@@ -990,6 +990,7 @@ function drawDetail(i){
   if(ROLE==="chef" || ROLE==="medecin" || ROLE==="national") h += '<div class="enc"><button class="spec" data-a="hx">Historique du patient</button></div>';
   var TB = '<button data-a="trf">Proposition de transfert</button>', hasT = canTransfer(CUR.mat, r);
   if(ROLE==="delegue" && FOSA){
+    var tRcv = trfByState(CUR.mat, r, "in", ["received"]); if(tRcv) h += trfPdfBtn(Object.assign({id:tRcv.id}, tRcv.q));
     var tAct = trfByState(CUR.mat, r, "out", ["pending","valid"]);
     if(tAct){ hasT = false; h += '<div class="note wait">🔁 Proposition de transfert en cours vers <b>'+esc(tAct.q.to)+'</b> : '+esc(trfStLabel(tAct.st))+'.</div>' }
     else { var tOld = trfByState(CUR.mat, r, "out", ["expired","refused"]); if(tOld) h += '<div class="note '+(tOld.st.s==="expired"?'bad':'warn')+'">'+(tOld.st.s==="expired" ? '⌛ La proposition vers '+esc(tOld.q.to)+' a expiré (patient non reçu en '+TRF_DAYS+' jours) : une nouvelle proposition est exigée.' : '✖ La proposition vers '+esc(tOld.q.to)+' n\'a pas été approuvée par le médecin conseil.')+'</div>' }
@@ -1182,9 +1183,9 @@ async function initShared(){
       var ch = snap.docChanges(); TRF = {};
       snap.docs.forEach(function(d){ TRF[d.id] = d.data() });
       if(!firstT) ch.forEach(function(c){ var q = c.doc.data(); if(c.type!=="added" || !q) return;
-        if(trfFlow(q)){ if(ROLE==="medecin") toast("🔔 Proposition de transfert à examiner : "+q.nom+" "+q.prenom+" ("+q.from+" → "+q.to+")") }
+        if(trfFlow(q)){ if(ROLE==="medecin" && (!q.medTo || q.medTo===AG.c)) toast("🔔 Proposition de transfert à examiner : "+q.nom+" "+q.prenom+" ("+q.from+" → "+q.to+")") }
         else if(FOSA && q.to===FOSA) toast("🔔 Nouvelle proposition de transfert reçue : "+q.nom+" "+q.prenom+" (de "+q.from+")") });
-      firstT = false; refreshAll();
+      firstT = false; trfOverlay(); refreshAll();
     }, function(){});
     var firstD = true;
     DBX.collection("trfdec").onSnapshot(function(snap){
@@ -1194,8 +1195,9 @@ async function initShared(){
         if(ROLE==="delegue" && FOSA && q.to===FOSA && ok) toast("🔔 Patient à recevoir en transfert de "+q.from+" : "+(tq.nom||"")+" "+(tq.prenom||"")+" (valable "+TRF_DAYS+" jours)");
         else if(ROLE==="delegue" && FOSA && q.from===FOSA) toast("🔔 Transfert vers "+q.to+" : "+(ok ? "approuvé" : "non approuvé")+" par le médecin conseil");
         else if(ROLE==="assistant" && q.lvl===AG.v) toast("🔔 Transfert "+q.from+" → "+q.to+" : "+(ok ? "approuvé" : "non approuvé")+" par le médecin conseil") });
-      firstD = false; refreshAll();
+      firstD = false; trfOverlay(); refreshAll();
     }, function(){});
+    DBX.collection("medst").onSnapshot(function(snap){ MST = {}; snap.docs.forEach(function(d){ MST[d.id] = d.data() }); refreshAll() }, function(){});
     DBX.collection("agents").onSnapshot(function(snap){ DAG = {}; snap.docs.forEach(function(d){ var x = d.data(); if(x && x.n) x.n = UPN(x.n); DAG[d.id] = x }); if(AG){ applyScope() } refreshAll() }, function(){});
     DBX.collection("presence").onSnapshot(function(snap){ PRES = {}; snap.docs.forEach(function(d){ PRES[d.id] = d.data() }); if(AG && ROLE!=="delegue" && !$("v9").classList.contains("hide")) renderMonitor(); if(AG && ROLE==="chef" && !$("v14").classList.contains("hide") && !xUserBusy()) renderSuivi(); presAllRefresh() }, function(){});
     DBX.collection("provinces").onSnapshot(function(snap){ DPROV = {}; snap.docs.forEach(function(d){ DPROV[d.id] = d.data() }); refreshAll() }, function(){});
@@ -1253,11 +1255,28 @@ function episodeOf(mat, r){
   var end = l.at + cfg.days*864e5, left = Math.ceil((end-Date.now())/864e5);
   return left>0 ? {left:left, end:end, id:l.id} : null;
 }
-var TRD = {}, TRF_DAYS = 7;
+var TRD = {}, TRF_DAYS = 7, MST = {};
+var MST_L = {dispo:["Disponible","good"], occupe:["Occupé momentanément","wait"], absent:["Absent","bad"], indispo:["Indisponible","bad"]};
+function medSt(c){ var m = MST[c]; return (m && MST_L[m.s]) ? m.s : "" }
+function medStTag(c){ var k = medSt(c); return k ? '<span class="tag '+MST_L[k][1]+'">'+MST_L[k][0]+'</span>' : '<span class="tag wait" style="opacity:.7">Non renseigné</span>' }
+function medStOut(c){ var k = medSt(c); return k==="absent" || k==="indispo" }
+function medsOfCity(city){ return allAgents().filter(function(a){ return a.r==="medecin" && a.v===city && a.active!==false }).sort(function(a,b){ return a.n.localeCompare(b.n) }) }
+function medAvailHtml(){
+  var k = medSt(AG.c), m = MST[AG.c];
+  return '<div class="card"><b>Ma disponibilité</b><p class="sub" style="margin:6px 0 8px">Les délégués de la ville la voient et choisissent le médecin conseil à qui envoyer leur proposition de transfert. Statut actuel : '+medStTag(AG.c)+(m && m.at ? ' <small>(depuis le '+esc(fmtDT(m.at))+')</small>' : '')+'</p>'
+    + '<div style="display:flex;flex-wrap:wrap;gap:6px">'+Object.keys(MST_L).map(function(x){ return '<button class="'+(x===k?'':'back')+'" data-a="x_mst" data-s="'+x+'" style="padding:8px 12px">'+MST_L[x][0]+'</button>' }).join("")+'</div></div>'
+}
+async function xMedSt(s){
+  if(ROLE!=="medecin" || !MST_L[s]) return;
+  var rec = {c:AG.c, n:AG.n, v:AG.v, s:s, at:Date.now()};
+  try{ await DBX.doc("medst/"+AG.c).set(rec); MST[AG.c] = rec; toast("Disponibilité : "+MST_L[s][0]); refreshAll() }catch(e){ toast("Enregistrement impossible : "+(e.message||e.code||e)) }
+}
 function trfFlow(q){ return !!q && q.flow===2 }
+function trfOverlay(){ Object.keys(TRF).forEach(function(k){ var q = TRF[k], d = TRD[k]; if(q && d && d.to && d.to!==q.to && !q.toOrig){ q.toOrig = q.to; q.to = d.to } }) }
+function trfSeen(k){ var q = TRF[k]; return q.toOrig ? xSeen("trf_"+k) : q.seen!==false }
 function trfIdOf(q){
   if(!q) return null; if(q.id && TRF[q.id]) return q.id; var f = null;
-  Object.keys(TRF).forEach(function(k){ var t = TRF[k]; if(!f && t && t.pk===q.pk && +t.at===+q.at && t.from===q.from && t.to===q.to) f = k });
+  Object.keys(TRF).forEach(function(k){ var t = TRF[k]; if(!f && t && t.pk===q.pk && +t.at===+q.at && t.from===q.from && (t.to===q.to || t.toOrig===q.to)) f = k });
   return f;
 }
 function trfRecvP(q, d){
@@ -1301,7 +1320,7 @@ function trfByState(mat, r, role, states){
 function trfTreated(q){
   return allP().some(function(p){ return p.fosa===q.from && (p.pk ? p.pk===q.pk : (p.mat===q.mat && p.rang===q.rang && p.nom===q.nom && p.prenom===q.prenom)) });
 }
-function trfUnseen(){ return FOSA ? Object.keys(TRF).filter(function(k){ var q = TRF[k]; if(q.to!==FOSA || q.seen!==false) return false; var s0 = trfState(q,k).s; return s0==="valid" || s0==="legacy" }).length : 0 }
+function trfUnseen(){ return FOSA ? Object.keys(TRF).filter(function(k){ var q = TRF[k]; if(q.to!==FOSA || trfSeen(k)) return false; var s0 = trfState(q,k).s; return s0==="valid" || s0==="legacy" }).length : 0 }
 var AFFK = {"CS Binza":{code:"10-101", kw:"binza"}, "Saint-Vincent de Paul":{code:"10-186", kw:"vincent"}, "CME Bumbu":{kw:"bumbu"}, "CBCO Bandal":{code:"10-188", kw:"bandal"}, "Lael vision":{kw:"lael"}};
 function affMatches(aff, f){
   var k = AFFK[f]; if(!k) return plainS(aff).indexOf(plainS(f))>=0;
@@ -1649,7 +1668,7 @@ function showFiche(id, tid, bk){
   var p = PREST[id]; if(!p) return;
   VIEW = {t:"fiche", id:id};
   BACK = bk || (tid ? function(){ showTransferView(tid) } : function(){ go("v7"); renderPrest() });
-  $("v3").innerHTML = '<button class="back" id="bk">← Retour</button><div class="card"><p class="sub" style="text-align:center;margin-bottom:10px">Fiche de malade — '+esc(p.fosa)+'</p>'+(photoOf(p.mat,p.rang) ? '<div style="text-align:center;margin-bottom:10px"><img src="'+photoOf(p.mat,p.rang).d+'" alt="" style="width:96px;height:128px;object-fit:cover;border-radius:8px;border:1px solid var(--line)"></div>' : '')+(trfInOf(p) ? trfNote(trfInOf(p), false) : '')+'<div class="enc" style="margin:0 0 10px;padding:0;border:0"><button data-a="pdf">Imprimer / enregistrer en PDF</button></div><dl style="margin:0">'
+  $("v3").innerHTML = '<button class="back" id="bk">← Retour</button><div class="card"><p class="sub" style="text-align:center;margin-bottom:10px">Fiche de malade — '+esc(p.fosa)+'</p>'+(photoOf(p.mat,p.rang) ? '<div style="text-align:center;margin-bottom:10px"><img src="'+photoOf(p.mat,p.rang).d+'" alt="" style="width:96px;height:128px;object-fit:cover;border-radius:8px;border:1px solid var(--line)"></div>' : '')+(trfInOf(p) ? trfNote(trfInOf(p), false)+trfPdfBtn(trfInOf(p)) : '')+'<div class="enc" style="margin:0 0 10px;padding:0;border:0"><button data-a="pdf">Imprimer / enregistrer en PDF</button></div><dl style="margin:0">'
     + ficheFields(p).map(function(x){return '<div class="line"><dt>'+esc(x[0])+'</dt><dd'+(x[0]==="Information complémentaire" && x[1]==="Cas conventionnel" ? ' style="color:#15803d"' : '')+'>'+esc(x[1])+'</dd></div>'}).join("")
     + '</dl>' + ficheNote(p) + '<div class="enc"><button data-a="pdf">Imprimer / enregistrer en PDF</button>'+(canEdit(p)?'<button class="trf" data-a="edit" data-id="'+esc(id)+'">Modifier le traitement</button>':'')+'</div></div>';
   go("v3");
@@ -1986,10 +2005,14 @@ function showTransferForm(i){
   var r = CUR.rows[i];
   if(!canTransfer(CUR.mat, r)){ toast("Proposition de transfert possible seulement après l'accord de la hiérarchie"); return }
   VIEW = {t:"tform", i:i}; BACK = function(){ drawDetail(i); go("v3") };
-  var city = fosaProv(FOSA) || (AG && AG.v) || "", done = prestsOf(CUR.mat, r, FOSA).length > 0, dest = FOSAS.filter(function(f){ return f!==FOSA && fosaProv(f)===city });
+  var city = fosaProv(FOSA) || (AG && AG.v) || "", done = prestsOf(CUR.mat, r, FOSA).length > 0, dest = FOSAS.filter(function(f){ return f!==FOSA && fosaProv(f)===city }), meds = medsOfCity(city);
   $("v3").innerHTML = '<button class="back" id="bk">← Retour</button><div class="card"><p class="sub" style="text-align:center;margin-bottom:10px">Proposition de transfert depuis '+esc(FOSA)+'</p><dl style="margin:0">'
     + [["Nom",r[1]+" "+r[2]],["Matricule",CUR.mat],["Rang",r[0]],["Soins reçus à "+FOSA, done?"Oui":"Non"]].map(function(y){return '<div class="line"><dt>'+esc(y[0])+'</dt><dd>'+esc(y[1])+'</dd></div>'}).join("") + '</dl>'
     + '<label class="lbl" for="tdest">FOSA de destination (ville '+esc(city||"—")+')</label><select id="tdest"><option value="">'+(dest.length?'— Choisir —':'Aucune autre FOSA disponible dans votre ville')+'</option>'+dest.map(function(f){return '<option value="'+esc(f)+'">'+esc(f)+'</option>'}).join("")+'</select>'
+    + '<label class="lbl" for="tmed">Médecin conseil sollicité</label>'
+    + (meds.length ? meds.map(function(a){ return '<div class="line"><dt>'+esc(a.n)+'</dt><dd>'+medStTag(a.c)+'</dd></div>' }).join("") : '')
+    + '<select id="tmed"><option value="">'+(meds.length?'— Choisir un médecin —':'Aucun médecin conseil dans votre ville')+'</option>'+meds.map(function(a){ var k = medSt(a.c); return '<option value="'+esc(a.c)+'"'+(medStOut(a.c)?' disabled':'')+'>'+esc(a.n)+' — '+(k?MST_L[k][0]:'Non renseigné')+'</option>' }).join("")+'</select>'
+    + '<p class="sub" style="margin:4px 0 0">Un médecin « Absent » ou « Indisponible » ne peut pas être choisi. S\'il le devient après l\'envoi, les autres médecins de la ville peuvent reprendre la proposition.</p>'
     + infoHtml()
     + '<label class="lbl" for="tmot">Motif du transfert</label><textarea id="tmot" rows="3" placeholder="Motif du transfert…"></textarea>'
     + '<div class="note wait" style="margin-top:10px">La proposition est d\'abord examinée par le <b>médecin conseil</b> de votre ville. La FOSA de destination n\'est notifiée qu\'<b>après son approbation</b>, et dispose alors de <b>'+TRF_DAYS+' jours</b> pour recevoir le patient ; passé ce délai, la proposition expire et une nouvelle est exigée.</div>'
@@ -2005,20 +2028,25 @@ async function doTransfer(i){
   if(!canTransfer(CUR.mat, r)){ toast("Proposition de transfert possible seulement après l'accord de la hiérarchie"); return }
   if(trfByState(CUR.mat, r, "out", ["pending","valid"])){ toast("Une proposition de transfert est déjà en cours pour ce patient"); return }
   if(!allAgents().some(function(a){ return a.r==="medecin" && a.v===city && a.active!==false })){ toast("Aucun médecin conseil dans votre ville : demandez au niveau National d'en créer un"); return }
+  var mc = $("tmed").value; if(!mc){ toast("Choisissez le médecin conseil à qui envoyer la proposition"); $("tmed").focus(); return }
+  var mg = medsOfCity(city).filter(function(a){ return a.c===mc })[0]; if(!mg){ toast("Médecin conseil introuvable dans votre ville"); return }
+  if(medStOut(mc)){ toast(mg.n+" n'est pas disponible : choisissez un autre médecin"); return }
   var id = "t_"+Date.now().toString(36)+Math.random().toString(36).slice(2,6), b = $("dtrf"); b.disabled = true;
   try{
-    await DBX.doc("transfers/"+id).set({pk:rkey(CUR.mat,r), mat:CUR.mat, rang:r[0], nom:r[1], prenom:r[2], from:FOSA, to:dest, motif:$("tmot").value.trim(), info:$("ic").value, at:Date.now(), by:ME.id, seen:false, flow:2});
-    toast("Proposition envoyée au médecin conseil : "+dest+" sera notifiée après son approbation"); drawDetail(i); go("v3");
+    await DBX.doc("transfers/"+id).set({pk:rkey(CUR.mat,r), mat:CUR.mat, rang:r[0], nom:r[1], prenom:r[2], from:FOSA, to:dest, motif:$("tmot").value.trim(), info:$("ic").value, at:Date.now(), by:ME.id, seen:false, flow:2, medTo:mc, medToName:mg.n});
+    toast("Proposition envoyée à "+mg.n+" : "+dest+" sera notifiée après son approbation"); drawDetail(i); go("v3");
   }catch(e){ b.disabled = false; toast("Proposition de transfert impossible : "+(e.message||e.code||e)) }
 }
 function showTransferView(id, back, full){
   var q = TRF[id]; if(!q) return;
   VIEW = {t:"transfer", tid:id, i:(VIEW && VIEW.i)};
   BACK = back || function(){ if(ROLE==="medecin") openView("v13"); else { go("v6"); renderNotif() } };
-  var incoming = ROLE==="delegue" && q.to===FOSA, treated = trfTreated(q), flow = trfFlow(q), st = trfState(q, id), d = st.d, limited = flow && incoming && !full;
+  var incoming = ROLE==="delegue" && q.to===FOSA, treated = trfTreated(q), flow = trfFlow(q), st = trfState(q, id), d = st.d, limited = flow && incoming && !full && st.s!=="received";
   var ps = allP().filter(function(p){ return p.fosa===q.from && (p.pk ? p.pk===q.pk : (p.mat===q.mat && p.rang===q.rang && p.nom===q.nom && p.prenom===q.prenom)) }).sort(function(a,b){return b.at-a.at});
   var rows = limited ? [["Nom",q.nom+" "+q.prenom],["Date de la proposition",fmtDT(q.at)]]
     : [["Nom",q.nom+" "+q.prenom],["Matricule",q.mat],["Rang",q.rang],["Date de la proposition",fmtDT(q.at)],["Information complémentaire",q.info||"—"],["Motif",q.motif||"—"],["Soins reçus à "+q.from, treated?"Oui":"Non"]];
+  if(flow && q.medTo && !limited) rows.push(["Médecin conseil sollicité", (q.medToName||q.medTo)+(medSt(q.medTo) ? " ("+MST_L[medSt(q.medTo)][0]+")" : "")]);
+  if(flow && q.toOrig && !limited) rows.push(["FOSA de destination","Modifiée par le médecin conseil : "+q.to+" (proposée : "+q.toOrig+")"]);
   if(flow){
     rows.push(["Décision du médecin conseil", d ? (d.verdict==="approved" ? "Approuvé" : "Non approuvé")+" par "+(d.medName||"—")+" le "+fmtDT(d.at) : "En attente"]);
     if(d && d.note && !limited) rows.push(["Commentaire du médecin", d.note]);
@@ -2031,19 +2059,21 @@ function showTransferView(id, back, full){
   else if(treated) h += '<p class="sub" style="margin:14px 0 4px"><b>Traitement déjà reçu à '+esc(q.from)+(ROLE==="medecin" && !d ? ' — lisez-le avant de décider' : '')+' (touchez une ligne pour lire la fiche)</b></p>' + ps.map(function(p){ return '<div class="nrow" data-id="'+esc(p.id)+'"><div><b>'+esc(p.type)+'</b><small>'+esc(fmtDT(p.at))+'</small></div><b>'+fmt(+p.cout||0)+' $</b></div>' }).join("");
   else h += '<div class="note wait">Patient non pris en charge à '+esc(q.from)+' : seul le transfert établi est consultable, aucune fiche de malade.</div>';
   if(ROLE==="medecin" && flow) h += '<div class="enc"><button class="back" data-a="x_topen" data-pk="'+esc(q.pk)+'" style="padding:6px 12px">Consulter l\'historique du patient</button></div>';
-  if(ROLE==="medecin" && flow && d && d.verdict==="approved"){
-    if(st.s==="received") h += '<div class="note good" style="margin-top:10px">✔ Patient reçu à '+esc(q.to)+' : le PDF de confirmation peut être généré.</div><div class="enc"><button class="goodb" data-a="x_tpdf">PDF de confirmation « Approuvé »</button></div>';
-    else h += '<div class="note wait" style="margin-top:10px">Le PDF de confirmation sera disponible dès que le patient aura bénéficié d\'un soin à '+esc(q.to)+'.</div>';
+  if((ROLE==="medecin" || ROLE==="delegue") && flow && d && d.verdict==="approved"){
+    if(st.s==="received") h += '<div class="note good" style="margin-top:10px">✔ Patient reçu à '+esc(q.to)+' : le PDF de confirmation peut être généré.</div><div class="enc"><button class="goodb" data-a="x_tpdf" data-t="'+esc(id)+'">PDF de confirmation « Approuvé »</button></div>';
+    else if(ROLE==="medecin") h += '<div class="note wait" style="margin-top:10px">Le PDF de confirmation sera disponible dès que le patient aura bénéficié d\'un soin à '+esc(q.to)+'.</div>';
   }
   h += '</div>';
   if(ROLE==="medecin" && flow && !d){
-    h += '<div class="card"><div class="sec">Décision du médecin conseil</div><p class="sub" style="margin:0 0 6px">La décision est <b>définitive</b>. Si vous approuvez, la FOSA de destination ('+esc(q.to)+') est notifiée et dispose de '+TRF_DAYS+' jours pour recevoir le patient.</p>'
+    var dl = FOSAS.filter(function(f){ return f!==q.from && fosaProv(f)===fosaProv(q.from) });
+    h += '<div class="card"><div class="sec">Décision du médecin conseil</div><p class="sub" style="margin:0 0 6px">La décision est <b>définitive</b>. Si vous approuvez, la FOSA de destination est notifiée et dispose de '+TRF_DAYS+' jours pour recevoir le patient.</p>'
+      + '<label class="lbl" for="xtd">FOSA de destination (proposée par le délégué : '+esc(q.to)+')</label><select id="xtd">'+dl.map(function(f){ return '<option value="'+esc(f)+'"'+(f===q.to?' selected':'')+'>'+esc(f)+(f===q.to?' (proposée)':'')+'</option>' }).join("")+'</select><p class="sub" style="margin:4px 0 0">Vous pouvez choisir une autre FOSA de la ville selon votre appréciation.</p>'
       + '<label class="chk"><input type="radio" name="xtv" value="approved"> <b>Approuver</b> le transfert</label><label class="chk"><input type="radio" name="xtv" value="refused"> <b>Ne pas approuver</b></label>'
       + '<label class="lbl" for="xtc">Éléments cliniques à transmettre (facultatif, en cas d\'approbation)</label><textarea id="xtc" rows="4" maxlength="1500" placeholder="Diagnostic, état du patient, examens, conduite à tenir…"></textarea>'
       + '<label class="lbl" for="xtn">Commentaire (obligatoire si non approuvé)</label><textarea id="xtn" rows="3" placeholder="Votre avis médical…"></textarea><div class="enc"><button data-a="x_tdec">Enregistrer ma décision</button></div></div>';
   }
   $("v3").innerHTML = h; go("v3");
-  if(incoming && q.seen===false && DBX) DBX.doc("transfers/"+id).update({seen:true}).catch(function(){});
+  if(incoming && !trfSeen(id)){ if(q.toOrig){ xMark("trf_"+id); refreshAll() } else if(DBX) DBX.doc("transfers/"+id).update({seen:true}).catch(function(){}) }
 }
 async function xTrfDec(){
   var id = VIEW && VIEW.tid, q = TRF[id]; if(ROLE!=="medecin" || !q || !trfFlow(q) || TRD[id]) return;
@@ -2051,9 +2081,11 @@ async function xTrfDec(){
   if(!v){ toast("Choisissez : approuver ou ne pas approuver"); return }
   if(v==="refused" && note.length<3){ toast("Indiquez le motif de la non-approbation"); $("xtn").focus(); return }
   if(!window.confirm("Votre décision ("+(v==="approved" ? "approuvé" : "non approuvé")+") sera définitive et conservée dans l'historique. L'enregistrer ?")) return;
-  var rec = {tid:id, lvl:AG.v, from:q.from, to:q.to, med:AG.c, medName:AG.n, verdict:v, note:note, at:Date.now()}, cl = ($("xtc") ? $("xtc").value : "").trim().slice(0,1500);
+  var dest = ($("xtd") && $("xtd").value) || q.to; if(v==="refused") dest = q.to;
+  var rec = {tid:id, lvl:AG.v, from:q.from, to:dest, med:AG.c, medName:AG.n, verdict:v, note:note, at:Date.now()}, cl = ($("xtc") ? $("xtc").value : "").trim().slice(0,1500);
+  if(dest!==q.to) rec.toOrig = q.to;
   if(v==="approved" && cl) rec.clin = cl;
-  try{ await DBX.doc("trfdec/"+id).set(rec); TRD[id] = rec; toast(v==="approved" ? "Transfert approuvé : "+q.to+" est notifiée" : "Transfert non approuvé"); refreshAll(); showTransferView(id, BACK) }
+  try{ await DBX.doc("trfdec/"+id).set(rec); TRD[id] = rec; toast(v==="approved" ? "Transfert approuvé : "+dest+" est notifiée" : "Transfert non approuvé"); refreshAll(); showTransferView(id, BACK) }
   catch(e){ toast("Décision impossible : "+(e.message||e.code||e)) }
 }
 function trfPdfLines(id){
@@ -2065,7 +2097,7 @@ function trfPdfLines(id){
   L.push({t:" "},{t:"Patient", b:1});
   L.push({t:"Nom : "+q.nom+" "+q.prenom},{t:"Matricule : "+q.mat+"    Rang : "+q.rang});
   L.push({t:" "},{t:"Transfert", b:1});
-  L.push({t:"FOSA d'origine : "+q.from},{t:"FOSA de destination : "+q.to},{t:"Proposition du : "+fmtDT(q.at)+" par "+by});
+  L.push({t:"FOSA d'origine : "+q.from},{t:"FOSA de destination : "+q.to+(q.toOrig ? " (proposée initialement : "+q.toOrig+", modifiée par le médecin conseil)" : "")},{t:"Proposition du : "+fmtDT(q.at)+" par "+by});
   L.push({t:"Soins reçus à "+q.from+" : "+(treated ? "oui" : "non")});
   L.push({t:"Motif : "+(q.motif||"-")});
   if(q.info) L.push({t:"Information complémentaire : "+q.info});
@@ -2080,6 +2112,11 @@ function exportTrfPdf(id){
   var q = TRF[id], L = trfPdfLines(id); if(!L){ toast("PDF disponible seulement après un soin du patient dans la FOSA de destination"); return }
   savePdf("Confirmation_transfert_"+String(q.nom||"patient").replace(/\s+/g,"_")+"_"+dayKey((TRD[id]||{}).at||Date.now())+".pdf", L, {sign:false, title:"Confirmation de transfert"});
 }
+function trfPdfBtn(q){
+  if(!q || !trfFlow(q) || (ROLE!=="delegue" && ROLE!=="medecin")) return '';
+  var id = trfIdOf(q), st = id ? trfState(TRF[id], id) : null; if(!st || st.s!=="received") return '';
+  return '<div class="note good" style="margin-top:10px">✔ Patient reçu en transfert de '+esc(q.from)+' : la confirmation du médecin conseil est disponible.</div><div class="enc"><button class="goodb" data-a="x_tpdf" data-t="'+esc(id)+'">PDF de confirmation « Approuvé »</button></div>';
+}
 function trfRowHtml(k, o){
   var q = TRF[k], st = trfState(q, k), tg = trfTagHtml(st), sub;
   o = o || {};
@@ -2088,7 +2125,7 @@ function trfRowHtml(k, o){
   if(o.noMat){ var mp = {valid:['good','À recevoir'], received:['good','Reçu'], expired:['bad','Expiré']}[st.s]; if(mp) tg = '<span class="tag '+mp[0]+'">'+mp[1]+'</span>' }
   if(o.asst){ tg = '<span class="tag '+(st.s==="pending" ? 'wait' : (st.s==="refused" ? 'bad' : 'good'))+'">'+(st.s==="pending" ? 'En attente' : (st.s==="refused" ? 'Non approuvé' : 'Approuvé'))+'</span>' }
   if(o.tk) return '<div class="nrow" data-tk="'+esc(k)+'"><div><b>'+esc(q.nom)+' '+esc(q.prenom)+'</b><small>'+sub+'</small></div>'+tg+'</div>';
-  var dot = (o.dot && q.seen===false && (st.s==="valid" || st.s==="legacy")) ? '<span class="dot"></span>' : '';
+  var dot = (o.dot && !trfSeen(k) && (st.s==="valid" || st.s==="legacy")) ? '<span class="dot"></span>' : '';
   return '<div class="nrow" data-k="'+esc(k)+'" data-m="trf"><div>'+dot+'<b>'+esc(q.nom)+' '+esc(q.prenom)+'</b><small>'+sub+'</small></div>'+tg+'</div>';
 }
 function trfCards(){
@@ -4831,7 +4868,7 @@ function xPending(){
     + Object.keys(DREQ).filter(function(k){ var d = DREQ[k]; return d.by===AG.c && d.status==="refused" && !xSeen("d_"+k) }).length;
   return 0;
 }
-function medTrfPending(){ return ROLE==="medecin" ? Object.keys(TRF).filter(function(k){ return trfFlow(TRF[k]) && !TRD[k] }).sort(function(a,b){ return (TRF[a].at||0)-(TRF[b].at||0) }) : [] }
+function medTrfPending(){ return ROLE==="medecin" ? Object.keys(TRF).filter(function(k){ var q = TRF[k]; return trfFlow(q) && !TRD[k] && (!q.medTo || q.medTo===AG.c || medStOut(q.medTo)) }).sort(function(a,b){ return (TRF[a].at||0)-(TRF[b].at||0) }) : [] }
 function xTabs(){ if(!AG) return; var n = xPending(); setTab("v13", (ROLE==="medecin" ? "🔔 Avis" : (ROLE==="chef" ? "Dossiers" : "Avis médicaux"))+(n?" ("+n+")":"")) }
 function xRefreshShare(){
   if($("v3").classList.contains("hide") || !VIEW || VIEW.t!=="share") return;
@@ -4882,7 +4919,7 @@ function xMedHtml(){
   var pend = ks.filter(function(k){ return xNeedAvis(SHR[k]) && !xMyAvis(k) }), done = ks.filter(function(k){ return !(xNeedAvis(SHR[k]) && !xMyAvis(k)) });
   var who = function(sh){ return "de "+(sh.byName || xNames([sh.by])[0]) };
   var tp = medTrfPending(), td = Object.keys(TRD).filter(function(k){ return TRD[k].med===AG.c }).sort(function(a,b){ return (TRD[b].at||0)-(TRD[a].at||0) }).slice(0,30);
-  return '<div class="card"><b>Propositions de transfert à examiner — ville '+esc(AG.v)+' ('+tp.length+')</b><p class="sub" style="margin:6px 0 0">Chaque proposition de transfert passe par vous avant la FOSA de destination. Votre décision est définitive.</p>'+(tp.length ? tp.map(function(k){ return trfRowHtml(k, {tk:1, tag:1}).replace(/<span class="tag[^>]*>[^<]*<\/span>/, '<span class="tag wait">À décider</span>') }).join("") : '<p class="sub" style="margin:8px 0 0">Aucune proposition en attente.</p>')+'</div>'
+  return medAvailHtml() + '<div class="card"><b>Propositions de transfert à examiner — ville '+esc(AG.v)+' ('+tp.length+')</b><p class="sub" style="margin:6px 0 0">Chaque proposition de transfert passe par vous avant la FOSA de destination. Votre décision est définitive.</p>'+(tp.length ? tp.map(function(k){ return trfRowHtml(k, {tk:1, tag:1}).replace(/<span class="tag[^>]*>[^<]*<\/span>/, '<span class="tag wait">À décider</span>') }).join("") : '<p class="sub" style="margin:8px 0 0">Aucune proposition en attente.</p>')+'</div>'
     + (td.length ? '<div class="card"><b>Mes décisions sur les transferts ('+td.length+')</b>'+td.map(function(k){ var d = TRD[k], q = TRF[k] || {}; return '<div class="nrow" data-tk="'+esc(k)+'"><div><b>'+esc((q.nom||"")+" "+(q.prenom||""))+'</b><small>'+esc(d.from)+' → '+esc(d.to)+' · '+esc(fmtDT(d.at||0))+'</small></div><span class="tag '+(d.verdict==="approved"?"good":"bad")+'">'+(d.verdict==="approved"?"Approuvé":"Non approuvé")+'</span></div>' }).join("")+'</div>' : '')
     + '<div class="card"><b>Avis demandés par l\'assistant — ville '+esc(AG.v)+' ('+pend.length+')</b>'+(pend.length ? pend.map(function(k){ return xShareRow(k, SHR[k], who(SHR[k])) }).join("") : '<p class="sub" style="margin:8px 0 0">Aucun avis en attente.</p>')+'</div>'
     + '<div class="card"><b>Historique ('+done.length+')</b><p class="sub" style="margin:6px 0 0">Vos avis sont définitifs et conservés.</p>'+(done.length ? done.map(function(k){ return xShareRow(k, SHR[k], who(SHR[k])) }).join("") : '<p class="sub" style="margin:8px 0 0">Aucun avis donné pour le moment.</p>')+'</div>';
@@ -5114,7 +5151,8 @@ function xAct(a, t){
   else if(a==="x_avis") xSendAvis();
   else if(a==="x_open") xOpenPat(t.dataset.pk);
   else if(a==="x_tdec") xTrfDec();
-  else if(a==="x_tpdf") exportTrfPdf(VIEW && VIEW.tid);
+  else if(a==="x_mst") xMedSt(t.dataset.s);
+  else if(a==="x_tpdf") exportTrfPdf((t && t.dataset && t.dataset.t) || (VIEW && VIEW.tid));
   else if(a==="x_topen"){ var tid0 = VIEW && VIEW.tid; showPatHist(t.dataset.pk, function(){ showTransferView(tid0) }) }
   else if(a==="x_cref") chefLoad(true);
   else if(a==="x_dreq"){ var r = CHEFF.rows.filter(function(x){ return x.id===t.dataset.id })[0]; if(r){ XS.dreq = r; renderSuivi(); window.scrollTo(0, 0); setTimeout(function(){ var m = $("x_dm"); if(m) m.focus() }, 60) } }
@@ -5168,7 +5206,7 @@ function admSpecHtml(P){
 }
 
 function clearShared(){
-  SBX.close(); REQ = {}; PREST = {}; TRF = {}; TRD = {}; DAG = {}; PRES = {}; DPROV = {}; DFOSA = {}; ASSIGN = {}; REPORTS = {}; INV = {}; SHR = {}; AVIS = {}; DREQ = {}; CHEFF = {rows:[], t:0, busy:false, err:"", days:7}; XS = {kind:"urg", note:"", q:"", sel:{}, to:{}, pool:{}, reqId:"", dreq:null, per:"7", fo:"", fq:""}; FIRST = true;
+  SBX.close(); REQ = {}; PREST = {}; TRF = {}; TRD = {}; MST = {}; DAG = {}; PRES = {}; DPROV = {}; DFOSA = {}; ASSIGN = {}; REPORTS = {}; INV = {}; SHR = {}; AVIS = {}; DREQ = {}; CHEFF = {rows:[], t:0, busy:false, err:"", days:7}; XS = {kind:"urg", note:"", q:"", sel:{}, to:{}, pool:{}, reqId:"", dreq:null, per:"7", fo:"", fq:""}; FIRST = true;
 }
 (async function(){
   $("q").disabled = $("go").disabled = true; $("lg").disabled = true;
