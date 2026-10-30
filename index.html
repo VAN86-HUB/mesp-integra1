@@ -1098,7 +1098,8 @@ function openDossier(k){
 
 /* ---------- notifications ---------- */
 function pendingCount(){ return isApprover() ? Object.keys(REQ).filter(function(k){return REQ[k].status==="pending" && lvlOK(REQ[k])}).length : 0 }
-function unseenCount(){ return ME.id ? Object.keys(REQ).filter(function(k){var q=REQ[k];return q.by===ME.id && q.status!=="pending" && q.seen===false}).length : 0 }
+function reqOfFosa(q){ return ROLE!=="delegue" || !q.fosa || q.fosa===FOSA }
+function unseenCount(){ return ME.id ? Object.keys(REQ).filter(function(k){var q=REQ[k];return q.by===ME.id && q.status!=="pending" && q.seen===false && reqOfFosa(q)}).length : 0 }
 function refreshAll(){
   if(ROLE==="national") alertSoon();
   var n = pendingCount()+unseenCount()+trfUnseen()+(ROLE==="delegue" ? remindersFor().length : 0); setTab("v6", "🔔 Notif."+(n?" ("+n+")":"")); var nr = reportsUnseen()+provPending(); setTab("v8", "Rapports et factures"+(nr?" ("+nr+")":""));
@@ -1128,7 +1129,7 @@ function notify(c){
   var q = c.doc.data(); if(!q || c.type==="removed") return;
   var nm = (q.nom||"")+" "+(q.prenom||"");
   if(isApprover() && q.status==="pending" && lvlOK(q)) toast("🔔 "+(kindOf(q)==="urg"?"Urgence signalée":"Nouvelle demande ("+KLAB[kindOf(q)]+")")+" : "+nm);
-  else if(q.by===ME.id && q.status!=="pending" && q.seen===false) toast("🔔 "+LABEL+" : "+(q.status==="authorized"?"autorisé":"non autorisé")+" — "+nm);
+  else if(q.by===ME.id && q.status!=="pending" && q.seen===false && reqOfFosa(q)) toast("🔔 "+LABEL+" : "+(q.status==="authorized"?"autorisé":"non autorisé")+" — "+nm);
 }
 function nrow(k,q,mode,sub){
   var dot = (mode==="mine" && q.status!=="pending" && q.seen===false) ? '<span class="dot"></span>' : '';
@@ -1146,8 +1147,8 @@ async function renderNotif(){
   }
   if(ROLE==="delegue"){
     h += remindHtml();
-    var mine = keys.filter(function(k){return ME.id && REQ[k].by===ME.id});
-    h += '<div class="card"><b>Mes demandes ('+mine.length+')</b>'+(mine.length?'':'<p class="sub" style="margin:8px 0 0">Aucune demande envoyée.</p>')
+    var mine = keys.filter(function(k){return ME.id && REQ[k].by===ME.id && reqOfFosa(REQ[k])});
+    h += '<div class="card"><b>Mes demandes — '+esc(FOSA||"")+' ('+mine.length+')</b>'+(mine.length?'':'<p class="sub" style="margin:8px 0 0">Aucune demande envoyée.</p>')
       + mine.map(function(k){return nrow(k,REQ[k],"mine","")}).join("")+'</div>';
     h += trfCards();
   }
@@ -1210,16 +1211,18 @@ function loadLocal(){
   try{ var x = JSON.parse(localStorage.getItem("mesp_x") || "{}"); ASSIGN = x.a || {}; REPORTS = x.r || {}; INV = x.i || {} }catch(e){}
 }
 function renderFosa(){
-  var s = $("fosa"), opts = ROLE==="delegue" ? SCOPE : [];
-  s.innerHTML = (opts.length>1 ? '<option value="">— Choisir la FOSA —</option>' : '') + opts.map(function(f){return '<option value="'+esc(f)+'">'+esc(f)+'</option>'}).join("");
+  var s = $("fosa"), opts = ROLE==="delegue" ? MYF : [];
+  s.innerHTML = (opts.length>1 && !FOSA ? '<option value="">— Choisir la FOSA —</option>' : '') + opts.map(function(f){return '<option value="'+esc(f)+'">'+esc(f)+'</option>'}).join("");
   s.value = FOSA || ""; s.disabled = opts.length<=1;
   if($("whof")) $("whof").innerHTML = ROLE!=="delegue" ? '' : (FOSA ? 'FOSA d\'affectation : <b>'+esc(FOSA)+'</b>' : 'Aucune FOSA affectée');
   $("fmsg").innerHTML = ROLE!=="delegue" ? '' : (!opts.length ? '<div class="note warn">Aucune FOSA ne vous est affectée : contactez l\'assistant de votre ville.</div>'
-    : '<p class="sub" style="margin:8px 0 0">FOSA active : <b>'+esc(FOSA||"—")+'</b> · '+(opts.length>1?'vous gérez '+opts.length+' FOSA.':'affectée par l\'assistant de votre ville.')+'</p>');
+    : '<p class="sub" style="margin:8px 0 0">FOSA active : <b>'+esc(FOSA||"—")+'</b> · '+(opts.length>1?'vous gérez '+opts.length+' FOSA : tout l\'écran (notifications, factures, listes) concerne uniquement cette FOSA.':'affectée par l\'assistant de votre ville.')+'</p>');
 }
 function setFosa(v){
-  if(ROLE!=="delegue" || (v && SCOPE.indexOf(v)<0)){ renderFosa(); return }
-  FOSA = v || null; renderFosa(); renderPrest(); refreshAll(); if(FOSA) toast("FOSA : "+FOSA);
+  if(ROLE!=="delegue" || !v || MYF.indexOf(v)<0 || v===FOSA){ renderFosa(); return }
+  FOSA = v; SCOPE = [v]; try{ localStorage.setItem("mesp_fosa_"+AG.c, v) }catch(e){}
+  if(typeof RFORM!=="undefined" && RFORM) RFORM.f = null;
+  renderFosa(); renderPrest(); refreshAll(); toast("FOSA : "+FOSA);
 }
 $("fosa").addEventListener("change", function(){ setFosa($("fosa").value) });
 
@@ -2167,7 +2170,7 @@ $("provs").addEventListener("click", function(e){
 
 /* ---------- agents, rôles, affectations ---------- */
 var DAG = {};
-var FPROV = {}, AG = null, ROLE = null, SCOPE = [], ASSIGN = {}, REPORTS = {}, INV = {}, LFAIL = 0, LLOCK = 0, ASDIRTY = false;
+var FPROV = {}, AG = null, ROLE = null, MYF = [], SCOPE = [], ASSIGN = {}, REPORTS = {}, INV = {}, LFAIL = 0, LLOCK = 0, ASDIRTY = false;
 var AGEB = ["0 à 4 ans","5 à 17 ans","18 à 59 ans","60 ans et +","Non renseigné"];
 function plainS(s){ return String(s||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase() }
 function isDel(a){ return plainS(a.f).indexOf("delegue")===0 }
@@ -2191,8 +2194,11 @@ function computeScope(){
   return FOSAS.slice();
 }
 function applyScope(){
-  SCOPE = computeScope();
-  if(ROLE==="delegue"){ if(SCOPE.indexOf(FOSA)<0) FOSA = SCOPE.length ? SCOPE[0] : null } else FOSA = null;
+  if(ROLE==="delegue"){
+    MYF = AG ? assignedOf(AG.c) : [];
+    if(MYF.indexOf(FOSA)<0){ var rm = null; try{ rm = localStorage.getItem("mesp_fosa_"+AG.c) }catch(e){} FOSA = (rm && MYF.indexOf(rm)>=0) ? rm : (MYF.length ? MYF[0] : null) }
+    SCOPE = FOSA ? [FOSA] : [];
+  } else { MYF = []; SCOPE = computeScope(); FOSA = null }
   renderFosa();
 }
 function lsave(){ try{ localStorage.setItem("mesp_x", JSON.stringify({a:ASSIGN, r:REPORTS, i:INV})) }catch(e){} }
@@ -3219,7 +3225,7 @@ function renderHome(){
     var nRep = unseenCount(), nTr = trfUnseen(), todo = '';
     if(nRep) todo += homeTodo("v6", "Réponses reçues sur vos demandes", "Urgence ou autorisation traitée par l'assistant", nRep);
     if(nTr) todo += homeTodo("v6", "Propositions de transfert reçues", "Patients envoyés vers votre FOSA", nTr);
-    var mine = Object.keys(REQ).filter(function(k){ return ME.id && REQ[k].by===ME.id }).sort(function(a,b){ return (REQ[b].at||0)-(REQ[a].at||0) }).slice(0,3);
+    var mine = Object.keys(REQ).filter(function(k){ return ME.id && REQ[k].by===ME.id && reqOfFosa(REQ[k]) }).sort(function(a,b){ return (REQ[b].at||0)-(REQ[a].at||0) }).slice(0,3);
     h += '<div class="card"><div class="sec">À faire</div>'
       + ((R.length||todo) ? todo + R.slice(0,8).map(function(r){ return '<div class="nrow" data-m="rem"'+(r.t==="inv" ? ' data-inv="'+esc(r.f+"|"+r.m)+'"' : ' data-id="'+esc(r.id)+'"')+'><div><b>'+(r.t==="inv" ? '🧾 ' : '⏳ ')+esc(r.txt)+'</b><small>'+esc(r.sub)+'</small></div><b>›</b></div>' }).join("") : '<p class="sub" style="margin:0">Rien en attente pour le moment.</p>') + '</div>';
     h += '<div class="card"><div class="sec">Mes dernières demandes</div>'+(mine.length ? mine.map(function(k){ return nrow(k, REQ[k], "mine", "") }).join("") : '<p class="sub" style="margin:0">Aucune demande envoyée.</p>')+'</div>';
@@ -3853,7 +3859,10 @@ $("v12").addEventListener("click", function(e){
 });
 
 /* --- budget contre réalisé --- */
-var BG = {m:"", v:"ville", n:"3", mg:"10", sg:null, tot:""};
+var BG = {m:"", v:"ville", n:"3", mg:"10", sg:null, tot:""}, BGLOAD = null;
+function bgKey(){ return "mesp_bgd_"+((AG && AG.c) || "x") }
+function bgLoad(){ var c = (AG && AG.c) || "x"; if(BGLOAD===c) return; BGLOAD = c; BG.sg = null; BG.tot = ""; try{ var o = JSON.parse(localStorage.getItem(bgKey()) || "{}"); if(o.tot) BG.tot = String(o.tot); if(o.sg && o.sg.rows && o.sg.rows.length){ BG.sg = o.sg; if(o.v) BG.v = o.v; if(o.m) BG.m = o.m; if(o.n) BG.n = o.n; if(o.mg) BG.mg = o.mg } }catch(e){} }
+function bgDraftSave(){ if(BGLOAD===null) return; try{ localStorage.setItem(bgKey(), JSON.stringify({tot:BG.tot, sg:BG.sg, v:BG.v, m:BG.m, n:BG.n, mg:BG.mg})) }catch(e){} }
 function bgProv(city){ var k = Object.keys(DPROV).filter(function(x){ return DPROV[x] && DPROV[x].name===city })[0]; return {id:k || slug(city), d:k ? DPROV[k] : null} }
 function bgData(){
   var m = BG.m || monthsList(1)[0], y = +m.slice(0,4), mo = +m.slice(5)-1, start = new Date(y, mo, 1).getTime(), end = new Date(y, mo+1, 1).getTime(), dim = new Date(y, mo+1, 0).getDate(), now = Date.now();
@@ -3885,7 +3894,7 @@ function bgSuggest(){
   return {rows:rows, has:has, n:n, mg:mg, m:D.m};
 }
 async function bgPut(k, city, val){
-  var pd = bgProv(city), id = pd.id; if(!DBX) return;
+  var pd = bgProv(city), id = pd.id; if(!DBX) throw new Error("hors ligne");
   if(BG.v==="ville"){ if(pd.d) await DBX.doc("provinces/"+id).update({budget:val}); else await DBX.doc("provinces/"+id).set({name:city, budget:val}) }
   else { var fb = Object.assign({}, (pd.d||{}).fbudget); if(val>0) fb[k] = val; else delete fb[k]; if(pd.d) await DBX.doc("provinces/"+id).update({fbudget:fb}); else await DBX.doc("provinces/"+id).set({name:city, fbudget:fb}) }
 }
@@ -3901,12 +3910,13 @@ function bgSplit(total){
 async function bgApply(){
   var S = BG.sg; if(!S) return; var ok = 0, ko = 0;
   for(var i = 0; i<S.rows.length; i++){ var r = S.rows[i]; try{ await bgPut(r.k, r.city, r.sug); ok++ }catch(e){ ko++ } }
-  BG.sg = null; toast(ok+" budget"+(ok>1?"s":"")+" enregistré"+(ok>1?"s":"")+(ko ? " · "+ko+" échec(s)" : "")); renderBudget();
+  if(!ko){ BG.sg = null; bgDraftSave() } toast(ok+" budget"+(ok>1?"s":"")+" enregistré"+(ok>1?"s":"")+(ko ? " · "+ko+" échec(s)" : "")); renderBudget();
 }
 function bgSugHtml(){
   var S = BG.sg; if(!S) return "";
   var tot = S.rows.reduce(function(t,r){ return t+r.sug }, 0);
-  return '<div class="card"><b>'+(S.mode==="split" ? 'Répartition du budget total de '+money(S.total) : 'Budget proposé pour '+esc(monthLabel(S.m)))+'</b><p class="sub" style="margin:6px 0 0">'+(S.mode==="split" ? (S.equal ? 'Aucune dépense sur les mois précédents : le budget est réparti à parts égales.' : 'Le budget est réparti selon la dépense moyenne des '+S.n+' mois précédents ('+S.has+' avec des prestations).')+' Vérifiez, puis appliquez : vous pourrez ensuite modifier chaque montant.' : 'Moyenne mensuelle des '+S.n+' mois précédents ('+S.has+' avec des prestations), plus '+S.mg+' % de marge, arrondie à la dizaine supérieure. Vérifiez, puis appliquez : vous pourrez ensuite modifier chaque montant.')+'</p>'
+  var btns = '<div class="enc" style="margin-top:10px"><button class="back" data-bgsug="apply" style="padding:6px 12px;font-weight:700">Appliquer ces budgets</button> <button class="back" data-bgsug="cancel" style="padding:6px 12px">Annuler</button></div>';
+  return '<div class="card" style="border:2px solid #b45309"><div class="note warn" style="margin:0 0 8px"><b>Non enregistré.</b> Ces montants ne sont qu\'une proposition : appuyez sur « Appliquer ces budgets » pour les enregistrer. La proposition est conservée si vous quittez l\'application.</div>'+(S.rows.length ? btns : '')+'<b style="display:block;margin-top:10px">'+(S.mode==="split" ? 'Répartition du budget total de '+money(S.total) : 'Budget proposé pour '+esc(monthLabel(S.m)))+'</b><p class="sub" style="margin:6px 0 0">'+(S.mode==="split" ? (S.equal ? 'Aucune dépense sur les mois précédents : le budget est réparti à parts égales.' : 'Le budget est réparti selon la dépense moyenne des '+S.n+' mois précédents ('+S.has+' avec des prestations).')+' Vérifiez, puis appliquez : vous pourrez ensuite modifier chaque montant.' : 'Moyenne mensuelle des '+S.n+' mois précédents ('+S.has+' avec des prestations), plus '+S.mg+' % de marge, arrondie à la dizaine supérieure. Vérifiez, puis appliquez : vous pourrez ensuite modifier chaque montant.')+'</p>'
     + (S.rows.length ? '<div class="kpis" style="margin-top:10px"><div class="kpi"><b>'+money(tot)+'</b><span>budget total proposé</span></div><div class="kpi"><b>'+S.rows.length+'</b><span>'+(BG.v==="ville" ? "villes" : "FOSA")+'</span></div></div>'
       + '<table class="mini" style="margin-top:8px"><thead><tr><th>'+(BG.v==="ville" ? "Ville" : "FOSA")+'</th><th>Moyenne</th><th>Actuel</th><th>Proposé</th></tr></thead><tbody>'+S.rows.map(function(r){ return '<tr><td>'+esc(r.k)+'</td><td>'+money(r.avg)+'</td><td>'+(r.cur ? money(r.cur) : '—')+'</td><td><b>'+money(r.sug)+'</b></td></tr>' }).join("")+'</tbody></table>'
       + '<div class="enc" style="margin-top:10px"><button class="back" data-bgsug="apply" style="padding:6px 12px">Appliquer ces budgets</button> <button class="back" data-bgsug="cancel" style="padding:6px 12px">Annuler</button></div>'
@@ -3914,6 +3924,7 @@ function bgSugHtml(){
 }
 function renderBudget(){
   if(ROLE!=="national") return;
+  bgLoad();
   var D = bgData(), tb = D.rows.reduce(function(s,x){ return s+x.bud }, 0), tr = D.rows.reduce(function(s,x){ return s+x.real }, 0), tf = D.rows.reduce(function(s,x){ return s+x.fc }, 0);
   var kp = function(v,l){ return '<div class="kpi"><b>'+v+'</b><span>'+l+'</span></div>' };
   var mx = Math.max.apply(null, D.rows.map(function(x){ return x.real }).concat([1]));
@@ -3934,6 +3945,7 @@ function renderBudget(){
           + '<small style="display:block;color:var(--muted)">Réalisé '+money(x.real)+(x.bud ? ' · '+Math.round(x.pct)+' % du budget' : '')+(D.cur ? ' · prévision '+money(x.fc) : '')+' · '+fmt(x.n)+' prestation(s)</small>'
           + '<label class="lbl" style="margin-top:6px">Budget mensuel ($)</label><input type="text" inputmode="numeric" data-bk="'+esc(x.k)+'" data-bc="'+esc(x.city)+'" value="'+(x.bud||"")+'" placeholder="Non défini"'+(x.city==="Non rattachée" ? ' disabled' : '')+' style="max-width:180px"></div>' }).join("")
       : '<p class="sub" style="margin:0">Aucune prestation ce mois-ci.</p>') + '</div>';
+  bgDraftSave();
 }
 async function bgSave(k, city, val){
   if(!DBX) return;
@@ -3945,7 +3957,7 @@ $("v2j").addEventListener("change", function(e){
   if(t.id==="bgm"){ BG.m = t.value; BG.sg = null; renderBudget() } else if(t.id==="bgv"){ BG.v = t.value; BG.sg = null; renderBudget() } else if(t.id==="bgn"){ BG.n = t.value; BG.sg = null; renderBudget() } else if(t.id==="bgg"){ BG.mg = t.value; BG.sg = null; renderBudget() }
   else if(t.dataset && t.dataset.bk!=null){ var v = parseInt(String(t.value).replace(/\D/g,""), 10) || 0; bgSave(t.dataset.bk, t.dataset.bc, v) }
 });
-$("v2j").addEventListener("input", function(e){ if(e.target.id==="bgt"){ var c0 = e.target.value.replace(/\D/g,"").slice(0,9); if(c0!==e.target.value) e.target.value = c0; BG.tot = c0; return } if(e.target.dataset && e.target.dataset.bk!=null){ var c = e.target.value.replace(/\D/g,"").slice(0,9); if(c!==e.target.value) e.target.value = c } });
+$("v2j").addEventListener("input", function(e){ if(e.target.id==="bgt"){ var c0 = e.target.value.replace(/\D/g,"").slice(0,9); if(c0!==e.target.value) e.target.value = c0; BG.tot = c0; bgDraftSave(); return } if(e.target.dataset && e.target.dataset.bk!=null){ var c = e.target.value.replace(/\D/g,"").slice(0,9); if(c!==e.target.value) e.target.value = c } });
 function bgTable(){ var D = bgData(); return {D:D, H:[BG.v==="ville" ? "Ville" : "FOSA"].concat(BG.v==="fosa" ? ["Ville"] : [], ["Budget mensuel ($)","Réalisé ($)","% du budget"], D.cur ? ["Prévision fin de mois ($)"] : [], ["Prestations","État"]),
   R:D.rows.map(function(x){ return [x.k].concat(BG.v==="fosa" ? [x.city] : [], [x.bud||"", Math.round(x.real*10)/10, x.bud ? Math.round(x.pct) : ""], D.cur ? [Math.round(x.fc*10)/10] : [], [x.n, BGST[x.st][0]]) }) } }
 $("v2j").addEventListener("click", function(e){
@@ -3959,7 +3971,7 @@ $("v2j").addEventListener("click", function(e){
 /* --- rappels aux délégués --- */
 function remindersFor(){
   if(ROLE!=="delegue" || !AG) return [];
-  var mine = assignedOf(AG.c), key = Object.keys(PREST).length+"|"+Object.keys(INV).length+"|"+Math.floor(Date.now()/6e4)+"|"+AG.c+"|"+mine.join(",")+"|"+mine.map(function(f){ return FCFG[f] ? FCFG[f].days : "" }).join(","); if(remindersFor.k===key) return remindersFor.v;
+  var mine = SCOPE.slice(), key = Object.keys(PREST).length+"|"+Object.keys(INV).length+"|"+Math.floor(Date.now()/6e4)+"|"+AG.c+"|"+mine.join(",")+"|"+mine.map(function(f){ return FCFG[f] ? FCFG[f].days : "" }).join(","); if(remindersFor.k===key) return remindersFor.v;
   var out = [], now = Date.now(), nd = new Date(), dim = new Date(nd.getFullYear(), nd.getMonth()+1, 0).getDate(), left = dim-nd.getDate(), ms = monthsList(4);
   mine.forEach(function(f){
     var cfg = FCFG[f], last = {}, has = {};
