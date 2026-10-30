@@ -2330,11 +2330,11 @@ async function admAddNational(){
   if(pw && pw.length<8){ toast("Mot de passe : 8 caractères minimum (ou laissez vide)"); $("nm_p").focus(); return }
   if(!nat && !city){ toast("Choisissez la province"); return }
   try{
-    var r = await callAdmin({action:"create", role:(nat || ty==="medecin" || ty==="chef") ? ty : undefined, name:n, fonction:f, city:nat ? undefined : city, password:pw});
+    var r = await callAdmin({action:"create", role:(nat || ty==="medecin" || ty==="chef") ? ty : undefined, name:n, fonction:f, city:nat ? undefined : city, password:ty==="delegue" ? "" : pw});
     var cty = ty==="autre" ? "Autre" : (nat ? "National" : city), rr = ty;
     DAG[r.code] = {c:r.code, n:n, f:f, l:(nat ? cty : "Provincial"), w:cty, v:cty, r:rr, active:true};
     var lab = {national:"national créé", autre:"« autre » créé", assistant:"assistant créé", delegue:"délégué créé", medecin:"médecin conseil créé", chef:"chef de service créé"}[ty];
-    NEWAS = {c:r.code, n:n, pw:r.password, v:cty, t:lab}; ADM.a = r.code; toast("Agent créé : "+n+" ("+r.code+")"); renderAdmin();
+    NEWAS = {c:r.code, n:n, pw:(ty=="delegue" ? null : r.password), v:cty, t:lab}; ADM.a = r.code; toast("Agent créé : "+n+" ("+r.code+")"); renderAdmin();
   }catch(e){ toast("Création impossible : "+(e.message||e)) }
 }
 async function admAgentSave(){
@@ -2376,7 +2376,7 @@ function renderAdmin(){
   var added = {}; ((DFOSA[slug(sel)]||{}).types||[]).forEach(function(t){ added[t.n] = 1 });
   var T = sel && FCFG[sel] ? FCFG[sel].types.slice().sort(tsort) : [];
   var asts = allAgents().filter(function(a){ return a.v!=="National" && a.r!=="autre" && a.r!=="medecin" && a.r!=="chef" && !isDel(a) });
-  var h = (NEWAS ? '<div class="note good"><b>Assistant '+esc(NEWAS.t||"créé")+' : '+esc(NEWAS.n)+'</b> — province '+esc(NEWAS.v)+'<br>Code agent : <b>'+esc(NEWAS.c)+'</b> · Mot de passe : <b>'+esc(NEWAS.pw)+'</b><br><small>Communiquez ces accès à l\'intéressé(e). Le mot de passe ne sera plus affiché.</small></div>' : '')
+  var h = (NEWAS ? '<div class="note good"><b>Assistant '+esc(NEWAS.t||"créé")+' : '+esc(NEWAS.n)+'</b> — province '+esc(NEWAS.v)+'<br>Code agent : <b>'+esc(NEWAS.c)+'</b>'+(NEWAS.pw ? ' · Mot de passe : <b>'+esc(NEWAS.pw)+'</b><br><small>Communiquez ces accès à l\'intéressé(e). Le mot de passe ne sera plus affiché.</small>' : '<br><small>Le mot de passe sera généré lorsque l\'assistant de la ville affectera ce délégué à une FOSA.</small>')+'</div>' : '')
     + (isSuper() ? superAdminHtml() : '')
     + backupHtml()
     + '<div class="card"><b>Provinces ('+P.length+')</b><p class="sub" style="margin:6px 0 0">'+(P.length?P.map(esc).join(" · "):"Aucune province.")+'</p>'
@@ -2670,12 +2670,26 @@ function showFosaPage(f, bk){
 function renderAssign(){
   if(ROLE!=="assistant") return;
   var L = AG.v, dels = allAgents().filter(function(a){ return a.v===L && isDel(a) });
-  var mine = fosasOfCity(L), nf = mine.map(function(f){ var lv = levelOfFosa(f), oth = otherDeleg(f, ""), blocked = (lv && lv!==L) || !!oth;
-      return '<label class="chk"><input type="checkbox" data-nf="'+esc(f)+'"'+(blocked?' disabled':'')+'> '+esc(f)+(lv && lv!==L?' <small class="sub">(ville '+esc(lv)+')</small>':(oth?' <small class="sub">(déjà : '+esc(oth.n)+')</small>':''))+'</label>' }).join("");
-  var h = (NEWDEL ? '<div class="note good"><b>Délégué(e) '+esc(NEWDEL.t||"créé(e)")+' : '+esc(NEWDEL.n)+'</b><br>Code agent : <b>'+esc(NEWDEL.c)+'</b> · Mot de passe : <b>'+esc(NEWDEL.pw)+'</b><br><small>Communiquez ces accès à l\'intéressé(e). Le mot de passe ne sera plus affiché.</small></div>' : '')
-    + '<div class="card"><b>Ajouter un délégué(e) — ville '+esc(L)+'</b><label class="lbl" for="nd_n">Nom complet</label><input id="nd_n" type="text" placeholder="Nom prénom" autocomplete="off">'
-    + '<label class="lbl" for="nd_p">Mot de passe initial (8 caractères minimum — laissez vide pour en générer un)</label><input id="nd_p" type="text" autocomplete="off">'
-    + '<div class="lbl">FOSA à affecter (0 à 2)</div>'+(mine.length?nf:'<p class="sub" style="margin:4px 0 8px">Aucune FOSA n\'est rattachée à votre ville : demandez au niveau National de la rattacher.</p>')+'<div class="enc"><button data-a="addel">Créer et affecter</button></div></div>'
+  var mine = fosasOfCity(L);
+  var h = (NEWDEL ? '<div class="note good"><b>Délégué(e) '+esc(NEWDEL.t||"créé(e)")+' : '+esc(NEWDEL.n)+'</b><br>Code agent : <b>'+esc(NEWDEL.c)+'</b> · Mot de passe : <b>'+esc(NEWDEL.pw)+'</b><br><small>Communiquez ces accès à l\'intéressé(e). Le mot de passe ne sera plus affiché.</small></div>' : '');
+  var sorted = dels.slice().sort(function(x,y){ return x.n.localeCompare(y.n, "fr") });
+  if(ASSEL && !sorted.some(function(d){ return d.c===ASSEL })) ASSEL = "";
+  h += '<div class="card"><b>Affecter un délégué(e) — ville '+esc(L)+'</b><p class="sub" style="margin:6px 0 8px">Les agents sont créés par le niveau National. Choisissez un agent de votre ville, puis ses FOSA (0 à 2). Le mot de passe de l\'agent est généré à sa première affectation.</p>'
+    + (sorted.length ? '<label class="lbl" for="as_sel">Agent (ordre alphabétique)</label><select id="as_sel"><option value="">— Choisir un agent —</option>'+sorted.map(function(d){ return '<option value="'+esc(d.c)+'"'+(d.c===ASSEL?' selected':'')+'>'+esc(d.n)+' — '+(assignedOf(d.c).length?'affecté(e)':'à affecter')+(d.active===false?' (compte désactivé)':'')+'</option>' }).join("")+'</select>'
+      : '<p class="sub" style="margin:0">Aucun agent délégué pour votre ville : demandez au niveau National de le créer.</p>');
+  var sd = ASSEL ? agentByCode(ASSEL) : null;
+  if(sd){
+    var cur0 = assignedOf(sd.c);
+    h += '<div style="margin-top:10px"><b>'+esc(sd.n)+'</b> <small class="sub">('+esc(sd.c)+')</small> <span class="tag '+(cur0.length?'good':'wait')+'">'+(cur0.length?'Affecté':'À affecter')+'</span>'
+      + (cur0.length ? '' : '<p class="sub" style="margin:6px 0 0">À l\'enregistrement de sa première affectation, un mot de passe sera généré et affiché une seule fois.</p>')
+      + '<div class="lbl">FOSA à affecter (0 à 2)</div>' + (mine.length ? mine.map(function(f){
+          var lv = levelOfFosa(f), oth = otherDeleg(f, sd.c), blocked = (lv && lv!==L) || !!oth;
+          return '<label class="chk"><input type="checkbox" data-d="'+esc(sd.c)+'" data-f="'+esc(f)+'"'+(cur0.indexOf(f)>=0?' checked':'')+(blocked?' disabled':'')+'> '+esc(f)+(lv && lv!==L?' <small class="sub">(ville '+esc(lv)+')</small>':(oth?' <small class="sub">(déjà : '+esc(oth.n)+')</small>':''))+'</label>' }).join("")
+        : '<p class="sub" style="margin:4px 0 8px">Aucune FOSA n\'est rattachée à votre ville : demandez au niveau National de la rattacher.</p>')
+      + '<div class="enc"><button data-a="saveas" data-d="'+esc(sd.c)+'">Enregistrer l\'affectation</button></div>'
+      + '<div class="enc"><button class="spec" data-a="pwreset" data-d="'+esc(sd.c)+'">Réinitialiser le mot de passe</button> <button class="spec" data-a="toggle" data-d="'+esc(sd.c)+'">'+(sd.active===false?'Réactiver le compte':'Désactiver le compte')+'</button></div></div>';
+  }
+  h += '</div>'
     + '<div class="card"><b>Affectations — ville '+esc(L)+'</b><p class="sub" style="margin:6px 0 0">Chaque délégué(e) gère une ou deux FOSA. Vous ne voyez que les FOSA rattachées à votre ville. Une FOSA ne peut appartenir qu\'à une seule ville et à un(e) seul(e) délégué(e).</p></div>';
   var affd = dels.filter(function(d){ return assignedOf(d.c).length }), pend = dels.filter(function(d){ return !assignedOf(d.c).length }), libres = mine.filter(function(f){ return !delegOf(f).length });
   var kq = function(v,l){ return '<div class="kpi"><b>'+v+'</b><span>'+l+'</span></div>' };
@@ -2683,35 +2697,32 @@ function renderAssign(){
     + '<div class="sec" style="margin-top:10px">Affectés ('+affd.length+')</div>'+(affd.length ? affd.map(function(d){ return '<div class="nrow" style="cursor:default"><div><b>'+esc(d.n)+'</b><small>'+esc(assignedOf(d.c).join(", "))+(d.active===false?' · compte désactivé':'')+'</small></div><span class="tag good">Affecté</span></div>' }).join("") : '<p class="sub" style="margin:0">Aucun délégué affecté.</p>')
     + '<div class="sec" style="margin-top:10px">Pas encore affectés ('+pend.length+')</div>'+(pend.length ? pend.map(function(d){ return '<div class="nrow" style="cursor:default"><div><b>'+esc(d.n)+'</b><small>'+esc(d.c)+(d.active===false?' · compte désactivé':'')+'</small></div><span class="tag wait">À affecter</span></div>' }).join("") : '<p class="sub" style="margin:0">Tous les délégués ont au moins une FOSA.</p>')
     + '<div class="sec" style="margin-top:10px">FOSA sans délégué ('+libres.length+')</div>'+(libres.length ? '<p class="sub" style="margin:0">'+libres.map(esc).join(" · ")+'</p>' : '<p class="sub" style="margin:0">Toutes les FOSA de la ville ont un délégué.</p>')+'</div>';
-  if(!dels.length) h += '<div class="card"><p class="sub" style="margin:0">Aucun(e) délégué(e) pour cette ville.</p></div>';
-  dels.forEach(function(d){
-    var cur = assignedOf(d.c);
-    h += '<div class="card"><b>'+esc(d.n)+'</b> <small class="sub">('+esc(d.c)+')</small> <span class="tag '+(cur.length?'good':'wait')+'">'+(cur.length?'Affecté':'À affecter')+'</span>' + (mine.length?'':'<p class="sub" style="margin:8px 0">Aucune FOSA n\'est rattachée à votre ville : demandez au niveau National de la rattacher.</p>') + mine.map(function(f){
-      var lv = levelOfFosa(f), oth = otherDeleg(f, d.c), blocked = (lv && lv!==L) || !!oth;
-      return '<label class="chk"><input type="checkbox" data-d="'+esc(d.c)+'" data-f="'+esc(f)+'"'+(cur.indexOf(f)>=0?' checked':'')+(blocked?' disabled':'')+'> '+esc(f)+(lv && lv!==L?' <small class="sub">(ville '+esc(lv)+')</small>':(oth?' <small class="sub">(déjà : '+esc(oth.n)+')</small>':''))+'</label>' }).join("")
-      + '<div class="enc"><button data-a="saveas" data-d="'+esc(d.c)+'">Enregistrer l\'affectation</button></div><div class="enc"><button class="spec" data-a="pwreset" data-d="'+esc(d.c)+'">Réinitialiser le mot de passe</button> <button class="spec" data-a="toggle" data-d="'+esc(d.c)+'">'+(d.active===false?'Réactiver le compte':'Désactiver le compte')+'</button></div></div>';
-  });
   ASDIRTY = false; $("v10").innerHTML = h;
 }
-var NEWDEL = null;
+var NEWDEL = null, ASSEL = "";
 async function saveAssign(code, fs){
   var d = agentByCode(code);
   if(ROLE!=="assistant" || !d || !isDel(d) || d.v!==AG.v){ toast("Affectation réservée à l'assistant de la même ville"); return }
   if(fs.length>2){ toast("Un(e) délégué(e) gère au maximum 2 FOSA"); return }
   for(var i=0;i<fs.length;i++){ if(fosaProv(fs[i])!==AG.v){ toast(fs[i]+" n'est pas rattachée à votre ville"); return } var lv = levelOfFosa(fs[i]); if(lv && lv!==AG.v){ toast(fs[i]+" est déjà affectée à la ville "+lv); return } var oth = otherDeleg(fs[i], code); if(oth){ toast(fs[i]+" est déjà gérée par "+oth.n); return } }
-  try{ await putDoc("assign", code, {fosas:fs, lvl:AG.v, by:AG.c, at:Date.now()}, ASSIGN); ASDIRTY = false; applyScope(); toast("Affectation enregistrée : "+d.n+" → "+(fs.join(", ")||"aucune FOSA")); renderAssign() }
-  catch(e){ toast("Affectation impossible : "+(e.message||e.code||e)) }
+  var first = !assignedOf(code).length && fs.length>0;
+  try{ await putDoc("assign", code, {fosas:fs, lvl:AG.v, by:AG.c, at:Date.now()}, ASSIGN); ASDIRTY = false; applyScope(); toast("Affectation enregistrée : "+d.n+" → "+(fs.join(", ")||"aucune FOSA")) }
+  catch(e){ toast("Affectation impossible : "+(e.message||e.code||e)); return }
+  if(first){
+    try{ var r = await callAdmin({action:"reset", code:code}); NEWDEL = {c:code, n:d.n, pw:r.password, t:"affecté(e) — mot de passe généré"} }
+    catch(e){ toast("Affectation faite, mais le mot de passe n'a pas pu être généré : "+(e.message||e.code||e)+". Utilisez « Réinitialiser le mot de passe ».") }
+  }
+  renderAssign()
 }
 $("v10").addEventListener("click", function(e){
-  var t = e.target; if(t.dataset && t.dataset.a==="addel"){ addDelegue(); return }
+  var t = e.target;
   if(t.dataset && (t.dataset.a==="pwreset" || t.dataset.a==="toggle")){ agentAct(t.dataset.a, t.dataset.d); return }
   if(!(t.dataset && t.dataset.a==="saveas")) return;
   var fs = []; $("v10").querySelectorAll('input[data-d="'+t.dataset.d+'"]').forEach(function(b){ if(b.checked && !b.disabled) fs.push(b.dataset.f) });
   saveAssign(t.dataset.d, fs);
 });
-$("v10").addEventListener("input", function(e){ if(e.target.id==="nd_n" || e.target.id==="nd_p") ASDIRTY = true });
 $("v10").addEventListener("change", function(e){
-  var t = e.target; if(t.dataset && t.dataset.nf){ ASDIRTY = true; var c = 0; $("v10").querySelectorAll("input[data-nf]").forEach(function(b){ if(b.checked) c++ }); if(c>2){ t.checked = false; toast("Un(e) délégué(e) gère au maximum 2 FOSA") } return }
+  var t = e.target; if(t.id==="as_sel"){ ASSEL = t.value; ASDIRTY = false; NEWDEL = null; renderAssign(); return }
   if(!(t.dataset && t.dataset.d)) return; ASDIRTY = true;
   var n = 0; $("v10").querySelectorAll('input[data-d="'+t.dataset.d+'"]').forEach(function(b){ if(b.checked) n++ });
   if(n>2){ t.checked = false; toast("Un(e) délégué(e) gère au maximum 2 FOSA") }
@@ -4460,7 +4471,7 @@ async function agentAct(kind, code){
   }catch(e){ toast("Opération impossible : "+(e.message||e)) }
 }
 async function addDelegue(){
-  if(ROLE!=="assistant"){ toast("Réservé à l'assistant de la ville"); return }
+  toast("La création des agents est réservée au niveau National"); return;
   var n = UPN($("nd_n").value), pw = $("nd_p").value.trim(), fs = [];
   $("v10").querySelectorAll("input[data-nf]").forEach(function(b){ if(b.checked && !b.disabled) fs.push(b.dataset.nf) });
   if(n.length<3 || n.indexOf(" ")<0){ toast("Saisissez le nom complet (nom et prénom)"); $("nd_n").focus(); return }
