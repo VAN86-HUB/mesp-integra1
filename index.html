@@ -2476,7 +2476,9 @@ function applyFosaCfg(){
   FCFG = cfg; AFFK = aff; FOSAS = names.sort(function(a,b){ return a.localeCompare(b,"fr",{sensitivity:"base"}) });
 }
 function isSuper(){ return ROLE==="national" && !!AG && SUPERS.indexOf(AG.c)>=0 }
-function agRole(a){ return a.r==="autre" ? "Autre" : a.r==="national" ? "National" : a.r==="medecin" ? "Médecin conseil" : a.r==="chef" ? "Chef de service" : (isDel(a) ? "Délégué" : "Assistant") }
+function isPrincipal(){ return ROLE==="national" && !!AG && AG.p===true && SUPERS.indexOf(AG.c)<0 }
+function canReset(){ return isSuper() || isPrincipal() }
+function agRole(a){ return a.r==="autre" ? "Autre" : a.r==="national" ? (SUPERS.indexOf(a.c)>=0 ? "Super-administrateur" : (a.p===true ? "Administrateur principal" : "National")) : a.r==="medecin" ? "Médecin conseil" : a.r==="chef" ? "Chef de service" : (isDel(a) ? "Délégué" : "Assistant") }
 function superAdminHtml(){
   var P = levels(), list = allAgents().slice().sort(function(x,y){ return x.c.localeCompare(y.c) }), sel = (ADM.a && agentByCode(ADM.a)) ? ADM.a : (list[0] ? list[0].c : ""); ADM.a = sel;
   var a = agentByCode(sel) || {}, isNat = a.r==="national" || a.r==="autre", self = !!AG && sel===AG.c, off = a.active===false;
@@ -2493,6 +2495,7 @@ function superAdminHtml(){
   if(a.c){
     h += '<div class="line"><dt>Statut</dt><dd>'+(off?'<span style="color:var(--bad,#c0392b)">Connexion suspendue</span>':'Actif')+'</dd></div>'
       + '<label class="lbl" for="mg_n">Nom complet</label><input id="mg_n" type="text" value="'+esc(a.n)+'" autocomplete="off">'
+      + (a.r==="national" && SUPERS.indexOf(a.c)<0 ? '<label style="display:flex;gap:8px;align-items:center;margin:10px 0"><input id="mg_pr" type="checkbox"'+(a.p===true?' checked':'')+' style="width:auto"> <span><b>Administrateur principal</b> : mêmes droits qu\'un administrateur, plus la réinitialisation des mots de passe</span></label>' : '')
       + (!isNat && a.r!=="autre" && !isDel(a) ? '<label class="lbl" for="mg_r">Type d\'agent</label><select id="mg_r">'+[["assistant","Assistant provincial"],["medecin","Médecin conseil"],["chef","Chef de service / coordonnateur"]].map(function(o){ return '<option value="'+o[0]+'"'+(o[0]===a.r?' selected':'')+'>'+o[1]+'</option>' }).join("")+'</select>' : '')
       + (isNat || a.r==="chef" || a.r==="medecin" ? '<label class="lbl" for="mg_f">Fonction</label><input id="mg_f" type="text" value="'+esc(a.f)+'" autocomplete="off">' : '')
       + (!isNat ? '<label class="lbl" for="mg_p">Province</label><select id="mg_p">'+P.map(function(v){ return '<option'+(v===a.v?' selected':'')+'>'+esc(v)+'</option>' }).join("")+'</select>' : '')
@@ -2553,7 +2556,9 @@ async function admAgentSave(){
   var nr = $("mg_r") ? $("mg_r").value : a.r, chg = nr!==a.r;
   if(chg && !window.confirm("Changer le type de "+a.n+" : "+agRole(a)+" → "+({assistant:"Assistant provincial",medecin:"Médecin conseil",chef:"Chef de service"}[nr])+" ?")) return;
   try{
-    await callAdmin({action:"update", code:code, name:n, fonction:f, city:v, role:chg ? nr : undefined});
+    var pr = $("mg_pr") ? $("mg_pr").checked : undefined;
+    await callAdmin({action:"update", code:code, name:n, fonction:f, city:v, role:chg ? nr : undefined, principal:pr});
+    if(pr!==undefined && DAG[code]) DAG[code].p = pr;
     var loc = DAG[code]; if(loc && chg){ loc.r = nr; loc.f = nr==="medecin" ? "Médecin conseil" : (nr==="assistant" ? "Assistant" : (f && f!==a.f ? f : "Chef de service")); delete ASSIGN[code] }
     loc = DAG[code]; if(loc){ loc.n = n; if(!chg) loc.f = f; if(a.r!=="national" && a.r!=="autre"){ loc.v = v; loc.w = v } }
     if(a.r!=="national" && a.r!=="autre" && v!==a.v) delete ASSIGN[code];
@@ -2594,6 +2599,82 @@ async function admAgentDel(){
   }catch(e){ toast("Suppression impossible : "+(e.message||e)) }
 }
 function nextAgentCode(){ var mx = 0; allAgents().forEach(function(a){ var m = /^10-(\d+)$/.exec(a.c); if(m && +m[1]>mx) mx = +m[1] }); return "10-"+String(mx+1).padStart(3,"0") }
+function principalHtml(){
+  var list = allAgents().filter(function(x){ return SUPERS.indexOf(x.c)<0 && !(x.r==="national" && x.p===true && x.c!==AG.c) }).sort(function(a,b){ return a.n.localeCompare(b.n) });
+  return '<div class="card"><b>Réinitialiser le mot de passe d\'un agent</b><p class="sub" style="margin:6px 0 8px">Administrateur principal : vous pouvez réinitialiser le mot de passe de tout agent (sauf du super-administrateur et des autres administrateurs principaux).</p>'
+    + '<label class="lbl" for="pp_a">Agent</label><select id="pp_a">'+list.map(function(x){ return '<option value="'+esc(x.c)+'">'+esc(x.c)+' · '+esc(x.n)+' · '+esc(agRole(x))+(x.r==="national"||x.r==="autre"?'':' · '+esc(x.v))+'</option>' }).join("")+'</select>'
+    + '<label class="lbl" for="pp_w">Nouveau mot de passe (8 caractères minimum — laissez vide pour en générer un)</label><input id="pp_w" type="text" autocomplete="off">'
+    + '<div class="enc"><button class="spec" data-a="pp_reset">Réinitialiser le mot de passe</button></div></div>'
+}
+async function principalReset(){
+  if(!isPrincipal()) return;
+  var c = $("pp_a").value, pw = $("pp_w").value.trim(), a = agentByCode(c); if(!a) return;
+  if(pw && pw.length<8){ toast("Mot de passe : 8 caractères minimum (ou laissez vide)"); return }
+  if(!window.confirm("Réinitialiser le mot de passe de "+a.n+" ("+c+") ?")) return;
+  try{ var r = await callAdmin({action:"reset", code:c, password:pw||undefined}); NEWAS = {c:c, n:a.n, pw:r.password, v:a.v, t:"— mot de passe réinitialisé"}; toast("Mot de passe réinitialisé : "+a.n); ADMDIRTY = false; renderAdmin() }
+  catch(e){ toast("Réinitialisation impossible : "+(e.message||e.code||e)) }
+}
+$("v12").addEventListener("click", function(e){ var b = e.target.closest && e.target.closest("[data-a='pp_reset']"); if(b) principalReset() });
+var PA = {fo:"", q:"", ed:"", lim:30};
+function prestAdminHtml(){
+  var ks = Object.keys(PREST), fl = PA.fo ? ks.filter(function(k){ return PREST[k].fosa===PA.fo }) : ks, q = plainS(PA.q||"");
+  var rows = fl.filter(function(k){ var p = PREST[k]; return !q || plainS((p.nom||"")+" "+(p.prenom||"")+" "+(p.mat||"")+" "+(p.type||"")).indexOf(q)>=0 }).sort(function(a,b){ return (PREST[b].at||0)-(PREST[a].at||0) });
+  var shown = rows.slice(0, PA.lim), fsl = FOSAS.slice();
+  ks.forEach(function(k){ var f = PREST[k].fosa; if(f && fsl.indexOf(f)<0) fsl.push(f) });
+  var h = '<div class="card"><b>Prestations (super-administrateur)</b><p class="sub" style="margin:6px 0 8px">Modifier le type, le coût, la date ou la FOSA de chaque prestation, la supprimer, ou supprimer toutes les prestations. Chaque opération est inscrite au journal d\'audit.</p>'
+    + '<label class="lbl" for="pa_f">FOSA</label><select id="pa_f"><option value="">Toutes les FOSA ('+ks.length+')</option>'+fsl.map(function(f){ return '<option value="'+esc(f)+'"'+(f===PA.fo?' selected':'')+'>'+esc(f)+'</option>' }).join("")+'</select>'
+    + '<label class="lbl" for="pa_q">Recherche (nom, matricule, type)</label><input id="pa_q" type="text" value="'+esc(PA.q)+'" autocomplete="off">'
+    + '<p class="sub" style="margin:8px 0 4px"><b>'+rows.length+'</b> prestation(s) correspondante(s)'+(rows.length>shown.length?' — '+shown.length+' affichée(s)':'')+'</p>';
+  h += shown.map(function(k){ var p = PREST[k];
+    if(PA.ed===k) return '<div class="card" style="margin:6px 0;border:2px solid var(--accent,#0a6)"><b>'+esc((p.nom||"")+" "+(p.prenom||""))+'</b> <small>'+esc(p.mat||"")+'</small>'
+      + '<label class="lbl" for="pe_t">Type de prestation</label><input id="pe_t" type="text" value="'+esc(p.type||"")+'" autocomplete="off">'
+      + '<label class="lbl" for="pe_c">Coût ($)</label><input id="pe_c" type="number" step="0.01" min="0" value="'+esc(String(p.cout==null?"":p.cout))+'" inputmode="decimal">'
+      + '<label class="lbl" for="pe_d">Date</label><input id="pe_d" type="date" value="'+esc(dayKey(p.at||Date.now()))+'">'
+      + '<label class="lbl" for="pe_f">FOSA</label><select id="pe_f">'+fsl.map(function(f){ return '<option value="'+esc(f)+'"'+(f===p.fosa?' selected':'')+'>'+esc(f)+'</option>' }).join("")+'</select>'
+      + '<div class="enc"><button data-a="pe_save" data-id="'+esc(k)+'">Enregistrer</button> <button class="spec" data-a="pe_cancel">Annuler</button></div></div>';
+    return '<div class="nrow" style="cursor:default"><div><b>'+esc((p.nom||"")+" "+(p.prenom||""))+'</b><small>'+esc(p.type||"—")+' · '+esc(p.fosa||"—")+' · '+esc(fmtD(p.at||0))+'</small></div><b>'+fmt(+p.cout||0)+' $</b></div>'
+      + '<div class="enc" style="margin:0 0 8px"><button class="spec" data-a="pe_edit" data-id="'+esc(k)+'">Modifier</button> <button class="spec" data-a="pe_del" data-id="'+esc(k)+'">Supprimer</button></div>' }).join("");
+  if(rows.length>shown.length) h += '<div class="enc"><button class="back" data-a="pe_more">Afficher plus</button></div>';
+  h += '<div class="enc" style="margin-top:12px"><button class="spec" data-a="pe_purge" style="color:var(--ko,#c0392b)">Supprimer '+(PA.fo ? 'toutes les prestations de '+esc(PA.fo) : 'TOUTES les prestations')+' ('+fl.length+')</button></div></div>';
+  return h;
+}
+async function prestAdminAct(a, id){
+  if(!isSuper()) return;
+  try{
+    if(a==="pe_edit"){ PA.ed = id; ADMDIRTY = true; renderAdmin(); return }
+    if(a==="pe_cancel"){ PA.ed = ""; ADMDIRTY = false; renderAdmin(); return }
+    if(a==="pe_more"){ PA.lim += 30; ADMDIRTY = false; renderAdmin(); return }
+    if(a==="pe_save"){
+      var p = PREST[id]; if(!p) return;
+      var ty = $("pe_t").value.trim(), co = parseFloat($("pe_c").value), dv = $("pe_d").value, fo = $("pe_f").value;
+      if(!ty){ toast("Type de prestation requis"); return }
+      if(isNaN(co) || co<0){ toast("Coût invalide"); return }
+      if(!dv){ toast("Date requise"); return }
+      var d0 = new Date(dv+"T00:00:00"), o = new Date(p.at||Date.now()); d0.setHours(o.getHours(), o.getMinutes(), o.getSeconds());
+      var r = await callAdmin({action:"prestUpdate", id:id, patch:{type:ty, cout:co, at:d0.getTime(), fosa:fo}});
+      PREST[id] = Object.assign({}, p, r.data || {type:ty, cout:co, at:d0.getTime(), fosa:fo});
+      PA.ed = ""; ADMDIRTY = false; toast("Prestation modifiée"); refreshAll(); renderAdmin(); return
+    }
+    if(a==="pe_del"){
+      var q = PREST[id]; if(!q) return;
+      if(!window.confirm("Supprimer cette prestation ?\n\n"+(q.nom||"")+" "+(q.prenom||"")+" — "+(q.type||"")+" — "+fmt(+q.cout||0)+" $ — "+q.fosa+"\n\nCette action est définitive.")) return;
+      await callAdmin({action:"prestDelete", id:id}); delete PREST[id]; toast("Prestation supprimée"); refreshAll(); renderAdmin(); return
+    }
+    if(a==="pe_purge"){
+      var n = PA.fo ? Object.keys(PREST).filter(function(k){ return PREST[k].fosa===PA.fo }).length : Object.keys(PREST).length;
+      if(!n){ toast("Aucune prestation à supprimer"); return }
+      var lab = PA.fo ? "toutes les prestations de "+PA.fo : "TOUTES les prestations de TOUTES les FOSA";
+      if(!window.confirm("ATTENTION : vous allez supprimer "+lab+" ("+n+" prestation(s)).\n\nCette action est DÉFINITIVE : les factures, rapports et statistiques calculés à partir de ces prestations seront affectés.\n\nVoulez-vous continuer ?")) return;
+      var w = window.prompt("Pour confirmer, tapez exactement : SUPPRIMER TOUT");
+      if(w!=="SUPPRIMER TOUT"){ toast("Suppression annulée : confirmation incorrecte"); return }
+      var rr = await callAdmin({action:"prestPurge", confirm:"SUPPRIMER TOUT", fosa:PA.fo || ""});
+      Object.keys(PREST).forEach(function(k){ if(!PA.fo || PREST[k].fosa===PA.fo) delete PREST[k] });
+      toast((rr.deleted||0)+" prestation(s) supprimée(s)"); refreshAll(); renderAdmin()
+    }
+  }catch(e){ toast("Opération impossible : "+(e.message||e.code||e)) }
+}
+$("v12").addEventListener("click", function(e){ var b = e.target.closest && e.target.closest("[data-a^='pe_']"); if(b) prestAdminAct(b.dataset.a, b.dataset.id) });
+$("v12").addEventListener("change", function(e){ var id = e.target.id; if(id==="pa_f"){ PA.fo = e.target.value; PA.lim = 30; PA.ed = ""; ADMDIRTY = false; renderAdmin() } else if(id==="pa_q"){ PA.q = e.target.value; PA.lim = 30; ADMDIRTY = false; renderAdmin() } });
 function renderAdmin(){
   if(ROLE!=="national") return;
   var P = levels(), fs = FOSAS, sel = (ADM.f && fs.indexOf(ADM.f)>=0) ? ADM.f : (fs[0]||""); ADM.f = sel;
@@ -2602,15 +2683,18 @@ function renderAdmin(){
   var asts = allAgents().filter(function(a){ return a.v!=="National" && a.r!=="autre" && a.r!=="medecin" && a.r!=="chef" && !isDel(a) });
   var h = (NEWAS ? '<div class="note good"><b>Assistant '+esc(NEWAS.t||"créé")+' : '+esc(NEWAS.n)+'</b> — province '+esc(NEWAS.v)+'<br>Code agent : <b>'+esc(NEWAS.c)+'</b>'+(NEWAS.pw ? ' · Mot de passe : <b>'+esc(NEWAS.pw)+'</b><br><small>Communiquez ces accès à l\'intéressé(e). Le mot de passe ne sera plus affiché.</small>' : '<br><small>Le mot de passe sera généré lorsque l\'assistant de la ville affectera ce délégué à une FOSA.</small>')+'</div>' : '')
     + (isSuper() ? superAdminHtml() : '')
+    + (isSuper() ? prestAdminHtml() : '')
+    + (isPrincipal() ? principalHtml() : '')
     + backupHtml()
     + '<div class="card"><b>Provinces ('+P.length+')</b><p class="sub" style="margin:6px 0 0">'+(P.length?P.map(esc).join(" · "):"Aucune province.")+'</p>'
     + '<label class="lbl" for="pv_n">Ajouter une province</label><input id="pv_n" type="text" placeholder="Nom de la province" autocomplete="off"><div class="enc"><button data-a="addprov">Ajouter la province</button></div></div>'
-    + '<div class="card"><b>Créer un assistant provincial</b>'
-    + '<label class="lbl" for="as_n">Nom complet</label><input id="as_n" type="text" placeholder="Nom prénom" autocomplete="off">'
+    + '<div class="card"><b>'+(isSuper() ? 'Créer un assistant provincial' : 'Assistants provinciaux')+'</b>'
+    + (isSuper() ? '' : '<p class="sub" style="margin:6px 0 0">Seul le super-administrateur crée, modifie ou supprime un compte. Vous pouvez suspendre ou réactiver la connexion d\'un agent.</p>')
+    + (!isSuper() ? '' : '<label class="lbl" for="as_n">Nom complet</label><input id="as_n" type="text" placeholder="Nom prénom" autocomplete="off">'
     + '<label class="lbl" for="as_p">Mot de passe initial (8 caractères minimum — laissez vide pour en générer un)</label><input id="as_p" type="text" autocomplete="off">'
     + '<label class="lbl" for="as_v">Province d\'affectation</label><select id="as_v">'+P.map(function(v){ return '<option>'+esc(v)+'</option>' }).join("")+'</select>'
-    + '<div class="enc"><button data-a="addas">Créer et affecter</button></div>'
-    + '<div class="sec" style="margin-top:12px">Assistants en place ('+asts.length+')</div>'+(asts.length?asts.map(function(a){ return '<div class="nrow" style="cursor:default"><div><b>'+esc(a.n)+'</b><small>'+esc(a.c)+' · '+esc(a.f)+'</small></div><span class="tag good">'+esc(a.v)+'</span></div><div class="enc" style="margin:0 0 8px"><button class="spec" data-a="pwreset" data-d="'+esc(a.c)+'">Réinitialiser le mot de passe</button> <button class="spec" data-a="toggle" data-d="'+esc(a.c)+'">'+(a.active===false?'Réactiver le compte':'Désactiver le compte')+'</button></div>' }).join(""):'<p class="sub" style="margin:0">Aucun assistant.</p>')+'</div>'
+    + '<div class="enc"><button data-a="addas">Créer et affecter</button></div>')
+    + '<div class="sec" style="margin-top:12px">Assistants en place ('+asts.length+')</div>'+(asts.length?asts.map(function(a){ return '<div class="nrow" style="cursor:default"><div><b>'+esc(a.n)+'</b><small>'+esc(a.c)+' · '+esc(a.f)+'</small></div><span class="tag good">'+esc(a.v)+'</span></div><div class="enc" style="margin:0 0 8px">'+(canReset() ? '<button class="spec" data-a="pwreset" data-d="'+esc(a.c)+'">Réinitialiser le mot de passe</button> ' : '')+'<button class="spec" data-a="toggle" data-d="'+esc(a.c)+'">'+(a.active===false?'Réactiver le compte':'Désactiver le compte')+'</button></div>' }).join(""):'<p class="sub" style="margin:0">Aucun assistant.</p>')+'</div>'
     + admSpecHtml(P)
     + '<div class="card"><b>Créer une FOSA</b>'
     + '<label class="lbl" for="fo_n">Nom de la FOSA</label><input id="fo_n" type="text" placeholder="Ex. CS Kintambo" autocomplete="off">'
@@ -4729,6 +4813,7 @@ async function addDelegue(){
   }catch(e){ toast("Création impossible : "+(e.message||e.code||e)) }
 }
 async function admAddAssistant(){
+  if(!isSuper()){ toast("Seul le super-administrateur peut créer un agent"); return }
   var n = UPN($("as_n").value), pw = $("as_p").value.trim(), v = $("as_v").value;
   if(n.length<3 || n.indexOf(" ")<0){ toast("Saisissez le nom complet (nom et prénom)"); $("as_n").focus(); return }
   if(pw && pw.length<8){ toast("Mot de passe : 8 caractères minimum (ou laissez vide)"); $("as_p").focus(); return }
@@ -5213,6 +5298,7 @@ setInterval(function(){ if(AG && ROLE==="chef" && !document.hidden && navigator.
 
 /* --- administration nationale : création des médecins conseils et chefs de service --- */
 async function admAddSpec(){
+  if(!isSuper()){ toast("Seul le super-administrateur peut créer un agent"); return }
   var n = UPN($("sp_n").value), pw = $("sp_p").value.trim(), v = $("sp_v").value, role = $("sp_t").value === "chef" ? "chef" : "medecin";
   if(n.length<3 || n.indexOf(" ")<0){ toast("Saisissez le nom complet (nom et prénom)"); $("sp_n").focus(); return }
   if(pw && pw.length<8){ toast("Mot de passe : 8 caractères minimum (ou laissez vide)"); $("sp_p").focus(); return }
@@ -5225,14 +5311,14 @@ async function admAddSpec(){
 }
 function admSpecHtml(P){
   var sp = allAgents().filter(function(a){ return a.r==="medecin" || a.r==="chef" }).sort(function(a,b){ return a.v.localeCompare(b.v) || a.n.localeCompare(b.n) });
-  return '<div class="card"><b>Créer un médecin conseil ou un chef de service</b><p class="sub" style="margin:6px 0 0">Ces agents ne font que la vérification de matricule, plus leurs rubriques propres (avis médicaux ; suivi et demandes de dossier).</p>'
-    + '<label class="lbl" for="sp_n">Nom complet</label><input id="sp_n" type="text" placeholder="Nom prénom" autocomplete="off">'
+  return '<div class="card"><b>'+(isSuper() ? 'Créer un médecin conseil ou un chef de service' : 'Médecins conseils et chefs de service')+'</b><p class="sub" style="margin:6px 0 0">Ces agents ne font que la vérification de matricule, plus leurs rubriques propres (avis médicaux ; suivi et demandes de dossier).</p>'
+    + (!isSuper() ? '' : '<label class="lbl" for="sp_n">Nom complet</label><input id="sp_n" type="text" placeholder="Nom prénom" autocomplete="off">'
     + '<label class="lbl" for="sp_t">Fonction</label><select id="sp_t"><option value="medecin">Médecin conseil</option><option value="chef">Chef de service / coordonnateur</option></select>'
     + '<label class="lbl" for="sp_v">Province</label><select id="sp_v">'+P.map(function(v){ return '<option>'+esc(v)+'</option>' }).join("")+'</select>'
     + '<label class="lbl" for="sp_p">Mot de passe initial (8 caractères minimum — laissez vide pour en générer un)</label><input id="sp_p" type="text" autocomplete="off">'
-    + '<div class="enc"><button data-a="addspec">Créer l\'agent</button></div>'
+    + '<div class="enc"><button data-a="addspec">Créer l\'agent</button></div>')
     + '<div class="sec" style="margin-top:12px">Médecins conseils et chefs de service ('+sp.length+')</div>'
-    + (sp.length ? sp.map(function(a){ return '<div class="nrow" style="cursor:default"><div><b>'+esc(a.n)+'</b><small>'+esc(a.c)+' · '+esc(agRole(a))+'</small></div><span class="tag good">'+esc(a.v)+'</span></div><div class="enc" style="margin:0 0 8px"><button class="spec" data-a="pwreset" data-d="'+esc(a.c)+'">Réinitialiser le mot de passe</button> <button class="spec" data-a="toggle" data-d="'+esc(a.c)+'">'+(a.active===false?'Réactiver le compte':'Désactiver le compte')+'</button></div>' }).join("") : '<p class="sub" style="margin:4px 0 0">Aucun pour le moment.</p>')
+    + (sp.length ? sp.map(function(a){ return '<div class="nrow" style="cursor:default"><div><b>'+esc(a.n)+'</b><small>'+esc(a.c)+' · '+esc(agRole(a))+'</small></div><span class="tag good">'+esc(a.v)+'</span></div><div class="enc" style="margin:0 0 8px">'+(canReset() ? '<button class="spec" data-a="pwreset" data-d="'+esc(a.c)+'">Réinitialiser le mot de passe</button> ' : '')+'<button class="spec" data-a="toggle" data-d="'+esc(a.c)+'">'+(a.active===false?'Réactiver le compte':'Désactiver le compte')+'</button></div>' }).join("") : '<p class="sub" style="margin:4px 0 0">Aucun pour le moment.</p>')
     + '</div>';
 }
 
