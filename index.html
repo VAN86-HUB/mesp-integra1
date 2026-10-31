@@ -2493,9 +2493,11 @@ function superAdminHtml(){
   if(a.c){
     h += '<div class="line"><dt>Statut</dt><dd>'+(off?'<span style="color:var(--bad,#c0392b)">Connexion suspendue</span>':'Actif')+'</dd></div>'
       + '<label class="lbl" for="mg_n">Nom complet</label><input id="mg_n" type="text" value="'+esc(a.n)+'" autocomplete="off">'
+      + (!isNat && a.r!=="autre" && !isDel(a) ? '<label class="lbl" for="mg_r">Type d\'agent</label><select id="mg_r">'+[["assistant","Assistant provincial"],["medecin","Médecin conseil"],["chef","Chef de service / coordonnateur"]].map(function(o){ return '<option value="'+o[0]+'"'+(o[0]===a.r?' selected':'')+'>'+o[1]+'</option>' }).join("")+'</select>' : '')
       + (isNat || a.r==="chef" || a.r==="medecin" ? '<label class="lbl" for="mg_f">Fonction</label><input id="mg_f" type="text" value="'+esc(a.f)+'" autocomplete="off">' : '')
       + (!isNat ? '<label class="lbl" for="mg_p">Province</label><select id="mg_p">'+P.map(function(v){ return '<option'+(v===a.v?' selected':'')+'>'+esc(v)+'</option>' }).join("")+'</select>' : '')
       + '<div class="enc"><button data-a="agsave">Enregistrer les informations</button></div>'
+      + (self ? '' : '<label class="lbl" for="mg_c">Code (matricule) de l\'agent</label><input id="mg_c" type="text" value="'+esc(a.c)+'" maxlength="6" inputmode="numeric" autocomplete="off"><div class="enc"><button class="spec" data-a="agcode">Changer le code</button></div><p class="sub" style="margin:4px 0 0">Format 10-123. Tout l\'historique de l\'agent suit le nouveau code ; il se connecte ensuite avec ce nouveau code (même mot de passe).</p>')
       + '<label class="lbl" for="mg_w">Nouveau mot de passe (8 caractères minimum — laissez vide pour en générer un)</label><input id="mg_w" type="text" autocomplete="off">'
       + '<div class="enc"><button class="spec" data-a="agpw">Changer le mot de passe</button></div>'
       + (self ? '<p class="sub" style="margin:8px 0 0">C\'est votre propre compte : suspension et suppression impossibles.</p>'
@@ -2548,12 +2550,29 @@ async function admAgentSave(){
   if(n.length<5 || n.indexOf(" ")<0){ toast("Saisissez le nom complet (nom et prénom)"); return }
   if((a.r==="national" || a.r==="autre") && !f){ toast("Saisissez la fonction"); return }
   if(a.r!=="national" && a.r!=="autre" && v!==a.v && !window.confirm("Changer la province de "+a.n+" ? "+(isDel(a)?"Ses affectations de FOSA seront retirées.":""))) return;
+  var nr = $("mg_r") ? $("mg_r").value : a.r, chg = nr!==a.r;
+  if(chg && !window.confirm("Changer le type de "+a.n+" : "+agRole(a)+" → "+({assistant:"Assistant provincial",medecin:"Médecin conseil",chef:"Chef de service"}[nr])+" ?")) return;
   try{
-    await callAdmin({action:"update", code:code, name:n, fonction:f, city:v});
-    var loc = DAG[code]; if(loc){ loc.n = n; loc.f = f; if(a.r!=="national" && a.r!=="autre"){ loc.v = v; loc.w = v } }
+    await callAdmin({action:"update", code:code, name:n, fonction:f, city:v, role:chg ? nr : undefined});
+    var loc = DAG[code]; if(loc && chg){ loc.r = nr; loc.f = nr==="medecin" ? "Médecin conseil" : (nr==="assistant" ? "Assistant" : (f && f!==a.f ? f : "Chef de service")); delete ASSIGN[code] }
+    loc = DAG[code]; if(loc){ loc.n = n; if(!chg) loc.f = f; if(a.r!=="national" && a.r!=="autre"){ loc.v = v; loc.w = v } }
     if(a.r!=="national" && a.r!=="autre" && v!==a.v) delete ASSIGN[code];
     toast("Informations modifiées : "+n); renderAdmin();
   }catch(e){ toast("Modification impossible : "+(e.message||e)) }
+}
+async function admAgentCode(){
+  var code = ADM.a, a = agentByCode(code); if(!a) return;
+  var nc = ($("mg_c").value||"").trim();
+  if(!/^\d{2}-\d{3}$/.test(nc)){ toast("Code invalide : format 10-123"); return }
+  if(nc===code){ toast("C'est déjà son code"); return }
+  if(agentByCode(nc)){ toast("Ce code est déjà utilisé par "+agentByCode(nc).n); return }
+  if(!window.confirm("Changer le code de "+a.n+" : "+code+" → "+nc+" ?\nTout son historique suivra le nouveau code. L'agent devra se connecter avec le nouveau code.")) return;
+  try{
+    await callAdmin({action:"recode", code:code, newCode:nc});
+    var loc = DAG[code]; if(loc){ delete DAG[code]; loc.c = nc; DAG[nc] = loc }
+    if(ASSIGN[code]){ ASSIGN[nc] = ASSIGN[code]; delete ASSIGN[code] }
+    ADM.a = nc; toast("Code modifié : "+code+" → "+nc+" ("+a.n+")"); renderAdmin();
+  }catch(e){ toast("Changement de code impossible : "+(e.message||e)) }
 }
 async function admAgentPw(){
   var code = ADM.a, a = agentByCode(code); if(!a) return;
@@ -2684,7 +2703,7 @@ $("v12").addEventListener("input", function(){ ADMDIRTY = true });
 $("v12").addEventListener("change", function(e){ if(e.target.id==="nm_t"){ var tv = e.target.value, nat = tv==="national" || tv==="autre"; $("nm_vw").classList.toggle("hide", nat); $("nm_fw").classList.toggle("hide", !(nat || tv==="chef")); ADMDIRTY = true; return } if(e.target.id==="ty_f"){ ADM.f = e.target.value; ADMDIRTY = false; renderAdmin() } else if(e.target.id==="mg_a"){ ADM.a = e.target.value; ADMDIRTY = false; renderAdmin() } else ADMDIRTY = true });
 $("v12").addEventListener("click", function(e){
   var t = e.target; if(!(t.dataset && t.dataset.a)) return; var a = t.dataset.a;
-  if(a==="pwreset" || a==="toggle") agentAct(a, t.dataset.d); else if(a==="addprov") admAddProvince(); else if(a==="addas") admAddAssistant(); else if(a==="addspec") admAddSpec(); else if(a==="addfosa") admAddFosa(); else if(a==="setprov") admSetProv(); else if(a==="setmode") admSetMode(); else if(a==="delfosa") admDelFosa(); else if(a==="addnat") admAddNational(); else if(a==="agsave") admAgentSave(); else if(a==="agpw") admAgentPw(); else if(a==="agdel") admAgentDel(); else if(a==="lgrefresh") loadLogins(true); else if(a==="addtype") admAddType(false); else if(a==="rmtype") admAddType(true, t.dataset.t);
+  if(a==="pwreset" || a==="toggle") agentAct(a, t.dataset.d); else if(a==="agcode") admAgentCode(); else if(a==="addprov") admAddProvince(); else if(a==="addas") admAddAssistant(); else if(a==="addspec") admAddSpec(); else if(a==="addfosa") admAddFosa(); else if(a==="setprov") admSetProv(); else if(a==="setmode") admSetMode(); else if(a==="delfosa") admDelFosa(); else if(a==="addnat") admAddNational(); else if(a==="agsave") admAgentSave(); else if(a==="agpw") admAgentPw(); else if(a==="agdel") admAgentDel(); else if(a==="lgrefresh") loadLogins(true); else if(a==="addtype") admAddType(false); else if(a==="rmtype") admAddType(true, t.dataset.t);
 });
 
 /* --- présence en ligne --- */
