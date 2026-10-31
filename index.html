@@ -1210,6 +1210,7 @@ async function initShared(){
       firstD = false; trfOverlay(); refreshAll();
     }, function(){});
     DBX.collection("invdraft").onSnapshot(idRemote, function(){});
+    DBX.collection("trfnum").onSnapshot(function(snap){ TNUM = {}; snap.docs.forEach(function(d){ TNUM[d.id] = d.data() }); refreshAll() }, function(){});
     DBX.collection("medst").onSnapshot(function(snap){ MST = {}; snap.docs.forEach(function(d){ MST[d.id] = d.data() }); refreshAll() }, function(){});
     DBX.collection("agents").onSnapshot(function(snap){ DAG = {}; snap.docs.forEach(function(d){ var x = d.data(); if(x && x.n) x.n = UPN(x.n); DAG[d.id] = x }); if(AG){ applyScope() } refreshAll() }, function(){});
     DBX.collection("presence").onSnapshot(function(snap){ PRES = {}; snap.docs.forEach(function(d){ PRES[d.id] = d.data() }); if(AG && ROLE!=="delegue" && !$("v9").classList.contains("hide")) renderMonitor(); if(AG && ROLE==="chef" && !$("v14").classList.contains("hide") && !xUserBusy()) renderSuivi(); presAllRefresh() }, function(){});
@@ -1268,7 +1269,7 @@ function episodeOf(mat, r){
   var end = l.at + cfg.days*864e5, left = Math.ceil((end-Date.now())/864e5);
   return left>0 ? {left:left, end:end, id:l.id} : null;
 }
-var TRD = {}, TRF_DAYS = 7, MST = {};
+var TRD = {}, TRF_DAYS = 7, MST = {}, TNUM = {};
 var MST_L = {dispo:["Disponible","good"], occupe:["Occupé momentanément","wait"], absent:["Absent","bad"], indispo:["Indisponible","bad"]};
 function medSt(c){ var m = MST[c]; return (m && MST_L[m.s]) ? m.s : "" }
 function medStTag(c){ var k = medSt(c); return k ? '<span class="tag '+MST_L[k][1]+'">'+MST_L[k][0]+'</span>' : '<span class="tag wait" style="opacity:.7">Non renseigné</span>' }
@@ -2018,10 +2019,10 @@ function showTransferForm(i){
   var r = CUR.rows[i];
   if(!canTransfer(CUR.mat, r)){ toast("Proposition de transfert possible seulement après l'accord de la hiérarchie"); return }
   VIEW = {t:"tform", i:i}; BACK = function(){ drawDetail(i); go("v3") };
-  var city = fosaProv(FOSA) || (AG && AG.v) || "", done = prestsOf(CUR.mat, r, FOSA).length > 0, dest = FOSAS.filter(function(f){ return f!==FOSA && fosaProv(f)===city }), meds = medsOfCity(city);
+  var city = destCity(FOSA) || (AG && AG.v) || "", done = prestsOf(CUR.mat, r, FOSA).length > 0, dest = destFosas(FOSA, city), meds = medsOfCity(city);
   $("v3").innerHTML = '<button class="back" id="bk">← Retour</button><div class="card"><p class="sub" style="text-align:center;margin-bottom:10px">Proposition de transfert depuis '+esc(FOSA)+'</p><dl style="margin:0">'
     + [["Nom",r[1]+" "+r[2]],["Matricule",CUR.mat],["Rang",r[0]],["Soins reçus à "+FOSA, done?"Oui":"Non"]].map(function(y){return '<div class="line"><dt>'+esc(y[0])+'</dt><dd>'+esc(y[1])+'</dd></div>'}).join("") + '</dl>'
-    + '<label class="lbl" for="tdest">FOSA de destination (ville '+esc(city||"—")+')</label><select id="tdest"><option value="">'+(dest.length?'— Choisir —':'Aucune autre FOSA disponible dans votre ville')+'</option>'+dest.map(function(f){return '<option value="'+esc(f)+'">'+esc(f)+'</option>'}).join("")+'</select>'
+    + '<label class="lbl" for="tdest">FOSA de destination (ville '+esc(city||"—")+')</label><select id="tdest"><option value="">'+(dest.length?'— Choisir —':'Aucune autre FOSA disponible dans votre ville')+'</option>'+dest.map(function(f){return '<option value="'+esc(f)+'">'+esc(f+destLabel(f))+'</option>'}).join("")+'</select>'
     + '<label class="lbl" for="tmed">Médecin conseil sollicité</label>'
     + (meds.length ? meds.map(function(a){ return '<div class="line"><dt>'+esc(a.n)+'</dt><dd>'+medStTag(a.c)+'</dd></div>' }).join("") : '')
     + '<select id="tmed"><option value="">'+(meds.length?'— Choisir un médecin —':'Aucun médecin conseil dans votre ville')+'</option>'+meds.map(function(a){ var k = medSt(a.c); return '<option value="'+esc(a.c)+'"'+(medStOut(a.c)?' disabled':'')+'>'+esc(a.n)+' — '+(k?MST_L[k][0]:'Non renseigné')+'</option>' }).join("")+'</select>'
@@ -2035,8 +2036,8 @@ function showTransferForm(i){
 }
 async function doTransfer(i){
   var dest = $("tdest").value; if(!dest){ toast("Choisissez la FOSA de destination"); $("tdest").focus(); return }
-  var city = fosaProv(FOSA) || (AG && AG.v) || "";
-  if(fosaProv(dest)!==city){ toast("Cette FOSA n'est pas dans la ville concernée"); return }
+  var city = destCity(FOSA) || (AG && AG.v) || "";
+  if(destCity(dest)!==city){ toast("Cette FOSA n'est pas dans la ville concernée"); return }
   var r = CUR.rows[i];
   if(!canTransfer(CUR.mat, r)){ toast("Proposition de transfert possible seulement après l'accord de la hiérarchie"); return }
   if(trfByState(CUR.mat, r, "out", ["pending","valid"])){ toast("Une proposition de transfert est déjà en cours pour ce patient"); return }
@@ -2073,14 +2074,14 @@ function showTransferView(id, back, full){
   else h += '<div class="note wait">Patient non pris en charge à '+esc(q.from)+' : seul le transfert établi est consultable, aucune fiche de malade.</div>';
   if(ROLE==="medecin" && flow) h += '<div class="enc"><button class="back" data-a="x_topen" data-pk="'+esc(q.pk)+'" style="padding:6px 12px">Consulter l\'historique du patient</button></div>';
   if((ROLE==="medecin" || ROLE==="delegue") && flow && d && d.verdict==="approved"){
-    if(st.s==="received") h += '<div class="note good" style="margin-top:10px">✔ Patient reçu à '+esc(q.to)+' : le PDF de confirmation peut être généré.</div><div class="enc"><button class="goodb" data-a="x_tpdf" data-t="'+esc(id)+'">PDF de confirmation « Approuvé »</button></div>';
+    if(st.s==="received") h += '<div class="note good" style="margin-top:10px">✔ Patient reçu à '+esc(q.to)+' : le PDF de confirmation peut être généré.</div><div class="enc"><button class="goodb" data-a="x_tpdf" data-t="'+esc(id)+'">PDF de confirmation « Approuvé »</button>'+(trfWaOk(q) ? ' <button class="goodb" data-a="x_twa" data-t="'+esc(id)+'">📤 Envoyer par WhatsApp</button>' : '')+'</div>';
     else if(ROLE==="medecin") h += '<div class="note wait" style="margin-top:10px">Le PDF de confirmation sera disponible dès que le patient aura bénéficié d\'un soin à '+esc(q.to)+'.</div>';
   }
   h += '</div>';
   if(ROLE==="medecin" && flow && !d){
-    var dl = FOSAS.filter(function(f){ return f!==q.from && fosaProv(f)===fosaProv(q.from) });
+    var dl = destFosas(q.from, destCity(q.from));
     h += '<div class="card"><div class="sec">Décision du médecin conseil</div><p class="sub" style="margin:0 0 6px">La décision est <b>définitive</b>. Si vous approuvez, la FOSA de destination est notifiée et dispose de '+TRF_DAYS+' jours pour recevoir le patient.</p>'
-      + '<label class="lbl" for="xtd">FOSA de destination (proposée par le délégué : '+esc(q.to)+')</label><select id="xtd">'+dl.map(function(f){ return '<option value="'+esc(f)+'"'+(f===q.to?' selected':'')+'>'+esc(f)+(f===q.to?' (proposée)':'')+'</option>' }).join("")+'</select><p class="sub" style="margin:4px 0 0">Vous pouvez choisir une autre FOSA de la ville selon votre appréciation.</p>'
+      + '<label class="lbl" for="xtd">FOSA de destination (proposée par le délégué : '+esc(q.to)+')</label><select id="xtd">'+dl.map(function(f){ return '<option value="'+esc(f)+'"'+(f===q.to?' selected':'')+'>'+esc(f+destLabel(f))+(f===q.to?' (proposée)':'')+'</option>' }).join("")+'</select><p class="sub" style="margin:4px 0 0">Vous pouvez choisir une autre FOSA de la ville selon votre appréciation.</p>'
       + '<label class="chk"><input type="radio" name="xtv" value="approved"> <b>Approuver</b> le transfert</label><label class="chk"><input type="radio" name="xtv" value="refused"> <b>Ne pas approuver</b></label>'
       + '<label class="lbl" for="xtc">Éléments cliniques à transmettre (facultatif, en cas d\'approbation)</label><textarea id="xtc" rows="4" maxlength="1500" placeholder="Diagnostic, état du patient, examens, conduite à tenir…"></textarea>'
       + '<label class="lbl" for="xtn">Commentaire (obligatoire si non approuvé)</label><textarea id="xtn" rows="3" placeholder="Votre avis médical…"></textarea><div class="enc"><button data-a="x_tdec">Enregistrer ma décision</button></div></div>';
@@ -2105,6 +2106,7 @@ function trfPdfLines(id){
   var q = TRF[id], d = TRD[id], st = trfState(q, id); if(!q || !d || d.verdict!=="approved" || st.s!=="received") return null;
   var by = (agentByCode(q.by)||{}).n || "-", end = (d.at||0)+TRF_DAYS*864e5, treated = trfTreated(q), L = [];
   L.push({t:"CONFIRMATION DE TRANSFERT", s:16});
+  if(TNUM[id]) L.push({t:"N° d'ordre : "+trfNumTxt(TNUM[id])+"   |   "+fmtD(TNUM[id].at||Date.now())+"   |   "+q.to, s:11, b:1});
   L.push({t:"Médecin conseil - ville "+(d.lvl||q.from), s:11});
   L.push({big:"Approuvé"});
   L.push({t:" "},{t:"Patient", b:1});
@@ -2121,14 +2123,40 @@ function trfPdfLines(id){
   if(d.clin){ L.push({t:" "},{t:"Éléments cliniques", b:1}); String(d.clin).split(/\n/).forEach(function(x){ L.push({t:x||" "}) }) }
   return L;
 }
+function trfNumTxt(x){ return String(x.n).padStart(3,"0")+"/"+String(x.day||"").split("-").reverse().join("-") }
+function trfPdfName(id){ var q = TRF[id], x = TNUM[id]; return (x ? "N"+String(x.n).padStart(3,"0")+"_" : "")+"Confirmation_transfert_"+plainS(String(q.nom||"patient")+" "+String(q.prenom||"")).trim().replace(/[^a-z0-9]+/g,"_").toUpperCase()+"_"+(x ? x.day : dayKey((TRD[id]||{}).at||Date.now()))+".pdf" }
 function exportTrfPdf(id){
   var q = TRF[id], L = trfPdfLines(id); if(!L){ toast("PDF disponible seulement après un soin du patient dans la FOSA de destination"); return }
-  savePdf("Confirmation_transfert_"+String(q.nom||"patient").replace(/\s+/g,"_")+"_"+dayKey((TRD[id]||{}).at||Date.now())+".pdf", L, {sign:false, title:"Confirmation de transfert"});
+  savePdf(trfPdfName(id), L, {sign:false, title:"Confirmation de transfert"});
+}
+/* envoi WhatsApp du PDF de confirmation (FOSA qui ne reçoit que sur transfert) : numéro d'ordre croissant par jour et par FOSA */
+function trfWaOk(q){ var c = q && FCFG[q.to]; return ROLE==="delegue" && trfFlow(q) && !!(c && c.restricted) && MYF.indexOf(q.to)>=0 }
+async function trfNumFor(id){
+  if(TNUM[id]) return TNUM[id];
+  var q = TRF[id], day = dayKey(Date.now()), n = 0;
+  Object.keys(TNUM).forEach(function(k){ var x = TNUM[k]; if(x && x.fosa===q.to && x.day===day && +x.n>n) n = +x.n });
+  var rec = {tid:id, fosa:q.to, day:day, n:n+1, at:Date.now(), by:ME.id};
+  await DBX.doc("trfnum/"+id).set(rec); TNUM[id] = rec; return rec;
+}
+async function shareTrfWa(id){
+  var q = TRF[id]; if(!q || !trfWaOk(q)){ toast("Envoi WhatsApp réservé au délégué d'une FOSA qui ne reçoit que sur transfert"); return }
+  if(!trfPdfLines(id)){ toast("PDF disponible seulement après un soin du patient dans la FOSA de destination"); return }
+  if(!DBX){ toast("Hors ligne : le numéro d'ordre ne peut pas être attribué"); return }
+  var x; try{ x = await trfNumFor(id) }catch(e){ toast("Numéro d'ordre impossible : "+(e.message||e.code||e)); return }
+  var L = trfPdfLines(id), name = trfPdfName(id), blob = pdfBlob(L, {sign:false, title:"Confirmation de transfert"}), file = null;
+  var txt = "MESP — Confirmation de transfert N° "+trfNumTxt(x)+"\nPatient : "+q.nom+" "+q.prenom+"\nDe "+q.from+" vers "+q.to+"\nDécision du médecin conseil : Approuvé";
+  try{ file = new File([blob], name, {type:"application/pdf"}) }catch(e){}
+  try{
+    if(file && navigator.canShare && navigator.canShare({files:[file]})){ await navigator.share({files:[file], title:name, text:txt}); toast("Partage ouvert : choisissez WhatsApp"); return }
+  }catch(e){ if(e && e.name==="AbortError") return }
+  await savePdf(name, L, {sign:false, title:"Confirmation de transfert"});
+  try{ window.open("https://wa.me/?text="+encodeURIComponent(txt), "_blank") }catch(e){}
+  toast("PDF enregistré : joignez-le dans WhatsApp (message déjà préparé)");
 }
 function trfPdfBtn(q){
   if(!q || !trfFlow(q) || (ROLE!=="delegue" && ROLE!=="medecin")) return '';
   var id = trfIdOf(q), st = id ? trfState(TRF[id], id) : null; if(!st || st.s!=="received") return '';
-  return '<div class="note good" style="margin-top:10px">✔ Patient reçu en transfert de '+esc(q.from)+' : la confirmation du médecin conseil est disponible.</div><div class="enc"><button class="goodb" data-a="x_tpdf" data-t="'+esc(id)+'">PDF de confirmation « Approuvé »</button></div>';
+  return '<div class="note good" style="margin-top:10px">✔ Patient reçu en transfert de '+esc(q.from)+' : la confirmation du médecin conseil est disponible.</div><div class="enc"><button class="goodb" data-a="x_tpdf" data-t="'+esc(id)+'">PDF de confirmation « Approuvé »</button>'+(trfWaOk(q) ? ' <button class="goodb" data-a="x_twa" data-t="'+esc(id)+'">📤 Envoyer par WhatsApp</button>' : '')+'</div>';
 }
 function trfRowHtml(k, o){
   var q = TRF[k], st = trfState(q, k), tg = trfTagHtml(st), sub;
@@ -2382,6 +2410,11 @@ function levels(){ var s = {}; allAgents().forEach(function(a){ if(a.v!=="Nation
 function assignedOf(c){ var a = ASSIGN[c]; return (a && a.fosas) ? a.fosas.filter(function(f){return FOSAS.indexOf(f)>=0}) : [] }
 function levelOfFosa(f){ var lv = null; Object.keys(ASSIGN).forEach(function(c){ var a = agentByCode(c); if(a && assignedOf(c).indexOf(f)>=0) lv = a.v }); return lv }
 function fosaProv(f){ return FPROV[f] || levelOfFosa(f) || "" }
+/* transferts : ville d'une FOSA, même sans province enregistrée ni délégué affecté (les 5 FOSA de base sont à Kinshasa) */
+var BASEC = {"CS Binza":"KINSHASA", "CME Bumbu":"KINSHASA", "Lael vision":"KINSHASA", "CBCO Bandal":"KINSHASA", "Saint-Vincent de Paul":"KINSHASA"};
+function destCity(f){ return fosaProv(f) || BASEC[f] || "" }
+function destFosas(origin, city){ return FOSAS.filter(function(f){ return f!==origin && destCity(f)===city }).sort(function(a,b){ return a.localeCompare(b,"fr",{sensitivity:"base"}) }) }
+function destLabel(f){ var c = FCFG[f]; return (c && c.restricted) ? (c.noUrgence ? " — reçoit uniquement par transfert" : " — reçoit par transfert ou urgence approuvée uniquement") : "" }
 function fosasOfCity(L){ return FOSAS.filter(function(f){ return fosaProv(f)===L }) }
 function levelFosas(L){ return FOSAS.filter(function(f){ return levelOfFosa(f)===L }) }
 function delegOf(f){ return Object.keys(ASSIGN).filter(function(c){ return assignedOf(c).indexOf(f)>=0 }).map(function(c){ var a = agentByCode(c); return a ? a.n : c }) }
@@ -2467,6 +2500,7 @@ function applyFosaCfg(){
     var isBase = BASE_FOSAS.indexOf(d.name)>=0;
     if(!cfg[d.name]) cfg[d.name] = {days:+d.days||7, restricted:!!d.restricted, noUrgence:!!d.noUrgence, multi:!!d.multi, types:[]};
     if(typeof d.multi==="boolean") cfg[d.name].multi = d.multi;
+    if(isBase || d.edited){ if(+d.days>=1) cfg[d.name].days = +d.days; if(typeof d.restricted==="boolean") cfg[d.name].restricted = d.restricted; if(typeof d.noUrgence==="boolean") cfg[d.name].noUrgence = d.noUrgence }
     if(names.indexOf(d.name)<0) names.push(d.name);
     if(!isBase && (d.code || d.kw)) aff[d.name] = {code:d.code || undefined, kw:d.kw || plainS(d.name)};
     (d.types||[]).forEach(function(t){ var T = cfg[d.name].types, j = -1; T.forEach(function(x,i){ if(x[0]===t.n) j = i }); if(j>=0) T[j] = [t.n, +t.c]; else T.push([t.n, +t.c]) });
@@ -2704,7 +2738,9 @@ function renderAdmin(){
     + '<label class="lbl" for="fo_m">Prestations par patient</label><select id="fo_m"><option value="one">Une seule prestation (le patient choisit un type)</option><option value="multi">Plusieurs prestations (on coche plusieurs, les coûts s\'additionnent)</option></select>'
     + '<label class="lbl" for="fo_d">Durée de l\'épisode de soins (jours)</label><input id="fo_d" type="number" min="1" max="365" value="7" inputmode="numeric">'
     + '<label class="chk"><input type="checkbox" id="fo_r"> Ne reçoit que sur transfert (ou urgence / autorisation spéciale)</label>'
-    + '<label class="chk"><input type="checkbox" id="fo_u"> N\'accepte pas les urgences</label>'
+    + '<label class="chk"><input type="checkbox" id="fo_u" disabled> N\'accepte pas les urgences (seulement si la FOSA ne reçoit que sur transfert)</label>'
+    + '<label class="lbl" for="fo_t">Premier type de prestation (facultatif)</label><input id="fo_t" type="text" placeholder="Ex. Consultation" autocomplete="off">'
+    + '<label class="lbl" for="fo_k">Son coût ($)</label><input id="fo_k" type="text" inputmode="decimal" placeholder="Ex. 12,5">'
     + '<div class="enc"><button data-a="addfosa">Créer la FOSA</button></div><p class="sub" style="margin:8px 0 0">La FOSA est ensuite affectée à un délégué par l\'assistant de la ville. Ajoutez ses types de prestation et leurs coûts ci-dessous.</p></div>'
     + '<div class="card"><b>Province des FOSA</b><p class="sub" style="margin:6px 0 8px">Seul l\'assistant de la province voit la FOSA pour l\'affecter à un délégué.</p>'+fs.map(function(f){ var pv = fosaProv(f); return '<div class="line"><dt>'+esc(f)+'</dt><dd>'+(pv?esc(pv):'<span style="color:var(--bad,#c0392b)">non rattachée</span>')+'</dd></div>' }).join("")
     + '<label class="lbl" for="rt_f">Rattacher / déplacer la FOSA</label><select id="rt_f">'+fs.map(function(f){ return '<option>'+esc(f)+'</option>' }).join("")+'</select>'
@@ -2712,6 +2748,7 @@ function renderAdmin(){
     + '<div class="enc"><button data-a="setprov">Enregistrer le rattachement</button></div>'
     + (isSuper() ? '<div class="enc"><button class="spec" data-a="delfosa">Supprimer la FOSA choisie ci-dessus</button></div><p class="sub" style="margin:4px 0 0">Suppression possible uniquement si aucun délégué n\'est affecté à la FOSA'+(function(){ var s0 = fs.filter(function(f){ return !delegOf(f).length }); return s0.length ? ' (sans délégué : '+s0.map(esc).join(", ")+')' : '' })()+'.</p>' : '')
     + '</div>'
+    + fosaCfgHtml(fs, sel)
     + '<div class="card"><b>Types de prestation et coûts</b><label class="lbl" for="ty_f">FOSA</label><select id="ty_f">'+fs.map(function(f){ return '<option'+(f===sel?' selected':'')+'>'+esc(f)+'</option>' }).join("")+'</select>'
     + '<label class="lbl" for="ty_m">Prestations par patient</label><select id="ty_m"><option value="one"'+(FCFG[sel]&&FCFG[sel].multi?'':' selected')+'>Une seule prestation</option><option value="multi"'+(FCFG[sel]&&FCFG[sel].multi?' selected':'')+'>Plusieurs prestations (coûts additionnés)</option></select><div class="enc"><button data-a="setmode">Enregistrer le mode</button></div><p class="sub" style="margin:4px 0 10px">Le mode s\'applique aux <b>nouvelles</b> prestations de cette FOSA ; celles déjà saisies sont conservées.</p>'
     + (T.length ? T.map(function(t){ return '<div class="line"><dt>'+esc(t[0])+(added[t[0]]?' <small class="sub">(ajouté / modifié)</small>':'')+'</dt><dd>'+t[1]+' $'+(added[t[0]]?' <button class="back" data-a="rmtype" data-t="'+esc(t[0])+'" style="padding:0 0 0 8px">Retirer</button>':'')+'</dd></div>' }).join("") : '<p class="sub" style="margin:8px 0">Aucun type de prestation configuré pour cette FOSA : les délégués ne peuvent pas encore encoder.</p>')
@@ -2757,6 +2794,31 @@ async function admSetProv(){
   try{ await DBX.doc("fosas/"+id).set(d); DFOSA[id] = d; applyFosaCfg(); applyScope(); toast(f+" rattachée à "+pv); renderAdmin() }
   catch(e){ toast("Rattachement impossible : "+(e.message||e.code||e)) }
 }
+function fosaCfgHtml(fs, sel){
+  var c = FCFG[sel] || {}, rs = !!c.restricted;
+  return '<div class="card"><b>Réglages d\'une FOSA</b><p class="sub" style="margin:6px 0 8px">Modifier la durée de l\'épisode et les conditions de réception d\'une FOSA existante, y compris les cinq FOSA de base. La province se règle dans « Province des FOSA », les types et coûts plus bas.</p>'
+    + '<label class="lbl" for="ef_f">FOSA</label><select id="ef_f">'+fs.map(function(f){ return '<option'+(f===sel?' selected':'')+'>'+esc(f)+'</option>' }).join("")+'</select>'
+    + '<label class="lbl" for="ef_d">Durée de l\'épisode de soins (jours)</label><input id="ef_d" type="number" min="1" max="365" value="'+esc(String(c.days||7))+'" inputmode="numeric">'
+    + '<label class="chk"><input type="checkbox" id="ef_r"'+(rs?' checked':'')+'> Ne reçoit que sur transfert (ou urgence / autorisation spéciale)</label>'
+    + '<label class="chk"><input type="checkbox" id="ef_u"'+(c.noUrgence&&rs?' checked':'')+(rs?'':' disabled')+'> N\'accepte pas les urgences (seulement si la FOSA ne reçoit que sur transfert)</label>'
+    + '<div class="enc"><button data-a="savefcfg">Enregistrer les réglages</button></div></div>'
+}
+async function admSaveFosaCfg(){
+  var f = $("ef_f").value, id = slug(f), days = parseInt($("ef_d").value,10), rs = $("ef_r").checked, nu = rs && $("ef_u").checked;
+  if(!(days>=1 && days<=365)){ toast("Durée d'épisode : entre 1 et 365 jours"); $("ef_d").focus(); return }
+  if(!DBX){ toast("Indisponible : ouvrez la page depuis Claude, connecté"); return }
+  var old = FCFG[f] || {};
+  if(old.restricted && !rs && !window.confirm(f+" recevra désormais les patients sans transfert. Continuer ?")) return;
+  var d = Object.assign({name:f, by:AG.c, at:Date.now()}, DFOSA[id] || {}); d.days = days; d.restricted = rs; d.noUrgence = nu; d.edited = true;
+  try{ await DBX.doc("fosas/"+id).set(d); DFOSA[id] = d; applyFosaCfg(); applyScope(); ADM.f = f; toast("Réglages enregistrés : "+f); refreshAll(); renderAdmin() }
+  catch(e){ toast("Enregistrement impossible : "+(e.message||e.code||e)) }
+}
+$("v12").addEventListener("change", function(e){
+  var id = e.target.id;
+  if(id==="fo_r" || id==="ef_r"){ var u = $(id==="fo_r" ? "fo_u" : "ef_u"); if(u){ u.disabled = !e.target.checked; if(!e.target.checked) u.checked = false } }
+  else if(id==="ef_f"){ ADM.f = e.target.value; ADMDIRTY = false; renderAdmin() }
+});
+$("v12").addEventListener("click", function(e){ var b = e.target.closest && e.target.closest("[data-a='savefcfg']"); if(b) admSaveFosaCfg() });
 async function admAddFosa(){
   var n = $("fo_n").value.trim().replace(/\s+/g," "), code = $("fo_c").value.trim(), days = parseInt($("fo_d").value,10);
   if(n.length<2){ toast("Saisissez le nom de la FOSA"); $("fo_n").focus(); return }
@@ -2764,7 +2826,13 @@ async function admAddFosa(){
   if(!(days>=1 && days<=365)){ toast("Durée d'épisode : entre 1 et 365 jours"); $("fo_d").focus(); return }
   if(!DBX){ toast("Indisponible : ouvrez la page depuis Claude, connecté"); return }
   var pv = $("fo_p") ? $("fo_p").value : ""; if(!pv){ toast("Ajoutez d'abord une province"); return }
-  var rec = {name:n, prov:pv, multi:($("fo_m") && $("fo_m").value==="multi"), code:code, kw:plainS(n), days:days, restricted:$("fo_r").checked, noUrgence:$("fo_u").checked, types:[], by:AG.c, at:Date.now()};
+  var t1 = ($("fo_t") ? $("fo_t").value.trim().replace(/\s+/g," ") : ""), k1 = ($("fo_k") ? parseFloat(String($("fo_k").value).replace(",",".")) : NaN), ty0 = [];
+  if(t1 || ($("fo_k") && $("fo_k").value.trim())){
+    if(t1.length<2){ toast("Saisissez le type de prestation (ou videz le coût)"); $("fo_t").focus(); return }
+    if(isNaN(k1) || k1<0){ toast("Saisissez un coût valide pour ce type"); $("fo_k").focus(); return }
+    ty0 = [{n:t1, c:k1}];
+  }
+  var rec = {name:n, prov:pv, multi:($("fo_m") && $("fo_m").value==="multi"), code:code, kw:plainS(n), days:days, restricted:$("fo_r").checked, noUrgence:$("fo_r").checked && $("fo_u").checked, types:ty0, by:AG.c, at:Date.now()};
   try{ await DBX.doc("fosas/"+slug(n)).set(rec); DFOSA[slug(n)] = rec; applyFosaCfg(); ADM.f = n; applyScope(); toast("FOSA créée : "+n); renderAdmin() }
   catch(e){ toast("Création impossible : "+(e.message||e.code||e)) }
 }
@@ -5284,6 +5352,7 @@ function xAct(a, t){
   else if(a==="x_open") xOpenPat(t.dataset.pk);
   else if(a==="x_tdec") xTrfDec();
   else if(a==="x_mst") xMedSt(t.dataset.s);
+  else if(a==="x_twa") shareTrfWa((t && t.dataset && t.dataset.t) || (VIEW && VIEW.tid));
   else if(a==="x_tpdf") exportTrfPdf((t && t.dataset && t.dataset.t) || (VIEW && VIEW.tid));
   else if(a==="x_topen"){ var tid0 = VIEW && VIEW.tid; showPatHist(t.dataset.pk, function(){ showTransferView(tid0) }) }
   else if(a==="x_cref") chefLoad(true);
@@ -5339,7 +5408,7 @@ function admSpecHtml(P){
 }
 
 function clearShared(){
-  SBX.close(); REQ = {}; PREST = {}; TRF = {}; TRD = {}; MST = {}; DAG = {}; PRES = {}; DPROV = {}; DFOSA = {}; ASSIGN = {}; REPORTS = {}; INV = {}; SHR = {}; AVIS = {}; DREQ = {}; CHEFF = {rows:[], t:0, busy:false, err:"", days:7}; XS = {kind:"urg", note:"", q:"", sel:{}, to:{}, pool:{}, reqId:"", dreq:null, per:"7", fo:"", fq:""}; FIRST = true;
+  SBX.close(); REQ = {}; PREST = {}; TRF = {}; TRD = {}; MST = {}; TNUM = {}; DAG = {}; PRES = {}; DPROV = {}; DFOSA = {}; ASSIGN = {}; REPORTS = {}; INV = {}; SHR = {}; AVIS = {}; DREQ = {}; CHEFF = {rows:[], t:0, busy:false, err:"", days:7}; XS = {kind:"urg", note:"", q:"", sel:{}, to:{}, pool:{}, reqId:"", dreq:null, per:"7", fo:"", fq:""}; FIRST = true;
 }
 (async function(){
   $("q").disabled = $("go").disabled = true; $("lg").disabled = true;
