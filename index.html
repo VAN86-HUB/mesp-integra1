@@ -1209,6 +1209,7 @@ async function initShared(){
         else if(ROLE==="assistant" && q.lvl===AG.v) toast("🔔 Transfert "+q.from+" → "+q.to+" : "+(ok ? "approuvé" : "non approuvé")+" par le médecin conseil") });
       firstD = false; trfOverlay(); refreshAll();
     }, function(){});
+    DBX.collection("invdraft").onSnapshot(idRemote, function(){});
     DBX.collection("medst").onSnapshot(function(snap){ MST = {}; snap.docs.forEach(function(d){ MST[d.id] = d.data() }); refreshAll() }, function(){});
     DBX.collection("agents").onSnapshot(function(snap){ DAG = {}; snap.docs.forEach(function(d){ var x = d.data(); if(x && x.n) x.n = UPN(x.n); DAG[d.id] = x }); if(AG){ applyScope() } refreshAll() }, function(){});
     DBX.collection("presence").onSnapshot(function(snap){ PRES = {}; snap.docs.forEach(function(d){ PRES[d.id] = d.data() }); if(AG && ROLE!=="delegue" && !$("v9").classList.contains("hide")) renderMonitor(); if(AG && ROLE==="chef" && !$("v14").classList.contains("hide") && !xUserBusy()) renderSuivi(); presAllRefresh() }, function(){});
@@ -3078,7 +3079,22 @@ function lastDayOf(m){ var p = m.split("-"); return new Date(+p[0], +p[1], 0).to
 var IDLOAD = null;
 function idKey(){ return "mesp_idr_"+((AG && AG.c) || "x") }
 function idLoad(){ var c = (AG && AG.c) || "x"; if(IDLOAD===c) return; IDLOAD = c; IDRAFT = {}; try{ var o = JSON.parse(localStorage.getItem(idKey()) || "{}"); Object.keys(o).forEach(function(k){ IDRAFT[k] = o[k] }) }catch(e){} }
-function idSave(){ if(IDLOAD===null) return; try{ var o = {}; Object.keys(IDRAFT).forEach(function(k){ var v = IDRAFT[k]; if(v && Object.keys(v).length) o[k] = v }); localStorage.setItem(idKey(), JSON.stringify(o)) }catch(e){} }
+function idSave(){ if(IDLOAD===null) return; var o = {}; Object.keys(IDRAFT).forEach(function(k){ var v = IDRAFT[k]; if(v && Object.keys(v).length) o[k] = v }); var t = Date.now();
+  try{ localStorage.setItem(idKey(), JSON.stringify(o)); localStorage.setItem(idKey()+"_at", String(t)) }catch(e){}
+  idPush(o, t) }
+/* brouillon de traitement de facture : copie en ligne (collection « invdraft », un document par agent) pour le retrouver sur un autre appareil */
+var IDPT = null;
+function idPush(o, t){ if(typeof DBX==="undefined" || !DBX || !AG) return; clearTimeout(IDPT); var c = AG.c; IDPT = setTimeout(function(){ try{ DBX.doc("invdraft/"+c).set({c:c, at:t, d:JSON.stringify(o)}).catch(function(){}) }catch(e){} }, 1200) }
+function idRemote(snap){
+  if(!AG) return; var me = null; snap.docs.forEach(function(d){ if(d.id===AG.c) me = d.data() });
+  idLoad(); var lt = 0, raw = "{}"; try{ lt = +localStorage.getItem(idKey()+"_at") || 0; raw = localStorage.getItem(idKey()) || "{}" }catch(e){}
+  if(me && (me.at||0) > lt){
+    var o = {}; try{ o = JSON.parse(me.d || "{}") }catch(e){}
+    IDRAFT = {}; Object.keys(o).forEach(function(k){ IDRAFT[k] = o[k] });
+    try{ localStorage.setItem(idKey(), me.d || "{}"); localStorage.setItem(idKey()+"_at", String(me.at)) }catch(e){}
+    if(ROLE==="delegue" && !$("v15").classList.contains("hide")) renderProc();
+  } else if(lt > ((me && me.at) || 0)){ var o2 = {}; try{ o2 = JSON.parse(raw) }catch(e){} idPush(o2, lt) }
+}
 function idraft(f,m){ idLoad(); var k = f+"|"+m; return IDRAFT[k] || (IDRAFT[k] = {}) }
 function rejHist(filter){
   var out = [];
