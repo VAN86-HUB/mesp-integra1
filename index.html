@@ -1211,7 +1211,7 @@ async function initShared(){
     }, function(){});
     DBX.collection("invdraft").onSnapshot(idRemote, function(){});
     DBX.collection("trfnum").onSnapshot(function(snap){ TNUM = {}; snap.docs.forEach(function(d){ TNUM[d.id] = d.data() }); refreshAll() }, function(){});
-    DBX.collection("medst").onSnapshot(function(snap){ MST = {}; snap.docs.forEach(function(d){ MST[d.id] = d.data() }); refreshAll() }, function(){});
+    DBX.collection("medst").onSnapshot(function(snap){ var mine = (AG && MST[AG.c]) || null; MST = {}; snap.docs.forEach(function(d){ MST[d.id] = d.data() }); if(AG && ROLE==="medecin" && !MST[AG.c] && mine) MST[AG.c] = mine; var g = medSig(); if(g!==MEDSIG){ MEDSIG = g; refreshAll() } if(AG && ROLE==="medecin" && !mine) medBeat().catch(function(){}) }, function(){});
     DBX.collection("agents").onSnapshot(function(snap){ DAG = {}; snap.docs.forEach(function(d){ var x = d.data(); if(x && x.n) x.n = UPN(x.n); DAG[d.id] = x }); if(AG){ applyScope() } refreshAll() }, function(){});
     DBX.collection("presence").onSnapshot(function(snap){ PRES = {}; snap.docs.forEach(function(d){ PRES[d.id] = d.data() }); if(AG && ROLE!=="delegue" && !$("v9").classList.contains("hide")) renderMonitor(); if(AG && ROLE==="chef" && !$("v14").classList.contains("hide") && !xUserBusy()) renderSuivi(); presAllRefresh() }, function(){});
     DBX.collection("provinces").onSnapshot(function(snap){ DPROV = {}; snap.docs.forEach(function(d){ DPROV[d.id] = d.data() }); refreshAll() }, function(){});
@@ -1270,21 +1270,46 @@ function episodeOf(mat, r){
   return left>0 ? {left:left, end:end, id:l.id} : null;
 }
 var TRD = {}, TRF_DAYS = 7, MST = {}, TNUM = {};
-var MST_L = {dispo:["Disponible","good"], occupe:["Occupé momentanément","wait"], absent:["Absent","bad"], indispo:["Indisponible","bad"]};
-function medSt(c){ var m = MST[c]; return (m && MST_L[m.s]) ? m.s : "" }
-function medStTag(c){ var k = medSt(c); return k ? '<span class="tag '+MST_L[k][1]+'">'+MST_L[k][0]+'</span>' : '<span class="tag wait" style="opacity:.7">Non renseigné</span>' }
-function medStOut(c){ var k = medSt(c); return k==="absent" || k==="indispo" }
+var MST_L = {dispo:["Disponible · en ligne","good","#1e9e4a"], dispo_bg:["Disponible · écran éteint","wait","#e0b000"], occupe:["Occupé momentanément","wait","#e67e22"], absent:["Absent · hors de l'application","bad","#8a8a8a"], indispo:["Indisponible · congé / mission","bad","#c0392b"]};
+var MED_ON_MS = 180000, MED_BG_MS = 1800000;
+/* disponibilité : automatique (en ligne = vert, écran éteint = jaune, hors de l'application = absent) ; le médecin choisit lui-même « Occupé » ou « Indisponible » */
+function medSt(c){
+  var m = MST[c]; if(!m) return "";
+  if(m.s==="indispo") return "indispo";
+  if(!m.hb){ return m.s==="occupe" ? "occupe" : "" }
+  var age = Date.now() - m.hb, live = (m.live==="on" && age<MED_ON_MS) ? "on" : ((m.live==="bg" && age<MED_BG_MS) ? "bg" : "");
+  if(!live) return "absent";
+  if(m.s==="occupe") return "occupe";
+  return live==="on" ? "dispo" : "dispo_bg";
+}
+function medDot(k){ return k ? '<span style="display:inline-block;width:11px;height:11px;border-radius:50%;background:'+MST_L[k][2]+';margin-right:6px;vertical-align:middle"></span>' : '' }
+function medStTag(c){ var k = medSt(c); return k ? '<span class="tag '+MST_L[k][1]+'">'+medDot(k)+MST_L[k][0]+'</span>' : '<span class="tag wait" style="opacity:.7">Non renseigné</span>' }
+function medStOut(c){ return medSt(c)==="indispo" }
 function medsOfCity(city){ return allAgents().filter(function(a){ return a.r==="medecin" && a.v===city && a.active!==false }).sort(function(a,b){ return a.n.localeCompare(b.n) }) }
 function medAvailHtml(){
-  var k = medSt(AG.c), m = MST[AG.c];
-  return '<div class="card"><b>Ma disponibilité</b><p class="sub" style="margin:6px 0 8px">Les délégués de la ville la voient et choisissent le médecin conseil à qui envoyer leur proposition de transfert. Statut actuel : '+medStTag(AG.c)+(m && m.at ? ' <small>(depuis le '+esc(fmtDT(m.at))+')</small>' : '')+'</p>'
-    + '<div style="display:flex;flex-wrap:wrap;gap:6px">'+Object.keys(MST_L).map(function(x){ return '<button class="'+(x===k?'':'back')+'" data-a="x_mst" data-s="'+x+'" style="padding:8px 12px">'+MST_L[x][0]+'</button>' }).join("")+'</div></div>'
+  var m = MST[AG.c] || {}, man = m.s==="occupe" ? "occupe" : (m.s==="indispo" ? "indispo" : "auto");
+  return '<div class="card"><b>Ma disponibilité</b><p class="sub" style="margin:6px 0 8px">Les délégués de la ville la voient et choisissent le médecin conseil à qui envoyer leur proposition de transfert. Statut vu par les délégués : '+medStTag(AG.c)+'</p>'
+    + '<p class="sub" style="margin:0 0 8px">🟢 en ligne dans l\'application · 🟡 écran éteint ou application en arrière-plan · ⚪ hors de l\'application (absent) : automatique. Vous choisissez vous-même « Occupé » ou « Indisponible ».</p>'
+    + '<div style="display:flex;flex-wrap:wrap;gap:6px">'+[["auto","Automatique"],["occupe","Occupé momentanément"],["indispo","Indisponible (congé / mission)"]].map(function(x){ return '<button class="'+(x[0]===man?'':'back')+'" data-a="x_mst" data-s="'+x[0]+'" style="padding:8px 12px">'+x[1]+'</button>' }).join("")+'</div></div>'
 }
 async function xMedSt(s){
-  if(ROLE!=="medecin" || !MST_L[s]) return;
-  var rec = {c:AG.c, n:AG.n, v:AG.v, s:s, at:Date.now()};
-  try{ await DBX.doc("medst/"+AG.c).set(rec); MST[AG.c] = rec; toast("Disponibilité : "+MST_L[s][0]); refreshAll() }catch(e){ toast("Enregistrement impossible : "+(e.message||e.code||e)) }
+  if(ROLE!=="medecin" || ["auto","occupe","indispo"].indexOf(s)<0) return;
+  try{ await medBeat(null, s); toast(s==="auto" ? "Disponibilité : automatique" : "Disponibilité : "+MST_L[s][0]); refreshAll() }catch(e){ toast("Enregistrement impossible : "+(e.message||e.code||e)) }
 }
+function medLive(){ return document.hidden ? "bg" : "on" }
+async function medBeat(live, man){
+  if(ROLE!=="medecin" || !AG || !DBX) return;
+  var old = MST[AG.c] || {}, s = man!==undefined ? man : (old.s || "auto"); if(s!=="occupe" && s!=="indispo") s = "auto";
+  var rec = {c:AG.c, n:AG.n, v:AG.v, s:s, live:live || medLive(), hb:Date.now(), at:(s!==old.s ? Date.now() : (old.at || Date.now()))};
+  MST[AG.c] = rec; await DBX.doc("medst/"+AG.c).set(rec);
+}
+setInterval(function(){ if(ROLE==="medecin" && AG && DBX) medBeat().catch(function(){}) }, 60000);
+document.addEventListener("visibilitychange", function(){ if(ROLE==="medecin" && AG && DBX) medBeat().catch(function(){}) });
+window.addEventListener("pagehide", function(){ if(ROLE==="medecin" && AG && DBX) medBeat("off").catch(function(){}) });
+/* rafraîchir l'affichage quand le statut effectif d'un médecin change (heartbeat, expiration) */
+var MEDSIG = "";
+function medSig(){ return Object.keys(MST).sort().map(function(c){ return c+":"+medSt(c) }).join("|") }
+setInterval(function(){ var g = medSig(); if(g!==MEDSIG){ MEDSIG = g; if(AG) refreshAll() } }, 30000);
 function trfFlow(q){ return !!q && q.flow===2 }
 function trfOverlay(){ Object.keys(TRF).forEach(function(k){ var q = TRF[k], d = TRD[k]; if(q && d && d.to && d.to!==q.to && !q.toOrig){ q.toOrig = q.to; q.to = d.to } }) }
 function trfSeen(k){ var q = TRF[k]; return q.toOrig ? xSeen("trf_"+k) : q.seen!==false }
@@ -2026,7 +2051,7 @@ function showTransferForm(i){
     + '<label class="lbl" for="tmed">Médecin conseil sollicité</label>'
     + (meds.length ? meds.map(function(a){ return '<div class="line"><dt>'+esc(a.n)+'</dt><dd>'+medStTag(a.c)+'</dd></div>' }).join("") : '')
     + '<select id="tmed"><option value="">'+(meds.length?'— Choisir un médecin —':'Aucun médecin conseil dans votre ville')+'</option>'+meds.map(function(a){ var k = medSt(a.c); return '<option value="'+esc(a.c)+'"'+(medStOut(a.c)?' disabled':'')+'>'+esc(a.n)+' — '+(k?MST_L[k][0]:'Non renseigné')+'</option>' }).join("")+'</select>'
-    + '<p class="sub" style="margin:4px 0 0">Un médecin « Absent » ou « Indisponible » ne peut pas être choisi. S\'il le devient après l\'envoi, les autres médecins de la ville peuvent reprendre la proposition.</p>'
+    + '<p class="sub" style="margin:4px 0 0">🟢 en ligne · 🟡 écran éteint · 🟠 occupé · ⚪ absent (hors de l\'application : il verra la proposition à sa prochaine connexion) · 🔴 indisponible (congé / mission : ne peut pas être choisi). Si le médecin choisi devient indisponible après l\'envoi, les autres médecins de la ville peuvent reprendre la proposition.</p>'
     + infoHtml()
     + '<label class="lbl" for="tmot">Motif du transfert</label><textarea id="tmot" rows="3" placeholder="Motif du transfert…"></textarea>'
     + '<div class="note wait" style="margin-top:10px">La proposition est d\'abord examinée par le <b>médecin conseil</b> de votre ville. La FOSA de destination n\'est notifiée qu\'<b>après son approbation</b>, et dispose alors de <b>'+TRF_DAYS+' jours</b> pour recevoir le patient ; passé ce délai, la proposition expire et une nouvelle est exigée.</div>'
@@ -2911,6 +2936,7 @@ function logout(force){
   if(DEMO){ location.reload(); return }
   var pend = obMine().length;
   if(pend && force!==true && !window.confirm(pend+" saisie(s) n'ont pas encore été envoyées au serveur. Elles seront conservées sur cet appareil et envoyées à votre prochaine connexion. Se déconnecter maintenant ?")) return;
+  if(ROLE==="medecin"){ try{ medBeat("off") }catch(e){} }
   presOff(); offClearUser(); OFFK = null; OFFRES = false;
   try{ localStorage.removeItem("mesp_sess") }catch(e){}
   try{ SB.auth.signOut() }catch(e){} clearShared();
