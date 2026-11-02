@@ -1168,11 +1168,12 @@ async function renderNotif(){
     var mine = keys.filter(function(k){return ME.id && REQ[k].by===ME.id && reqOfFosa(REQ[k])});
     h += '<div class="card"><b>Mes demandes — '+esc(FOSA||"")+' ('+mine.length+')</b>'+(mine.length?'':'<p class="sub" style="margin:8px 0 0">Aucune demande envoyée.</p>')
       + mine.map(function(k){return nrow(k,REQ[k],"mine","")}).join("")+'</div>';
-    h += trfCards();
+    h += trfCards() + thDelHtml();
   }
   el.innerHTML = h;
 }
 $("v6").addEventListener("click", function(e){
+  var hb = e.target.closest("[data-a=x_thopen]"); if(hb){ xThOpen(); return }
   var row = e.target.closest(".nrow");
   if(row){ if(row.dataset.m==="rem"){ var bkn = function(){ openView("v6") }; if(row.dataset.inv){ var xi = row.dataset.inv.split("|"); bkn.proc = ROLE==="delegue"; showInvoice(xi[0], xi[1], bkn, undefined, false, !!bkn.proc) } else if(row.dataset.id) showFiche(row.dataset.id, null, bkn) } else if(row.dataset.m==="rev") showReview(row.dataset.k); else if(row.dataset.m==="trf") showTransferView(row.dataset.k); else openDossier(row.dataset.k) }
 });
@@ -2194,6 +2195,49 @@ function trfRowHtml(k, o){
   var dot = (o.dot && !trfSeen(k) && (st.s==="valid" || st.s==="legacy")) ? '<span class="dot"></span>' : '';
   return '<div class="nrow" data-k="'+esc(k)+'" data-m="trf"><div>'+dot+'<b>'+esc(q.nom)+' '+esc(q.prenom)+'</b><small>'+sub+'</small></div>'+tg+'</div>';
 }
+/* historique des transferts : délégué = 6 derniers mois de sa FOSA ; médecin conseil = tout, du plus récent au plus ancien */
+var XH = {open:false, n:40, q:""};
+function thSince(){ return Date.now() - 183*864e5 }
+function thDelKeys(){
+  var cut = thSince();
+  return Object.keys(TRF).filter(function(k){ var q = TRF[k]; if(!q || !FOSA || (q.at||0)<cut) return false; if(q.from===FOSA) return true; return q.to===FOSA && trfFlow(q) && trfState(q,k).s==="received" }).sort(function(a,b){ return (TRF[b].at||0)-(TRF[a].at||0) });
+}
+function thDelHtml(){
+  if(!FOSA) return '';
+  var ks = thDelKeys(), sent = ks.filter(function(k){ return TRF[k].from===FOSA }), rec = ks.filter(function(k){ return TRF[k].to===FOSA && TRF[k].from!==FOSA });
+  var ap = 0, no = 0, wt = 0;
+  sent.forEach(function(k){ var q = TRF[k]; if(!trfFlow(q)) return; var d = trfState(q,k).d; if(!d) wt++; else if(d.verdict==="approved") ap++; else no++ });
+  var det = [ap?ap+' approuvé'+(ap>1?'s':''):'', no?no+' non approuvé'+(no>1?'s':''):'', wt?wt+' en attente':''].filter(Boolean).join(' · ');
+  var h = '<div class="card"><b>Historique des transferts — '+esc(FOSA)+'</b><p class="sub" style="margin:6px 0 0">Sur les 6 derniers mois : <b>'+sent.length+'</b> transfert'+(sent.length>1?'s':'')+' envoyé'+(sent.length>1?'s':'')+(det?' ('+det+')':'')+' · <b>'+rec.length+'</b> patient'+(rec.length>1?'s':'')+' reçu'+(rec.length>1?'s':'')+' par transfert.</p>'
+    + '<button class="'+(XH.open?'back':'')+'" data-a="x_thopen" style="margin-top:8px;padding:8px 12px">'+(XH.open?'Masquer l\'historique':'Consulter l\'historique')+'</button>';
+  if(XH.open){
+    h += ks.length ? ks.map(function(k){ var q = TRF[k], st = trfState(q,k), out = q.from===FOSA;
+      return '<div class="nrow" data-k="'+esc(k)+'" data-m="trf"><div><b>'+esc(q.nom)+' '+esc(q.prenom)+'</b><small>'+(out?'Envoyé vers '+esc(q.to):'Reçu de '+esc(q.from))+' · '+esc(fmtDT(q.at||0))+(st.d ? ' · médecin : '+esc(st.d.medName||'—') : '')+'</small></div>'+(trfFlow(q) ? trfTagHtml(st) : '<span class="tag wait">Transfert</span>')+'</div>' }).join("")
+      : '<p class="sub" style="margin:8px 0 0">Aucun transfert sur les 6 derniers mois.</p>';
+  }
+  return h + '</div>';
+}
+function thMedKeys(){
+  var q0 = plainS(XH.q||"").trim();
+  return Object.keys(TRF).filter(function(k){ var q = TRF[k]; if(!trfFlow(q)) return false; if(!q0) return true;
+    return plainS([q.nom,q.prenom,q.mat,q.from,q.to].join(" ")).indexOf(q0)>=0 }).sort(function(a,b){ return (TRF[b].at||0)-(TRF[a].at||0) });
+}
+function thMedListHtml(){
+  var ks = thMedKeys(), shown = ks.slice(0, XH.n);
+  if(!ks.length) return '<p class="sub" style="margin:8px 0 0">Aucun transfert'+(XH.q?' pour cette recherche':'')+'.</p>';
+  return shown.map(function(k){ var q = TRF[k], st = trfState(q,k), d = st.d;
+    return '<div class="nrow" data-tk="'+esc(k)+'"><div><b>'+esc(q.nom)+' '+esc(q.prenom)+'</b><small>'+esc(q.mat||"")+' · '+esc(q.from)+' → '+esc(q.to)+' · '+esc(fmtDT(q.at||0))+(d ? ' · '+esc(d.medName||'—')+' ('+(d.verdict==="approved"?'approuvé':'non approuvé')+' le '+esc(fmtD(d.at))+')' : '')+'</small></div>'+trfTagHtml(st)+'</div>' }).join("")
+    + (ks.length>shown.length ? '<button class="back" data-a="x_thmore" style="margin-top:8px;padding:8px 12px">Afficher plus ('+(ks.length-shown.length)+' restants)</button>' : '');
+}
+function thMedHtml(){
+  var n = Object.keys(TRF).filter(function(k){ return trfFlow(TRF[k]) }).length;
+  return '<div class="card"><b>Historique des transferts ('+n+')</b><p class="sub" style="margin:6px 0 0">Tous les transferts de la ville, du plus récent au plus ancien, avec la décision du médecin conseil.</p>'
+    + '<button class="'+(XH.open?'back':'')+'" data-a="x_thopen" style="margin-top:8px;padding:8px 12px">'+(XH.open?'Masquer l\'historique':'Consulter l\'historique')+'</button>'
+    + (XH.open ? '<input id="th_q" type="text" autocomplete="off" placeholder="Rechercher : nom, matricule, FOSA" value="'+esc(XH.q)+'" style="margin-top:8px"><div id="th_list">'+thMedListHtml()+'</div>' : '')+'</div>';
+}
+function xThOpen(){ XH.open = !XH.open; XH.n = 40; if(ROLE==="medecin") renderAvis(); else refreshAll() }
+function xThMore(){ XH.n += 40; var l = $("th_list"); if(l) l.innerHTML = thMedListHtml() }
+document.addEventListener("input", function(e){ if(e.target && e.target.id==="th_q"){ XH.q = e.target.value; XH.n = 40; var l = $("th_list"); if(l) l.innerHTML = thMedListHtml() } });
 function trfCards(){
   if(!FOSA) return '<div class="card"><b>Propositions de transfert</b><p class="sub" style="margin:8px 0 0">Choisissez une FOSA pour voir les propositions de transfert.</p></div>';
   var ks = Object.keys(TRF).sort(function(a,b){return (TRF[b].at||0)-(TRF[a].at||0)});
@@ -4442,7 +4486,7 @@ setInterval(idleCheck, 1000);
 document.addEventListener("visibilitychange", function(){ if(!document.hidden) idleCheck() });
 
 /* --- facturation clôturée : top 10 FOSA / patients --- */
-var BIL = {k:"month", o:-1, v:""};
+var BIL = {k:"month", o:-1, v:"", cm:""};
 var BILK = [["month","Mois"],["quarter","Trimestre"],["year","Année"]];
 function bilBounds(){
   var d = new Date(), y = d.getFullYear(), mo = d.getMonth(), a, b, lab;
@@ -4475,8 +4519,26 @@ function bilData(){
   return {bd:bd, nAll:nAll, nInv:nInv, tot:tot, nPres:nPres, rej:rej, nFos:Object.keys(fos).length, nPat:Object.keys(pat).length,
     topF:Object.keys(fos).map(function(k){return fos[k]}).sort(byS).slice(0,10), topP:Object.keys(pat).map(function(k){return pat[k]}).sort(byS).slice(0,10)};
 }
+/* factures clôturées par la province, classées selon la date de clôture : mois puis liste dans l'ordre de clôture */
+function bilClosedKeys(){
+  return Object.keys(INV).filter(function(k){ var iv = INV[k]; return iv && iv.prov && iv.month && (!BIL.v || (iv.lvl || levelOfFosa(iv.fosa))===BIL.v) });
+}
+function bilCmKey(k){ return dayKey(INV[k].prov.at||0).slice(0,7) }
+function bilClosedMonthsHtml(){
+  var by = {}; bilClosedKeys().forEach(function(k){ var m = bilCmKey(k), o = by[m] || (by[m] = {m:m, n:0, t:0}); o.n++; o.t += +INV[k].prov.tot||0 });
+  var ms = Object.keys(by).sort().reverse();
+  return '<div class="card"><div class="sec">Factures clôturées par la province — par mois de clôture</div><p class="sub" style="margin:0 0 6px">Touchez un mois pour voir toutes ses factures, dans l\'ordre de clôture : la première clôturée reste en tête.</p>'
+    + (ms.length ? ms.map(function(m){ var o = by[m]; return '<div class="nrow" data-cm="'+m+'"><div><b>'+esc(monthLabel(m))+'</b><small>'+o.n+' facture'+(o.n>1?'s':'')+' clôturée'+(o.n>1?'s':'')+' · '+money(o.t)+'</small></div><span class="tag good">Voir ›</span></div>' }).join("") : '<p class="sub" style="margin:0">Aucune facture clôturée par la province'+(BIL.v?' pour la ville '+esc(BIL.v):'')+'.</p>')+'</div>';
+}
+function bilClosedListHtml(){
+  var ks = bilClosedKeys().filter(function(k){ return bilCmKey(k)===BIL.cm }).sort(function(a,b){ return (INV[a].prov.at||0)-(INV[b].prov.at||0) });
+  var tot = ks.reduce(function(s0,k){ return s0+(+INV[k].prov.tot||0) },0);
+  return '<div class="card"><button class="back" data-a="bilcmback" style="padding:6px 12px">← Retour aux mois</button><div class="sec" style="margin-top:8px">Clôturées en '+esc(monthLabel(BIL.cm))+(BIL.v?' — '+esc(BIL.v):'')+' ('+ks.length+')</div><p class="sub" style="margin:0 0 6px">Dans l\'ordre de clôture par la province · total '+money(tot)+'</p>'
+    + (ks.length ? ks.map(function(k,i){ var iv = INV[k]; return invRowHtml({f:iv.fosa, m:iv.month, n:0, t:0}, true).replace('<b>','<b>'+(i+1)+'. ') }).join("") : '<p class="sub" style="margin:0">Aucune facture.</p>')+'</div>';
+}
 function renderBil(){
   if(ROLE!=="national") return;
+  if(BIL.cm){ $("v2d").innerHTML = bilClosedListHtml(); return }
   var D = bilData(), kp = function(v,l){ return '<div class="kpi"><b>'+v+'</b><span>'+l+'</span></div>' };
   var bar = '<div class="card"><div class="tabs" style="margin:0 0 8px">'+BILK.map(function(x){ return '<button data-bk="'+x[0]+'"'+(BIL.k===x[0]?' class="on"':'')+'>'+x[1]+'</button>' }).join("")+'</div>'
     + '<div style="display:flex;align-items:center;justify-content:space-between;gap:10px"><button class="back" data-bn="-1" style="padding:6px 12px">‹</button><b style="text-align:center">'+esc(D.bd.lab)+'</b><button class="back" data-bn="1" style="padding:6px 12px"'+(BIL.o>=0?' disabled':'')+'>›</button></div>'
@@ -4487,6 +4549,7 @@ function renderBil(){
     + '<div style="height:12px;border-radius:7px;background:rgba(127,127,127,.22);margin:8px 0 4px;overflow:hidden" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="'+pc+'"><div style="height:100%;width:'+pc+'%;background:var(--ok,#0e7a57)"></div></div>'
     + '<p class="sub" style="margin:4px 0 0">'+(D.nAll-D.nInv>0 ? fmt(D.nAll-D.nInv)+' facture'+(D.nAll-D.nInv>1?'s':'')+' restante'+(D.nAll-D.nInv>1?'s':'')+' (non clôturée'+(D.nAll-D.nInv>1?'s':'')+' ou en attente de la province).' : 'Toutes les factures de la période sont clôturées.')+'</p></div>';
   var h = bar + prog + '<div class="card"><div class="kpis">'+kp(fmt(D.nInv),"factures clôturées")+kp(money(D.tot),"total facturé")+kp(fmt(D.nPres),"prestations validées")+kp(fmt(D.nPat),"patients")+'</div></div>';
+  h += bilClosedMonthsHtml();
   if(!D.nInv) h += '<div class="card"><p class="sub" style="margin:0">Aucune facture clôturée sur cette période'+(BIL.v?' pour la ville '+esc(BIL.v):'')+'.</p></div>';
   else {
     h += '<div class="enc" style="margin:0 0 10px"><button data-a="bilxls" class="goodb">Exporter les classements en Excel (.xlsx)</button></div>';
@@ -4495,7 +4558,7 @@ function renderBil(){
   }
   $("v2d").innerHTML = h;
 }
-$("v2d").addEventListener("change", function(e){ if(e.target.id==="bv"){ BIL.v = e.target.value; renderBil() } });
+$("v2d").addEventListener("change", function(e){ if(e.target.id==="bv"){ BIL.v = e.target.value; BIL.cm = ""; renderBil() } });
 function buildTopXlsx(D){
   var H = function(a){ return a.map(function(t){ return {v:t, s:2} }) }, sc = BIL.v ? "Ville : "+BIL.v : "Toutes les villes";
   var S1 = [[{v:"TOP 10 — FOSA LES PLUS COÛTEUSES", s:1}],[{v:D.bd.lab+" · "+sc+" · factures clôturées par la province uniquement", s:3}],[], H(["Rang","FOSA","Prestations validées","Montant facturé ($)"])];
@@ -4514,6 +4577,10 @@ async function exportTopXlsx(){
 }
 $("v2d").addEventListener("click", function(e){
   var t = e.target; if(t.dataset && t.dataset.a==="bilxls"){ exportTopXlsx(); return }
+  if(t.dataset && t.dataset.a==="bilcmback"){ BIL.cm = ""; renderBil(); return }
+  var rw = t.closest && t.closest(".nrow");
+  if(rw && rw.dataset.cm){ BIL.cm = rw.dataset.cm; renderBil(); window.scrollTo(0,0); return }
+  if(rw && rw.dataset.inv){ var xv = rw.dataset.inv.split("|"); showInvoice(xv[0], xv[1], function(){ go("v2"); sub(4) }); return }
   if(t.dataset && t.dataset.bk){ BIL.k = t.dataset.bk; BIL.o = BIL.k==="month" ? -1 : (BIL.k==="quarter" ? -1 : 0); renderBil() }
   else if(t.dataset && t.dataset.bn){ BIL.o = Math.min(0, BIL.o+(+t.dataset.bn)); renderBil() }
 });
@@ -5147,6 +5214,7 @@ function xMedHtml(){
   var tp = medTrfPending(), td = Object.keys(TRD).filter(function(k){ return TRD[k].med===AG.c }).sort(function(a,b){ return (TRD[b].at||0)-(TRD[a].at||0) }).slice(0,30);
   return medAvailHtml() + '<div class="card"><b>Propositions de transfert à examiner — ville '+esc(AG.v)+' ('+tp.length+')</b><p class="sub" style="margin:6px 0 0">Chaque proposition de transfert passe par vous avant la FOSA de destination. Votre décision est définitive.</p>'+(tp.length ? tp.map(function(k){ return trfRowHtml(k, {tk:1, tag:1}).replace(/<span class="tag[^>]*>[^<]*<\/span>/, '<span class="tag wait">À décider</span>') }).join("") : '<p class="sub" style="margin:8px 0 0">Aucune proposition en attente.</p>')+'</div>'
     + (td.length ? '<div class="card"><b>Mes décisions sur les transferts ('+td.length+')</b>'+td.map(function(k){ var d = TRD[k], q = TRF[k] || {}; return '<div class="nrow" data-tk="'+esc(k)+'"><div><b>'+esc((q.nom||"")+" "+(q.prenom||""))+'</b><small>'+esc(d.from)+' → '+esc(d.to)+' · '+esc(fmtDT(d.at||0))+'</small></div><span class="tag '+(d.verdict==="approved"?"good":"bad")+'">'+(d.verdict==="approved"?"Approuvé":"Non approuvé")+'</span></div>' }).join("")+'</div>' : '')
+    + thMedHtml()
     + '<div class="card"><b>Avis demandés par l\'assistant — ville '+esc(AG.v)+' ('+pend.length+')</b>'+(pend.length ? pend.map(function(k){ return xShareRow(k, SHR[k], who(SHR[k])) }).join("") : '<p class="sub" style="margin:8px 0 0">Aucun avis en attente.</p>')+'</div>'
     + '<div class="card"><b>Historique ('+done.length+')</b><p class="sub" style="margin:6px 0 0">Vos avis sont définitifs et conservés.</p>'+(done.length ? done.map(function(k){ return xShareRow(k, SHR[k], who(SHR[k])) }).join("") : '<p class="sub" style="margin:8px 0 0">Aucun avis donné pour le moment.</p>')+'</div>';
 }
@@ -5378,6 +5446,8 @@ function xAct(a, t){
   else if(a==="x_open") xOpenPat(t.dataset.pk);
   else if(a==="x_tdec") xTrfDec();
   else if(a==="x_mst") xMedSt(t.dataset.s);
+  else if(a==="x_thopen") xThOpen();
+  else if(a==="x_thmore") xThMore();
   else if(a==="x_twa") shareTrfWa((t && t.dataset && t.dataset.t) || (VIEW && VIEW.tid));
   else if(a==="x_tpdf") exportTrfPdf((t && t.dataset && t.dataset.t) || (VIEW && VIEW.tid));
   else if(a==="x_topen"){ var tid0 = VIEW && VIEW.tid; showPatHist(t.dataset.pk, function(){ showTransferView(tid0) }) }
