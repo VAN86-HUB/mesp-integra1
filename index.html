@@ -4523,17 +4523,17 @@ function bilData(){
 function bilClosedKeys(){
   return Object.keys(INV).filter(function(k){ var iv = INV[k]; return iv && iv.prov && iv.month && (!BIL.v || (iv.lvl || levelOfFosa(iv.fosa))===BIL.v) });
 }
-function bilCmKey(k){ return dayKey(INV[k].prov.at||0).slice(0,7) }
+function bilCmKey(k){ return INV[k].month }
 function bilClosedMonthsHtml(){
   var by = {}; bilClosedKeys().forEach(function(k){ var m = bilCmKey(k), o = by[m] || (by[m] = {m:m, n:0, t:0}); o.n++; o.t += +INV[k].prov.tot||0 });
   var ms = Object.keys(by).sort().reverse();
-  return '<div class="card"><div class="sec">Factures clôturées par la province — par mois de clôture</div><p class="sub" style="margin:0 0 6px">Touchez un mois pour voir toutes ses factures, dans l\'ordre de clôture : la première clôturée reste en tête.</p>'
+  return '<div class="card"><div class="sec">Factures clôturées par la province — par mois de facturation</div><p class="sub" style="margin:0 0 6px">Mois réel couvert par la facture. Touchez un mois pour voir toutes ses factures, dans l\'ordre de clôture par la province : la première clôturée reste en tête.</p>'
     + (ms.length ? ms.map(function(m){ var o = by[m]; return '<div class="nrow" data-cm="'+m+'"><div><b>'+esc(monthLabel(m))+'</b><small>'+o.n+' facture'+(o.n>1?'s':'')+' clôturée'+(o.n>1?'s':'')+' · '+money(o.t)+'</small></div><span class="tag good">Voir ›</span></div>' }).join("") : '<p class="sub" style="margin:0">Aucune facture clôturée par la province'+(BIL.v?' pour la ville '+esc(BIL.v):'')+'.</p>')+'</div>';
 }
 function bilClosedListHtml(){
   var ks = bilClosedKeys().filter(function(k){ return bilCmKey(k)===BIL.cm }).sort(function(a,b){ return (INV[a].prov.at||0)-(INV[b].prov.at||0) });
   var tot = ks.reduce(function(s0,k){ return s0+(+INV[k].prov.tot||0) },0);
-  return '<div class="card"><button class="back" data-a="bilcmback" style="padding:6px 12px">← Retour aux mois</button><div class="sec" style="margin-top:8px">Clôturées en '+esc(monthLabel(BIL.cm))+(BIL.v?' — '+esc(BIL.v):'')+' ('+ks.length+')</div><p class="sub" style="margin:0 0 6px">Dans l\'ordre de clôture par la province · total '+money(tot)+'</p>'
+  return '<div class="card"><button class="back" data-a="bilcmback" style="padding:6px 12px">← Retour aux mois</button><div class="sec" style="margin-top:8px">Factures de '+esc(monthLabel(BIL.cm))+(BIL.v?' — '+esc(BIL.v):'')+' ('+ks.length+')</div><p class="sub" style="margin:0 0 6px">Du plus ancien au plus récent selon la clôture par la province · total '+money(tot)+'</p>'
     + (ks.length ? ks.map(function(k,i){ var iv = INV[k]; return invRowHtml({f:iv.fosa, m:iv.month, n:0, t:0}, true).replace('<b>','<b>'+(i+1)+'. ') }).join("") : '<p class="sub" style="margin:0">Aucune facture.</p>')+'</div>';
 }
 function renderBil(){
