@@ -222,8 +222,8 @@ input[type=password],input[type=date],input#lc{width:100%;font:inherit;font-size
   <section id="v2" class="hide">
     <div class="tabs" style="flex-wrap:wrap"><button id="s1" class="on">Indicateurs Dinacopé</button><button id="s2">Indicateur de suivi et de gestion des risques</button><button id="s3">Base d'identification</button><button id="s4">Factures clôturées</button></div>
     <div id="v2a"><div class="card"><div class="kpis" id="kpis"></div></div><div class="card" id="provs"></div></div>
-    <div id="v2r" class="hide"><div class="tabs" id="rk" style="flex-wrap:wrap"><button id="s2a" class="on">Suivi</button><button id="s5">Tendance</button><button id="s6">Évolution</button><button id="s7">Épisodes</button><button id="s8">Alertes</button><button id="s9">Journal</button><button id="s10">Budget</button></div>
-    <div id="v2b" class="hide"></div><div id="v2e" class="hide"></div><div id="v2f" class="hide"></div><div id="v2g" class="hide"></div><div id="v2h" class="hide"></div><div id="v2i" class="hide"></div><div id="v2j" class="hide"></div></div>
+    <div id="v2r" class="hide"><div class="tabs" id="rk" style="flex-wrap:wrap"><button id="s2a" class="on">Suivi</button><button id="s5">Tendance</button><button id="s6">Évolution</button><button id="s7">Épisodes</button><button id="s8">Alertes</button><button id="s9">Journal</button><button id="s10">Budget</button><button id="s11">Vue générale</button></div>
+    <div id="v2b" class="hide"></div><div id="v2e" class="hide"></div><div id="v2f" class="hide"></div><div id="v2g" class="hide"></div><div id="v2h" class="hide"></div><div id="v2i" class="hide"></div><div id="v2j" class="hide"></div><div id="v2k" class="hide"></div></div>
     <div id="v2c" class="hide"></div>
     <div id="v2d" class="hide"></div>
   </section>
@@ -1127,6 +1127,7 @@ function refreshAll(){
   if(!$("v7").classList.contains("hide")) renderPrest();
   if(!$("v2").classList.contains("hide") && !$("v2d").classList.contains("hide")) renderBil();
   if(!$("v2").classList.contains("hide") && !$("v2b").classList.contains("hide") && !(a && a.tagName==="SELECT")) renderPInd();
+  if(!$("v2").classList.contains("hide") && !$("v2k").classList.contains("hide") && !(a && (a.tagName==="SELECT" || a.tagName==="INPUT"))) renderVG();
   if(!$("v2").classList.contains("hide") && !$("v2j").classList.contains("hide") && !(a && (a.tagName==="SELECT" || a.tagName==="INPUT"))) renderBudget();
   if(!$("v19").classList.contains("hide")) renderNatHome();
   var busy = a && /^(rk|rf|rd|rm|rob|srch)$/.test(a.id||"");
@@ -2555,7 +2556,7 @@ function startSession(a){
   $("tabs").innerHTML = ROLE==="national" ? SPACES.map(function(x){ return '<button data-sp="'+x.k+'">'+x.n+'</button>' }).join("") : t.map(function(x){ return '<button data-v="'+x[0]+'">'+x[1]+'</button>' }).join(""); $("tabs").classList.toggle("hide", ROLE==="autre");
   document.body.classList.toggle("nat", ROLE==="national"); SPLAST = {};
   $("who").innerHTML = '<span style="min-width:0"><b style="font-size:.95rem;color:var(--text)">'+esc(a.n)+'</b><small style="display:block">'+esc(a.f)+' · <b>'+esc(a.v==='National' ? 'Niveau national' : (a.r==='autre' ? 'Vérification de matricule' : 'Ville : '+(a.w||a.v)))+'</b></small><small id="whof" style="display:block"></small></span><button class="back" id="snd" style="padding:0 12px 0 0">🔔 Son</button><button class="back" id="chpw" style="padding:0 12px 0 0">Mot de passe</button><button class="back" id="lo" style="padding:0">Se déconnecter</button>'; $("who").classList.remove("hide"); $("top").classList.add("in"); sndBtn();
-  $("fbox").classList.toggle("hide", ROLE!=="delegue"); $("s1").classList.toggle("hide", ROLE!=="national"); $("s3").classList.toggle("hide", ROLE!=="national"); $("s4").classList.toggle("hide", ROLE!=="national"); ["s5","s6","s7","s8","s9","s10"].forEach(function(i){ $(i).classList.toggle("hide", ROLE!=="national") });
+  $("fbox").classList.toggle("hide", ROLE!=="delegue"); $("s1").classList.toggle("hide", ROLE!=="national"); $("s3").classList.toggle("hide", ROLE!=="national"); $("s4").classList.toggle("hide", ROLE!=="national"); ["s5","s6","s7","s8","s9","s10","s11"].forEach(function(i){ $(i).classList.toggle("hide", ROLE!=="national") });
   $("out").classList.add("hide"); $("q").value = ""; CUR = null; VIEW = null;
   applyScope(); sub(ROLE==="national" ? 1 : 2); refreshAll(); if(ROLE==="national") navTo("v19"); else openView(t[0][0]); presStart(); if(isSuper()){ if(PRESALL) clearInterval(PRESALL); PRESALL = setInterval(presAllRefresh, 15000) }
 }
@@ -3883,7 +3884,7 @@ function cmpBind(id, kind){
 }
 /* --- navigation nationale : 6 espaces --- */
 var SPACES = [
-  {k:"pil", n:"Pilotage", it:[["v19","Accueil"],["v11","Villes"],["s1","Indicateurs Dinacopé"],["s10","Budget"],["s5","Tendance"],["s6","Évolution"]]},
+  {k:"pil", n:"Pilotage", it:[["v19","Accueil"],["v11","Villes"],["s1","Indicateurs Dinacopé"],["s11","Vue générale"],["s10","Budget"],["s5","Tendance"],["s6","Évolution"]]},
   {k:"soi", n:"Soins", it:[["s2","Suivi des risques"],["s7","Épisodes"],["s4","Factures clôturées"],["v18","Historique et Top 20"]]},
   {k:"ctl", n:"Contrôle et fraude", it:[["s8","Alertes"],["s8at","FOSA et délégués atypiques"],["s8fa","Écarts de facturation"]]},
   {k:"dro", n:"Droits et identité", it:[["s3","Base d'identification"],["v17","Cartes bloquées"]]},
@@ -3891,7 +3892,7 @@ var SPACES = [
   {k:"ver", n:"Vérification", it:[["v1","Vérification"]]}], SPLAST = {}, SPA = "pil", ITA = "v19";
 function itKey(){
   var v = curView(); if(v!=="v2") return v;
-  var P = ["v2a","v2b","v2c","v2d","v2e","v2f","v2g","v2h","v2i","v2j"], N = [1,2,3,4,5,6,7,8,9,10];
+  var P = ["v2a","v2b","v2c","v2d","v2e","v2f","v2g","v2h","v2i","v2j","v2k"], N = [1,2,3,4,5,6,7,8,9,10,11];
   for(var i = 0; i<P.length; i++) if(!$(P[i]).classList.contains("hide")){ if(N[i]===8) return AL.tab==="at" ? "s8at" : (AL.tab==="fa" ? "s8fa" : "s8"); return "s"+N[i] }
   return "s1";
 }
@@ -3932,7 +3933,7 @@ function renderNatHome(){
 function perBar0(){ return "" }
 $("v19").addEventListener("click", function(e){ var b = e.target.closest && e.target.closest("button[data-nh]"); if(b) navTo(b.dataset.nh) });
 function sub(n){
-  var inR = n===2 || n>=5 && n<=10;
+  var inR = n===2 || n>=5 && n<=11;
   $("v2r").classList.toggle("hide",!inR); $("s2").classList.toggle("on",inR);
   $("v2b").classList.toggle("hide",n!==2); $("s2a").classList.toggle("on",n===2);
   $("v2e").classList.toggle("hide",n!==5); $("s5").classList.toggle("on",n===5);
@@ -3941,10 +3942,11 @@ function sub(n){
   $("v2h").classList.toggle("hide",n!==8); $("s8").classList.toggle("on",n===8);
   $("v2i").classList.toggle("hide",n!==9); $("s9").classList.toggle("on",n===9);
   $("v2j").classList.toggle("hide",n!==10); $("s10").classList.toggle("on",n===10);
+  $("v2k").classList.toggle("hide",n!==11); $("s11").classList.toggle("on",n===11);
   $("v2d").classList.toggle("hide",n!==4); $("s4").classList.toggle("on",n===4);
   $("v2a").classList.toggle("hide",n!==1); $("v2c").classList.toggle("hide",n!==3);
   $("s1").classList.toggle("on",n===1); $("s3").classList.toggle("on",n===3);
-  if(n===2) renderPInd(); if(n===3) renderIdent(); if(n===4) renderBil(); if(n===5) renderCmp("t"); if(n===6) renderCmp("e"); if(n===7) renderEpisodes(); if(n===10) renderBudget(); if(n===8) renderAlerts(); if(n===9){ renderJournal(); if(!JR.rows.length && !JR.loading) loadJournal(true) }
+  if(n===2) renderPInd(); if(n===3) renderIdent(); if(n===4) renderBil(); if(n===5) renderCmp("t"); if(n===6) renderCmp("e"); if(n===7) renderEpisodes(); if(n===10) renderBudget(); if(n===11) renderVG(); if(n===8) renderAlerts(); if(n===9){ renderJournal(); if(!JR.rows.length && !JR.loading) loadJournal(true) }
   updNav();
 }
 $("s1").addEventListener("click", function(){ sub(1) });
@@ -3958,6 +3960,7 @@ $("s7").addEventListener("click", function(){ sub(7) });
 $("s8").addEventListener("click", function(){ sub(8) });
 $("s9").addEventListener("click", function(){ sub(9) });
 $("s10").addEventListener("click", function(){ sub(10) });
+$("s11").addEventListener("click", function(){ sub(11) });
 $("v2g").addEventListener("click", function(e){ var tr = e.target.closest && e.target.closest("tr[data-ev]"); if(!tr) return; EV = tr.dataset.ev; EF = ""; renderEpisodes(); window.scrollTo(0,0) });
 $("v2g").addEventListener("change", function(e){ if(e.target.id==="ef") EF = e.target.value; else if(e.target.id==="ep") EP = e.target.value; else if(e.target.id==="ev"){ EV = e.target.value; EF = "" } else return; renderEpisodes() });
 cmpBind("v2e","t"); cmpBind("v2f","e");
@@ -4519,6 +4522,57 @@ function bilData(){
   return {bd:bd, nAll:nAll, nInv:nInv, tot:tot, nPres:nPres, rej:rej, nFos:Object.keys(fos).length, nPat:Object.keys(pat).length,
     topF:Object.keys(fos).map(function(k){return fos[k]}).sort(byS).slice(0,10), topP:Object.keys(pat).map(function(k){return pat[k]}).sort(byS).slice(0,10)};
 }
+/* --- vue générale (national) : coûts, rejets et reste à facturer par période, par FOSA, par ville ou pour toutes les villes --- */
+var VG = {k:"month", o:-1, g:"all", v:""}, VGK = [["month","Mois"],["quarter","Trimestre"],["semester","Semestre"],["year","Année"]], VGG = [["all","Toutes les villes"],["city","Par ville"],["fosa","Par FOSA"]];
+function vgBounds(){
+  var d = new Date(), y = d.getFullYear(), mo = d.getMonth(), a, b, lab;
+  if(VG.k==="month"){ var i = y*12+mo+VG.o; a = i; b = i; lab = monthLabel(Math.floor(i/12)+"-"+String(i%12+1).padStart(2,"0")) }
+  else if(VG.k==="quarter"){ var q = y*4+Math.floor(mo/3)+VG.o, qy = Math.floor(q/4), qn = q%4; a = qy*12+qn*3; b = a+2; lab = "T"+(qn+1)+" "+qy+" ("+["janv.–mars","avr.–juin","juil.–sept.","oct.–déc."][qn]+")" }
+  else if(VG.k==="semester"){ var h = y*2+Math.floor(mo/6)+VG.o, hy = Math.floor(h/2), hn = h%2; a = hy*12+hn*6; b = a+5; lab = "S"+(hn+1)+" "+hy+" ("+(hn ? "juil.–déc." : "janv.–juin")+")" }
+  else { var yy = y+VG.o; a = yy*12; b = yy*12+11; lab = "Année "+yy }
+  return {a:a, b:b, lab:lab};
+}
+function vgData(){
+  var bd = vgBounds(), rows = {}, tot = {dem:0, rd:0, rp:0, pay:0, n:0}, d0 = new Date(), cur = d0.getFullYear()*12+d0.getMonth();
+  var inB = function(m){ if(!m) return false; var q = m.split("-"), mi = +q[0]*12+(+q[1]-1); return mi>=bd.a && mi<=bd.b && mi<cur };
+  var row = function(f, c){ if(VG.v && c!==VG.v) return null; var key = VG.g==="fosa" ? f : (VG.g==="city" ? (c||"—") : "all"); return rows[key] || (rows[key] = {k:key, c:VG.g==="fosa" ? (c||"—") : "", dem:0, rd:0, rp:0, pay:0, n:0}) };
+  Object.keys(INV).forEach(function(k){
+    var iv = INV[k]; if(!iv || !iv.month || !inB(iv.month)) return;
+    var r = row(iv.fosa, iv.lvl || levelOfFosa(iv.fosa)); if(!r) return; r.n++;
+    var ok, rd, rp;
+    if(iv.prov){ ok = +iv.prov.tot||0; rd = +iv.prov.rtotD||0; rp = +iv.prov.rtotP||0 }
+    else { ok = +iv.tot||0; rd = +iv.rtot||0; rp = 0 }
+    r.dem += ok+rd+rp; r.rd += rd; r.rp += rp; r.pay += ok;
+  });
+  var list = Object.keys(rows).map(function(k){ return rows[k] }).sort(function(a,b){ return b.dem-a.dem || String(a.k).localeCompare(String(b.k)) });
+  list.forEach(function(r){ tot.dem += r.dem; tot.rd += r.rd; tot.rp += r.rp; tot.pay += r.pay; tot.n += r.n });
+  return {bd:bd, list:list, tot:tot};
+}
+function renderVG(){
+  if(ROLE!=="national") return;
+  var D = vgData(), c = function(v){ return '<td style="text-align:right;white-space:nowrap">'+money(v)+'</td>' };
+  var bar = '<div class="card"><b>Vue générale</b><div class="tabs" style="margin:8px 0">'+VGK.map(function(x){ return '<button data-vk="'+x[0]+'"'+(VG.k===x[0]?' class="on"':'')+'>'+x[1]+'</button>' }).join("")+'</div>'
+    + '<div style="display:flex;align-items:center;justify-content:space-between;gap:10px"><button class="back" data-vn="-1" style="padding:6px 12px">‹</button><b style="text-align:center">'+esc(D.bd.lab)+'</b><button class="back" data-vn="1" style="padding:6px 12px"'+(VG.o>=(VG.k==='month'?-1:0)?' disabled':'')+'>›</button></div>'
+    + '<div class="tabs" style="margin:8px 0">'+VGG.map(function(x){ return '<button data-vg="'+x[0]+'"'+(VG.g===x[0]?' class="on"':'')+'>'+x[1]+'</button>' }).join("")+'</div>'
+    + '<label class="lbl" for="vgv">Ville</label><select id="vgv"><option value="">Toutes les villes</option>'+levels().map(function(L){ return '<option value="'+esc(L)+'"'+(VG.v===L?' selected':'')+'>'+esc(L)+'</option>' }).join("")+'</select>'
+    + '<p class="sub" style="margin:8px 0 0">Uniquement les factures <b>déjà clôturées</b> (par le délégué ou par la province), classées selon leur <b>mois de facturation</b> ; le mois en cours n\'est pas affiché. <b>Demande</b> = montant total demandé avant rejets. <b>Rejets1</b> = rejets du délégué. <b>Rejets2</b> = rejets de la province (assistant). <b>Total à Payer</b> = Demande − Total Rejets.</p></div>';
+  var h = bar;
+  if(!D.list.length) h += '<div class="card"><p class="sub" style="margin:0">Aucune facture clôturée sur cette période'+(VG.v?' pour la ville '+esc(VG.v):'')+'.</p></div>';
+  else {
+    var head = '<tr><th style="text-align:left">'+(VG.g==="fosa"?'FOSA':(VG.g==="city"?'Ville':'Périmètre'))+'</th><th style="text-align:right">Demande</th><th style="text-align:right">Rejets1</th><th style="text-align:right">Rejets2</th><th style="text-align:right">Total Rejets</th><th style="text-align:right">Total à Payer</th></tr>';
+    var body = D.list.map(function(r){ return '<tr><td>'+(VG.g==="all" ? (VG.v ? esc(VG.v) : 'Toutes les villes') : esc(r.k)+(r.c ? '<small style="display:block;color:var(--muted)">'+esc(r.c)+'</small>' : ''))+'</td>'+c(r.dem)+c(r.rd)+c(r.rp)+c(r.rd+r.rp)+c(r.pay)+'</tr>' }).join("");
+    var foot = D.list.length>1 ? '<tr style="font-weight:700;border-top:2px solid var(--line)"><td>Total</td>'+c(D.tot.dem)+c(D.tot.rd)+c(D.tot.rp)+c(D.tot.rd+D.tot.rp)+c(D.tot.pay)+'</tr>' : '';
+    h += '<div class="card" style="padding:8px"><div style="overflow-x:auto"><table style="width:100%;min-width:560px;border-collapse:collapse;font-size:13px">'+head+body+foot+'</table></div></div>';
+  }
+  $("v2k").innerHTML = h;
+}
+$("v2k").addEventListener("change", function(e){ if(e.target.id==="vgv"){ VG.v = e.target.value; renderVG() } });
+$("v2k").addEventListener("click", function(e){
+  var t = e.target.closest ? e.target.closest("button") : null; if(!t) return;
+  if(t.dataset.vk){ VG.k = t.dataset.vk; VG.o = VG.k==="year" ? 0 : -1; renderVG() }
+  else if(t.dataset.vn){ VG.o = Math.min(VG.k==="month" ? -1 : 0, VG.o+(+t.dataset.vn)); renderVG() }
+  else if(t.dataset.vg){ VG.g = t.dataset.vg; renderVG() }
+});
 /* factures clôturées par la province, classées selon la date de clôture : mois puis liste dans l'ordre de clôture */
 function bilClosedKeys(){
   return Object.keys(INV).filter(function(k){ var iv = INV[k]; return iv && iv.prov && iv.month && (!BIL.v || (iv.lvl || levelOfFosa(iv.fosa))===BIL.v) });
