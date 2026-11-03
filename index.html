@@ -2468,7 +2468,7 @@ $("v2b").addEventListener("change", function(e){
 function renderStats(){
   var S = DB.H.stats, tot = DB.mat.length, ns = 0, ne = 0;
   S.forEach(function(p){ ns += p.s.length; ne += p.e });
-  $("kpis").innerHTML = [[fmt(tot),"agents (matricules)"],[S.length,"provinces"],[fmt(ns),"sous-provinces"],[fmt(ne),"établissements"]]
+  $("kpis").innerHTML = [[fmt(tot),"enseignants (matricules)"],[S.length,"provinces"],[fmt(ns),"sous-provinces"],[fmt(ne),"établissements"]]
     .map(function(k){return '<div class="kpi"><b>'+k[0]+'</b><span>'+k[1]+'</span></div>'}).join("");
   var max = S[0].a;
   $("provs").innerHTML = S.map(function(p,i){
@@ -2482,7 +2482,7 @@ $("provs").addEventListener("click", function(e){
   var el = e.target.closest(".prov"); if(!el) return;
   var det = el.querySelector(".det");
   if(!det.innerHTML) det.innerHTML = '<div style="margin-top:8px">' + DB.H.stats[+el.dataset.i].s.map(function(s){
-    return '<div class="sp"><span>'+esc(s.n)+'</span><b>'+fmt(s.a)+(s.a>1?' agents':' agent')+'</b></div>'}).join("") + '</div>';
+    return '<div class="sp"><span>'+esc(s.n)+'</span><b>'+fmt(s.a)+(s.a>1?' enseignants':' enseignant')+'</b></div>'}).join("") + '</div>';
   det.classList.toggle("hide");
 });
 
@@ -3904,7 +3904,7 @@ function cmpBind(id, kind){
 }
 /* --- navigation nationale : 6 espaces --- */
 var SPACES = [
-  {k:"pil", n:"Pilotage", it:[["v19","Accueil"],["v11","Villes"],["s1","Indicateurs Dinacopé"],["s11","Vue générale"],["s10","Budget"],["s5","Tendance"],["s6","Évolution"]]},
+  {k:"pil", n:"Pilotage", it:[["v19","Accueil"],["v11","Villes"],["s1","Indicateurs Dinacopé"],["s10","Budget"],["s5","Tendance"],["s6","Évolution"],["s11","Vue générale"]]},
   {k:"soi", n:"Soins", it:[["s2","Suivi des risques"],["s7","Épisodes"],["s4","Factures clôturées"],["v18","Historique et Top 20"]]},
   {k:"ctl", n:"Contrôle et fraude", it:[["s8","Alertes"],["s8at","FOSA et délégués atypiques"],["s8fa","Écarts de facturation"]]},
   {k:"dro", n:"Droits et identité", it:[["s3","Base d'identification"],["v17","Cartes bloquées"]]},
