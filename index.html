@@ -4699,7 +4699,8 @@ document.addEventListener("input", function(e){
   var multi = t.tagName==="TEXTAREA", lg = TXTLONG.indexOf(t.id)>=0 || (t.dataset && t.dataset.rd!==undefined), s = t.selectionStart, u = fmtTxt(t.value, lg, multi);
   if(u !== t.value){ var c = fmtTxt(t.value.slice(0, s||0), lg, multi).length; t.value = u; try{ t.setSelectionRange(c,c) }catch(x){} }
 }, true);
-function isField(el){ return !!el && (el.tagName==="INPUT" || el.tagName==="TEXTAREA") }
+/* champs de saisie seulement : jamais les cases à cocher, boutons radio, etc. (sinon la page défile entre le appui et le relâchement de la souris et le premier clic est perdu) */
+function isField(el){ return !!el && (el.tagName==="TEXTAREA" || (el.tagName==="INPUT" && !/^(checkbox|radio|button|submit|reset|range|file|color|image)$/i.test(el.type||""))) }
 /* Garde le champ actif dans la moitié haute de l'écran, toujours au-dessus du clavier :
    on ajoute de la place sous la page pour pouvoir la faire défiler, puis on aligne le champ en haut. */
 function lift(el){
