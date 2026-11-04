@@ -225,7 +225,7 @@ input[type=password],input[type=date],input#lc{width:100%;font:inherit;font-size
   <section id="v2" class="hide">
     <div class="tabs" style="flex-wrap:wrap"><button id="s1" class="on">Indicateurs Dinacopé</button><button id="s2">Indicateur de suivi et de gestion des risques</button><button id="s3">Base d'identification</button><button id="s4">Factures clôturées</button></div>
     <div id="v2a"><div class="card"><div class="kpis" id="kpis"></div></div><div class="card" id="provs"></div></div>
-    <div id="v2r" class="hide"><div class="tabs" id="rk" style="flex-wrap:wrap"><button id="s2a" class="on">Suivi</button><button id="s5">Tendance</button><button id="s6">Évolution</button><button id="s7">Épisodes</button><button id="s8">Alertes</button><button id="s9">Journal</button><button id="s10">Budget</button><button id="s11">Vue générale</button></div>
+    <div id="v2r" class="hide"><div class="tabs" id="rk" style="flex-wrap:wrap"><button id="s2a" class="on">Suivi</button><button id="s5">Tendance</button><button id="s6">Évolution</button><button id="s7">Épisodes</button><button id="s8">Alertes</button><button id="s9">Journal</button><button id="s10">Budget</button><button id="s11">Vue générale de DR</button></div>
     <div id="v2b" class="hide"></div><div id="v2e" class="hide"></div><div id="v2f" class="hide"></div><div id="v2g" class="hide"></div><div id="v2h" class="hide"></div><div id="v2i" class="hide"></div><div id="v2j" class="hide"></div><div id="v2k" class="hide"></div></div>
     <div id="v2c" class="hide"></div>
     <div id="v2d" class="hide"></div>
@@ -360,7 +360,7 @@ function info(mat,r,age){
   if(NOENC.indexOf(r[0])<0 && age!==null) rows.push(["Statut",age<18?"OK":"PAC +18 ans"]);
   return '<dl style="margin:0">'+rows.map(function(x){return '<div class="line"><dt>'+x[0]+'</dt><dd>'+esc(x[1])+'</dd></div>'}).join("")+'</dl>';
 }
-function stText(q){var m = q.decidedByName ? " ("+q.decidedByName+")" : "";return q.status==="authorized"?"✔ Autorisé par le médecin conseil"+m:(q.status==="refused"?"✖ Non autorisé par le médecin conseil"+m:"⏳ En attente de décision du médecin conseil"+(q.medToName?" ("+q.medToName+")":""))}
+function stText(q){var m = q.decidedByName ? " ("+q.decidedByName+")" : "";return q.status==="authorized"?"✔ Autorisé par le médecin conseil"+m:(q.status==="refused"?"✖ Non autorisé par le médecin conseil"+m:(ROLE==="delegue" ? "⏳ "+MEDSENT+" — en attente de décision" : "⏳ En attente de décision du médecin conseil")+(q.medToName && ROLE!=="delegue"?" ("+q.medToName+")":""))}
 function stCls(q){return q.status==="authorized"?"good":(q.status==="refused"?"bad":"wait")}
 
 /* ---------- vérification ---------- */
@@ -911,7 +911,7 @@ function reqBlocks(k){
   if(!DBX) return "";
   var h = "", u = uget(k), sp = REQ[k+"~S"], dt = function(q){ return q.decision ? '<p class="sub" style="margin:8px 0 0">Détail : '+esc(q.decision)+'</p>' : '' };
   if(FOSA && !(FCFG[FOSA] && FCFG[FOSA].noUrgence) && CUR.ok){
-    if(u && !u.used && u.status==="pending") h += '<div class="note wait">⏳ Urgence signalée — en attente de l\'approbation du médecin conseil'+(u.medToName?' ('+esc(u.medToName)+')':'')+'.</div>';
+    if(u && !u.used && u.status==="pending") h += '<div class="note wait">⏳ Urgence signalée — en attente de l\'approbation du médecin conseil'+(u.medToName && ROLE!=="delegue"?' ('+esc(u.medToName)+')':'')+'.</div>';
     else { if(u && !u.used && u.status==="refused") h += '<div class="note bad">✖ Urgence non approuvée</div>'+dt(u); h += '<div class="enc"><button class="spec" data-a="urgreq">Signaler une urgence au médecin conseil</button></div>' }
   }
   if(sp && sp.status==="authorized") h += '<div class="note wait">L\'autorisation spéciale accordée par la hiérarchie le '+esc(fmtD(sp.decidedAt||0))+' a expiré ('+(sp.days||30)+' jours).</div>';
@@ -1021,12 +1021,18 @@ function drawDetail(i){
 }
 function showDetail(i){ drawDetail(i); go("v3") }
 
+/* le délégué ne choisit pas le médecin : l'application envoie au premier médecin disponible de la ville */
+function medPick(city){
+  var ms = medsOfCity(city); if(!ms.length) return {none:true};
+  var ok = ms.filter(function(a){ return !medStOut(a.c) }); if(!ok.length) return {c:"", n:""};
+  var rk = {dispo:0, dispo_bg:1, occupe:2, absent:3, "":4};
+  var load = function(c){ var n = 0; Object.keys(REQ).forEach(function(k){ var q = REQ[k]; if(q && q.status==="pending" && q.medTo===c) n++ }); Object.keys(TRF).forEach(function(k){ var q = TRF[k]; if(trfFlow(q) && !TRD[k] && q.medTo===c) n++ }); return n };
+  ok.sort(function(a,b){ var ra = rk[medSt(a.c)], rb = rk[medSt(b.c)]; if(ra!==rb) return ra-rb; var la = load(a.c), lb = load(b.c); if(la!==lb) return la-lb; return a.n.localeCompare(b.n) });
+  return {c:ok[0].c, n:ok[0].n};
+}
+var MEDSENT = "Envoyé au Médecin conseils";
 function reqMedHtml(){
-  var meds = medsOfCity(AG ? AG.v : "");
-  return '<label class="lbl" for="rmed">Médecin conseil qui décide</label>'
-    + (meds.length ? meds.map(function(a){ return '<div class="line"><dt>'+esc(a.n)+'</dt><dd>'+medStTag(a.c)+'</dd></div>' }).join("") : '')
-    + '<select id="rmed"><option value="">'+(meds.length?'— Choisir un médecin —':'Aucun médecin conseil dans votre ville')+'</option>'+meds.map(function(a){ var k = medSt(a.c); return '<option value="'+esc(a.c)+'"'+(medStOut(a.c)?' disabled':'')+'>'+esc(a.n)+' — '+(k?MST_L[k][0]:'Non renseigné')+'</option>' }).join("")+'</select>'
-    + '<p class="sub" style="margin:4px 0 8px">🟢 en ligne · 🟡 écran éteint · 🟠 occupé · ⚪ absent (verra la demande à sa prochaine connexion) · 🔴 indisponible (ne peut pas être choisi). Si le médecin choisi devient indisponible, un autre médecin de la ville peut décider.</p>';
+  return '<div class="note wait" style="margin:10px 0">La demande sera envoyée au <b>Médecin conseils</b> de votre ville : l\'application la confie au premier médecin disponible. Le nom du médecin vous sera communiqué lorsqu\'il aura décidé.</div>';
 }
 function showForm(i, kind){
   kind = kind || "pac";
@@ -1046,8 +1052,8 @@ async function send(i){
   var ob = $("obs").value.trim(), ref = $("ref") ? $("ref").value.trim() : "";
   if(kind==="urg" && !ob){ toast("Saisissez la justification de l'urgence"); $("obs").focus(); return }
   if(kind==="spec" && !ref){ toast("Saisissez la référence du document d'autorisation"); $("ref").focus(); return }
-  var dk = kind==="pac" ? k : (kind==="spec" ? k+"~S" : ukey(k)), mc = $("rmed") ? $("rmed").value : "", mname = "";
-  if(kind!=="spec"){ var mg = medsOfCity(AG ? AG.v : "").filter(function(a){ return a.c===mc })[0]; if(!mg){ toast(medsOfCity(AG ? AG.v : "").length ? "Choisissez le médecin conseil à qui envoyer la demande" : "Aucun médecin conseil dans votre ville : demandez au niveau National d'en créer un"); if($("rmed")) $("rmed").focus(); return } mname = mg.n }
+  var dk = kind==="pac" ? k : (kind==="spec" ? k+"~S" : ukey(k)), mc = "", mname = "";
+  if(kind!=="spec"){ var mg = medPick(AG ? AG.v : ""); if(mg.none){ toast("Aucun médecin conseil dans votre ville : demandez au niveau National d'en créer un"); return } mc = mg.c; mname = mg.n }
   b.disabled = true;
   try{
     var rec = {mat:CUR.mat, rang:r[0], nom:r[1], prenom:r[2], dob:r[3], sexe:r[4], obs:ob, by:ME.id, lvl:AG?AG.v:null, status:"pending", at:Date.now(), decision:"", seen:true};
@@ -1055,7 +1061,7 @@ async function send(i){
     if(kind!=="spec"){ rec.medTo = mc; rec.medToName = mname }
     b.textContent = "Envoi en cours…";
     await Promise.race([DBX.doc("requests/"+dk).set(rec), new Promise(function(_,rj){ setTimeout(function(){ rj(new Error("délai dépassé, vérifiez la connexion et réessayez")) }, 20000) })]);
-    toast((kind==="urg"?"Urgence signalée au médecin conseil : ":"Demande envoyée au médecin conseil : ")+mname); FROM = FROM; showDetail(i);
+    toast(kind==="spec" ? "Demande envoyée" : MEDSENT); FROM = FROM; showDetail(i);
   }catch(e){ b.disabled=false; b.textContent="Envoyer"; toast("Envoi impossible : "+(e.message||e.code||e)) }
 }
 
@@ -1068,13 +1074,13 @@ async function showReview(k){
     + '<div class="line"><dt>Type de demande</dt><dd><b>'+esc(KLAB[kindOf(q)])+'</b></dd></div>'
     + (q.fosa ? '<div class="line"><dt>FOSA</dt><dd>'+esc(q.fosa)+'</dd></div>' : '')
     + '<div class="line"><dt>Demandeur</dt><dd>'+esc(who)+'</dd></div>'
-    + (q.medToName ? '<div class="line"><dt>Médecin conseil sollicité</dt><dd>'+esc(q.medToName)+'</dd></div>' : '')
+    + (q.medToName && ROLE!=="delegue" ? '<div class="line"><dt>Médecin conseil sollicité</dt><dd>'+esc(q.medToName)+'</dd></div>' : '')
     + (q.ref ? '<div class="line"><dt>Document</dt><dd>'+esc(q.ref)+'</dd></div>' : '')
     + '<div class="line"><dt>'+(kindOf(q)==="urg"?'Justification':'Observation')+'</dt><dd>'+esc(q.obs||"—")+'</dd></div>';
   if(q.status==="pending" && isApprover() && lvlOK(q) && reqDecOK(q))
     h += (kindOf(q)==="spec" ? '<label class="lbl" for="dur">Durée de validité de l\'autorisation</label><select id="dur"><option value="7">7 jours</option><option value="14">14 jours</option></select>' : '') + '<label class="lbl" for="dec">Détail de la décision</label><textarea id="dec" rows="3" placeholder="Saisissez le détail…"></textarea><div class="enc"><button class="goodb" data-a="ok">Autoriser</button><button class="spec" data-a="no">Refuser</button></div>';
   else h += (q.status==="pending" && ROLE==="assistant" ? '<div class="note wait">Information : cette demande est examinée par le médecin conseil. Vous ne pouvez pas la décider.</div>' : '')+'<div class="note '+stCls(q)+'">'+stText(q)+(q.status==="authorized"&&kindOf(q)==="spec"?' — valable '+(q.days||30)+' jours (jusqu\'au '+esc(fmtD(specEnd(q)))+')':'')+'</div>'+(q.decision?'<p class="sub" style="margin:8px 0 0">Détail : '+esc(q.decision)+'</p>':'');
-  if(ROLE==="medecin") xMark("rq_"+k);
+  if(ROLE==="medecin") xMark("rq_"+k); else if(ROLE==="assistant") xMark("ar_"+k);
   $("v3").innerHTML = h + xReqBlock(k) + '</div>'; go("v3"); var d=$("dec"); if(d) setTimeout(function(){d.focus()},80);
 }
 async function decide(k, st){
@@ -1168,8 +1174,10 @@ function notify(c){
   else if(ROLE==="assistant" && q.status==="pending" && lvlOK(q)) toast("🔔 "+(kindOf(q)==="urg"?"Urgence signalée":"Nouvelle demande ("+KLAB[kindOf(q)]+")")+" (décision du médecin conseil) : "+nm);
   else if(q.by===ME.id && q.status!=="pending" && q.seen===false && reqOfFosa(q)) toast("🔔 "+LABEL+" : "+(q.status==="authorized"?"autorisé":"non autorisé")+" — "+nm);
 }
+/* « nouveau » = pas encore ouvert sur cet appareil ni sur les autres (collection xseen), limité aux 7 derniers jours */
+function xRecent(at){ return Date.now()-(at||0) < 7*864e5 }
 function nrow(k,q,mode,sub){
-  var dot = (mode==="mine" && q.status!=="pending" && q.seen===false) ? '<span class="dot"></span>' : '';
+  var dot = ((mode==="mine" && q.status!=="pending" && q.seen===false) || (mode==="rev" && ROLE==="assistant" && xRecent(q.at) && !xSeen("ar_"+k))) ? '<span class="dot"></span>' : '';
   return '<div class="nrow" data-k="'+esc(k)+'" data-m="'+mode+'"><div>'+dot+'<b>'+esc(q.nom)+' '+esc(q.prenom)+'</b><small>'+esc(q.mat)+' · rang '+esc(q.rang)+' · '+esc(KLAB[kindOf(q)])+(q.fosa?' ('+esc(q.fosa)+')':'')+(sub?' · '+esc(sub):'')+'</small></div><span class="tag '+stCls(q)+'">'+(q.status==="authorized"?"Autorisé":(q.status==="refused"?"Non autorisé":"En attente"))+'</span></div>';
 }
 async function renderNotif(){
@@ -1309,7 +1317,7 @@ function medStOut(c){ return medSt(c)==="indispo" }
 function medsOfCity(city){ return allAgents().filter(function(a){ return a.r==="medecin" && a.v===city && a.active!==false }).sort(function(a,b){ return a.n.localeCompare(b.n) }) }
 function medAvailHtml(){
   var m = MST[AG.c] || {}, man = m.s==="occupe" ? "occupe" : (m.s==="indispo" ? "indispo" : "auto");
-  return '<div class="card"><b>Ma disponibilité</b><p class="sub" style="margin:6px 0 8px">Les délégués de la ville la voient et choisissent le médecin conseil à qui envoyer leur proposition de transfert. Statut vu par les délégués : '+medStTag(AG.c)+'</p>'
+  return '<div class="card"><b>Ma disponibilité</b><p class="sub" style="margin:6px 0 8px">L\'application envoie chaque demande (urgence, transfert, autorisation) au premier médecin disponible de la ville. Les délégués ne voient ni votre nom ni votre statut avant votre décision. Votre statut actuel : '+medStTag(AG.c)+'</p>'
     + '<p class="sub" style="margin:0 0 8px">🟢 en ligne dans l\'application · 🟡 écran éteint ou application en arrière-plan · ⚪ hors de l\'application (absent) : automatique. Vous choisissez vous-même « Occupé » ou « Indisponible ».</p>'
     + '<div style="display:flex;flex-wrap:wrap;gap:6px">'+[["auto","Automatique"],["occupe","Occupé momentanément"],["indispo","Indisponible (congé / mission)"]].map(function(x){ return '<button class="'+(x[0]===man?'':'back')+'" data-a="x_mst" data-s="'+x[0]+'" style="padding:8px 12px">'+x[1]+'</button>' }).join("")+'</div></div>'
 }
@@ -2069,15 +2077,12 @@ function showTransferForm(i){
   $("v3").innerHTML = '<button class="back" id="bk">← Retour</button><div class="card"><p class="sub" style="text-align:center;margin-bottom:10px">Proposition de transfert depuis '+esc(FOSA)+'</p><dl style="margin:0">'
     + [["Nom",r[1]+" "+r[2]],["Matricule",CUR.mat],["Rang",r[0]],["Soins reçus à "+FOSA, done?"Oui":"Non"]].map(function(y){return '<div class="line"><dt>'+esc(y[0])+'</dt><dd>'+esc(y[1])+'</dd></div>'}).join("") + '</dl>'
     + '<label class="lbl" for="tdest">FOSA de destination (ville '+esc(city||"—")+')</label><select id="tdest"><option value="">'+(dest.length?'— Choisir —':'Aucune autre FOSA disponible dans votre ville')+'</option>'+dest.map(function(f){return '<option value="'+esc(f)+'">'+esc(f+destLabel(f))+'</option>'}).join("")+'</select>'
-    + '<label class="lbl" for="tmed">Médecin conseil sollicité</label>'
-    + (meds.length ? meds.map(function(a){ return '<div class="line"><dt>'+esc(a.n)+'</dt><dd>'+medStTag(a.c)+'</dd></div>' }).join("") : '')
-    + '<select id="tmed"><option value="">'+(meds.length?'— Choisir un médecin —':'Aucun médecin conseil dans votre ville')+'</option>'+meds.map(function(a){ var k = medSt(a.c); return '<option value="'+esc(a.c)+'"'+(medStOut(a.c)?' disabled':'')+'>'+esc(a.n)+' — '+(k?MST_L[k][0]:'Non renseigné')+'</option>' }).join("")+'</select>'
-    + '<p class="sub" style="margin:4px 0 0">🟢 en ligne · 🟡 écran éteint · 🟠 occupé · ⚪ absent (hors de l\'application : il verra la proposition à sa prochaine connexion) · 🔴 indisponible (congé / mission : ne peut pas être choisi). Si le médecin choisi devient indisponible après l\'envoi, les autres médecins de la ville peuvent reprendre la proposition.</p>'
+    + '<div class="note wait" style="margin:10px 0">La proposition sera envoyée au <b>Médecin conseils</b> de votre ville : l\'application la confie au premier médecin disponible. Le nom du médecin vous sera communiqué lorsqu\'il aura décidé.</div>'
     + infoHtml()
     + '<label class="lbl" for="tmot">Motif du transfert</label><textarea id="tmot" rows="3" placeholder="Motif du transfert…"></textarea>'
     + '<div class="note wait" style="margin-top:10px">La proposition est d\'abord examinée par le <b>médecin conseil</b> de votre ville. La FOSA de destination n\'est notifiée qu\'<b>après son approbation</b>, et dispose alors de <b>'+TRF_DAYS+' jours</b> pour recevoir le patient ; passé ce délai, la proposition expire et une nouvelle est exigée.</div>'
     + '<p class="sub" style="margin:10px 0 0">'+(done ? 'Patient pris en charge : le médecin conseil et, après approbation, la FOSA de destination auront accès à la fiche de malade.' : 'Patient sans soins : seul le transfert établi sera consultable.')+'</p>'
-    + '<div class="enc"><button id="dtrf" data-a="dotrf">Envoyer au médecin conseil</button></div></div>';
+    + '<div class="enc"><button id="dtrf" data-a="dotrf">Envoyer au Médecin conseils</button></div></div>';
   go("v3");
 }
 async function doTransfer(i){
@@ -2088,13 +2093,11 @@ async function doTransfer(i){
   if(!canTransfer(CUR.mat, r)){ toast("Proposition de transfert possible seulement après l'accord de la hiérarchie"); return }
   if(trfByState(CUR.mat, r, "out", ["pending","valid"])){ toast("Une proposition de transfert est déjà en cours pour ce patient"); return }
   if(!allAgents().some(function(a){ return a.r==="medecin" && a.v===city && a.active!==false })){ toast("Aucun médecin conseil dans votre ville : demandez au niveau National d'en créer un"); return }
-  var mc = $("tmed").value; if(!mc){ toast("Choisissez le médecin conseil à qui envoyer la proposition"); $("tmed").focus(); return }
-  var mg = medsOfCity(city).filter(function(a){ return a.c===mc })[0]; if(!mg){ toast("Médecin conseil introuvable dans votre ville"); return }
-  if(medStOut(mc)){ toast(mg.n+" n'est pas disponible : choisissez un autre médecin"); return }
+  var mg = medPick(city), mc = mg.c;
   var id = "t_"+Date.now().toString(36)+Math.random().toString(36).slice(2,6), b = $("dtrf"); b.disabled = true;
   try{
     await DBX.doc("transfers/"+id).set({pk:rkey(CUR.mat,r), mat:CUR.mat, rang:r[0], nom:r[1], prenom:r[2], from:FOSA, to:dest, motif:$("tmot").value.trim(), info:$("ic").value, at:Date.now(), by:ME.id, seen:false, flow:2, medTo:mc, medToName:mg.n});
-    toast("Proposition envoyée à "+mg.n+" : "+dest+" sera notifiée après son approbation"); drawDetail(i); go("v3");
+    toast(MEDSENT+" : "+dest+" sera notifiée après son approbation"); drawDetail(i); go("v3");
   }catch(e){ b.disabled = false; toast("Proposition de transfert impossible : "+(e.message||e.code||e)) }
 }
 function showTransferView(id, back, full){
@@ -2105,7 +2108,7 @@ function showTransferView(id, back, full){
   var ps = allP().filter(function(p){ return p.fosa===q.from && (p.pk ? p.pk===q.pk : (p.mat===q.mat && p.rang===q.rang && p.nom===q.nom && p.prenom===q.prenom)) }).sort(function(a,b){return b.at-a.at});
   var rows = limited ? [["Nom",q.nom+" "+q.prenom],["Date de la proposition",fmtDT(q.at)]]
     : [["Nom",q.nom+" "+q.prenom],["Matricule",q.mat],["Rang",q.rang],["Date de la proposition",fmtDT(q.at)],["Information complémentaire",q.info||"—"],["Motif",q.motif||"—"],["Soins reçus à "+q.from, treated?"Oui":"Non"]];
-  if(flow && q.medTo && !limited) rows.push(["Médecin conseil sollicité", (q.medToName||q.medTo)+(medSt(q.medTo) ? " ("+MST_L[medSt(q.medTo)][0]+")" : "")]);
+  if(flow && q.medTo && !limited && ROLE!=="delegue") rows.push(["Médecin conseil sollicité", (q.medToName||q.medTo)+(medSt(q.medTo) ? " ("+MST_L[medSt(q.medTo)][0]+")" : "")]);
   if(flow && q.toOrig && !limited) rows.push(["FOSA de destination","Modifiée par le médecin conseil : "+q.to+" (proposée : "+q.toOrig+")"]);
   if(flow){
     rows.push(["Décision du médecin conseil", d ? (d.verdict==="approved" ? "Approuvé" : "Non approuvé")+" par "+(d.medName||"—")+" le "+fmtDT(d.at) : "En attente"]);
@@ -2133,7 +2136,7 @@ function showTransferView(id, back, full){
       + '<label class="lbl" for="xtn">Commentaire (obligatoire si non approuvé)</label><textarea id="xtn" rows="3" placeholder="Votre avis médical…"></textarea><div class="enc"><button data-a="x_tdec">Enregistrer ma décision</button></div></div>';
   }
   $("v3").innerHTML = h; go("v3");
-  if(ROLE==="medecin") xMark("mt_"+id);
+  if(ROLE==="medecin") xMark("mt_"+id); else if(ROLE==="assistant") xMark("at_"+id); else if(ROLE==="delegue") xMark("td_"+id);
   if(incoming && !trfSeen(id)){ if(q.toOrig){ xMark("trf_"+id); refreshAll() } else if(DBX) DBX.doc("transfers/"+id).update({seen:true}).catch(function(){}) }
 }
 async function xTrfDec(){
@@ -2214,6 +2217,8 @@ function trfRowHtml(k, o){
   if(o.asst){ tg = '<span class="tag '+(st.s==="pending" ? 'wait' : (st.s==="refused" ? 'bad' : 'good'))+'">'+(st.s==="pending" ? 'En attente' : (st.s==="refused" ? 'Non approuvé' : 'Approuvé'))+'</span>' }
   if(o.tk) return '<div class="nrow" data-tk="'+esc(k)+'"><div><b>'+esc(q.nom)+' '+esc(q.prenom)+'</b><small>'+sub+'</small></div>'+tg+'</div>';
   var dot = (o.dot && !trfSeen(k) && (st.s==="valid" || st.s==="legacy")) ? '<span class="dot"></span>' : '';
+  if(!dot && o.asst && ROLE==="assistant" && xRecent(q.at) && !xSeen("at_"+k)) dot = '<span class="dot"></span>';
+  if(!dot && o.out && ROLE==="delegue" && st.d && xRecent(st.d.at) && !xSeen("td_"+k)) dot = '<span class="dot"></span>';
   return '<div class="nrow" data-k="'+esc(k)+'" data-m="trf"><div>'+dot+'<b>'+esc(q.nom)+' '+esc(q.prenom)+'</b><small>'+sub+'</small></div>'+tg+'</div>';
 }
 /* historique des transferts : délégué = 6 derniers mois de sa FOSA ; médecin conseil = tout, du plus récent au plus ancien */
@@ -2266,7 +2271,7 @@ function trfCards(){
   var rout = ks.filter(function(k){return TRF[k].from===FOSA});
   var rowIn = function(k){ var q = TRF[k]; if(!trfFlow(q)){ var tr = trfTreated(q); return '<div class="nrow" data-k="'+esc(k)+'" data-m="trf"><div>'+(q.seen===false?'<span class="dot"></span>':'')+'<b>'+esc(q.nom)+' '+esc(q.prenom)+'</b><small>'+esc(q.mat)+' · rang '+esc(q.rang)+' · de '+esc(q.from)+' · '+esc(fmtD(q.at))+'</small></div><span class="tag '+(tr?'good':'wait')+'">'+(tr?'Avec soins':'Sans soins')+'</span></div>' } return trfRowHtml(k, {noMat:true, dot:true}) };
   return '<div class="card"><b>Patients à recevoir en transfert — '+esc(FOSA)+' ('+rin.length+')</b><p class="sub" style="margin:6px 0 0">Transferts approuvés par le médecin conseil. Le matricule n\'est pas affiché : il apparaît à la vérification du matricule, quand le patient se présente avec sa carte. Un transfert expire si le patient n\'est pas reçu dans les '+TRF_DAYS+' jours.</p>'+(rin.length?'':'<p class="sub" style="margin:8px 0 0">Aucun transfert à recevoir.</p>')+rin.map(rowIn).join("")+'</div>'
-    + '<div class="card"><b>Propositions de transfert envoyées ('+rout.length+')</b>'+(rout.length?'':'<p class="sub" style="margin:8px 0 0">Aucune proposition de transfert envoyée.</p>')+rout.map(function(k){ var q = TRF[k]; if(!trfFlow(q)){ var tr = trfTreated(q); return '<div class="nrow" data-k="'+esc(k)+'" data-m="trf"><div><b>'+esc(q.nom)+' '+esc(q.prenom)+'</b><small>'+esc(q.mat)+' · rang '+esc(q.rang)+' · vers '+esc(q.to)+' · '+esc(fmtD(q.at))+'</small></div><span class="tag '+(tr?'good':'wait')+'">'+(tr?'Avec soins':'Sans soins')+'</span></div>' } return trfRowHtml(k, {}) }).join("")+'</div>';
+    + '<div class="card"><b>Propositions de transfert envoyées ('+rout.length+')</b>'+(rout.length?'':'<p class="sub" style="margin:8px 0 0">Aucune proposition de transfert envoyée.</p>')+rout.map(function(k){ var q = TRF[k]; if(!trfFlow(q)){ var tr = trfTreated(q); return '<div class="nrow" data-k="'+esc(k)+'" data-m="trf"><div><b>'+esc(q.nom)+' '+esc(q.prenom)+'</b><small>'+esc(q.mat)+' · rang '+esc(q.rang)+' · vers '+esc(q.to)+' · '+esc(fmtD(q.at))+'</small></div><span class="tag '+(tr?'good':'wait')+'">'+(tr?'Avec soins':'Sans soins')+'</span></div>' } return trfRowHtml(k, {out:true}) }).join("")+'</div>';
 }
 /* assistant : lecture seule de la réponse du médecin conseil */
 function trfAsstHtml(){
@@ -3904,7 +3909,7 @@ function cmpBind(id, kind){
 }
 /* --- navigation nationale : 6 espaces --- */
 var SPACES = [
-  {k:"pil", n:"Pilotage", it:[["v19","Accueil"],["v11","Villes"],["s1","Indicateurs Dinacopé"],["s10","Budget"],["s5","Tendance"],["s6","Évolution"],["s11","Vue générale"]]},
+  {k:"pil", n:"Pilotage", it:[["v19","Accueil"],["v11","Villes"],["s1","Indicateurs Dinacopé"],["s10","Budget"],["s5","Tendance"],["s6","Évolution"],["s11","Vue générale de DR"]]},
   {k:"soi", n:"Soins", it:[["s2","Suivi des risques"],["s7","Épisodes"],["s4","Factures clôturées"],["v18","Historique et Top 20"]]},
   {k:"ctl", n:"Contrôle et fraude", it:[["s8","Alertes"],["s8at","FOSA et délégués atypiques"],["s8fa","Écarts de facturation"]]},
   {k:"dro", n:"Droits et identité", it:[["s3","Base d'identification"],["v17","Cartes bloquées"]]},
@@ -4571,7 +4576,7 @@ function vgData(){
 function renderVG(){
   if(ROLE!=="national") return;
   var D = vgData(), c = function(v){ return '<td style="text-align:right;white-space:nowrap">'+money(v)+'</td>' };
-  var bar = '<div class="card"><b>Vue générale</b><div class="tabs" style="margin:8px 0">'+VGK.map(function(x){ return '<button data-vk="'+x[0]+'"'+(VG.k===x[0]?' class="on"':'')+'>'+x[1]+'</button>' }).join("")+'</div>'
+  var bar = '<div class="card"><b>Vue générale de DR</b> <small style="color:var(--muted)">(DR = dépenses de régime)</small><div class="tabs" style="margin:8px 0">'+VGK.map(function(x){ return '<button data-vk="'+x[0]+'"'+(VG.k===x[0]?' class="on"':'')+'>'+x[1]+'</button>' }).join("")+'</div>'
     + '<div style="display:flex;align-items:center;justify-content:space-between;gap:10px"><button class="back" data-vn="-1" style="padding:6px 12px">‹</button><b style="text-align:center">'+esc(D.bd.lab)+'</b><button class="back" data-vn="1" style="padding:6px 12px"'+(VG.o>=(VG.k==='month'?-1:0)?' disabled':'')+'>›</button></div>'
     + '<div class="tabs" style="margin:8px 0">'+VGG.map(function(x){ return '<button data-vg="'+x[0]+'"'+(VG.g===x[0]?' class="on"':'')+'>'+x[1]+'</button>' }).join("")+'</div>'
     + '<label class="lbl" for="vgv">Ville</label><select id="vgv"><option value="">Toutes les villes</option>'+levels().map(function(L){ return '<option value="'+esc(L)+'"'+(VG.v===L?' selected':'')+'>'+esc(L)+'</option>' }).join("")+'</select>'

@@ -2,7 +2,7 @@
    - Page et fichiers de l'application : réseau d'abord (toujours la dernière version), copie locale en secours.
    - Bibliothèques externes (supabase-js, pako) : copie locale d'abord, mise à jour en arrière-plan.
    - Les appels à Supabase (données, authentification, stockage) ne sont JAMAIS interceptés ni mis en cache ici. */
-var CACHE = "mesp-v86";
+var CACHE = "mesp-v87";
 var SHELL = ["./", "index.html", "config.js", "manifest.webmanifest", "icon-192.png", "icon-512.png", "apple-touch-icon.png"];
 var CDN = ["cdn.jsdelivr.net", "cdnjs.cloudflare.com"];
 /* Bibliothèques chargées par la page : préchargées à l'installation pour que l'application s'ouvre dès la première coupure de réseau. */
