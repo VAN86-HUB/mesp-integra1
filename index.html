@@ -978,10 +978,10 @@ function drawFreq(i){
   h += '<div class="card"><div class="sec">Encodages (du plus récent au plus ancien)</div>';
   if(!E.p.length) h += '<p class="sub" style="margin:0">Aucun encodage.</p>';
   else h += E.p.map(function(p){ var lv = city ? (levelOfFosa(p.fosa)||"") : "";
-    return '<div class="line"><dt>'+esc(fmtDT(p.at||0))+'</dt><dd><b>'+esc(p.fosa)+'</b>'+(lv ? ' <small>('+esc(lv)+')</small>' : '')+'<br><small>'+esc(p.type||"—")+(money && p.cout!=null ? ' · '+esc(fmt(+p.cout||0))+' $' : '')+'</small></dd></div>' }).join("");
+    return '<div class="line"><dt>'+esc(fmtDT(p.at||0))+'</dt><dd><b>'+esc(p.fosa)+'</b>'+(lv ? ' <small>('+esc(lv)+')</small>' : '')+'<br><small>'+esc(p.type||"—")+(money && p.cout!=null ? ' · '+esc(fmt(+p.cout||0))+' $' : '')+'</small><br><small>Plainte : '+(String(p.plainte||"").trim() ? esc(String(p.plainte).trim()) : '<i>non renseigné</i>')+'</small></dd></div>' }).join("");
   h += '</div><div class="card"><div class="sec">Transferts</div>';
   if(!E.t.length) h += '<p class="sub" style="margin:0">Aucun transfert.</p>';
-  else h += E.t.map(function(t){ return '<div class="line"><dt>'+esc(fmtDT(t.at||0))+'</dt><dd><b>'+esc(t.from)+'</b> → <b>'+esc(t.to)+'</b>'+(t.motif ? '<br><small>'+esc(t.motif)+'</small>' : '')+'</dd></div>' }).join("");
+  else h += E.t.map(function(t){ return '<div class="line"><dt>'+esc(fmtDT(t.at||0))+'</dt><dd><b>'+esc(t.from)+'</b> → <b>'+esc(t.to)+'</b>'+'<br><small>Motif : '+(String(t.motif||"").trim() ? esc(String(t.motif).trim()) : '<i>non renseigné</i>')+'</small>'+'</dd></div>' }).join("");
   $("v3").innerHTML = h + '</div>'; go("v3");
 }
 $("v3").addEventListener("click", function(e){ var b = e.target.closest && e.target.closest("button"); if(!b || b.dataset.a!=="fq" || b.disabled || !VIEW || VIEW.t!=="detail" || !CUR) return; drawFreq(VIEW.i) });
@@ -2238,7 +2238,7 @@ function thDelHtml(){
     + '<button class="'+(XH.open?'back':'')+'" data-a="x_thopen" style="margin-top:8px;padding:8px 12px">'+(XH.open?'Masquer l\'historique':'Consulter l\'historique')+'</button>';
   if(XH.open){
     h += ks.length ? ks.map(function(k){ var q = TRF[k], st = trfState(q,k), out = q.from===FOSA;
-      return '<div class="nrow" data-k="'+esc(k)+'" data-m="trf"><div><b>'+esc(q.nom)+' '+esc(q.prenom)+'</b><small>'+(out?'Envoyé vers '+esc(q.to):'Reçu de '+esc(q.from))+' · '+esc(fmtDT(q.at||0))+(st.d ? ' · médecin : '+esc(st.d.medName||'—') : '')+'</small></div>'+(trfFlow(q) ? trfTagHtml(st) : '<span class="tag wait">Transfert</span>')+'</div>' }).join("")
+      return '<div class="nrow" data-k="'+esc(k)+'" data-m="trf"><div><b>'+esc(q.nom)+' '+esc(q.prenom)+'</b><small>'+(out?'Envoyé vers '+esc(q.to):'Reçu de '+esc(q.from))+' · '+esc(fmtDT(q.at||0))+(st.d ? ' · médecin : '+esc(st.d.medName||'—') : '')+'</small>'+'<br><small>Motif : '+(String(q.motif||"").trim() ? esc(String(q.motif).trim()) : '<i>non renseigné</i>')+'</small>'+'</div>'+(trfFlow(q) ? trfTagHtml(st) : '<span class="tag wait">Transfert</span>')+'</div>' }).join("")
       : '<p class="sub" style="margin:8px 0 0">Aucun transfert sur les 6 derniers mois.</p>';
   }
   return h + '</div>';
@@ -2252,7 +2252,7 @@ function thMedListHtml(){
   var ks = thMedKeys(), shown = ks.slice(0, XH.n);
   if(!ks.length) return '<p class="sub" style="margin:8px 0 0">Aucun transfert'+(XH.q?' pour cette recherche':'')+'.</p>';
   return shown.map(function(k){ var q = TRF[k], st = trfState(q,k), d = st.d;
-    return '<div class="nrow" data-tk="'+esc(k)+'"><div><b>'+esc(q.nom)+' '+esc(q.prenom)+'</b><small>'+esc(q.mat||"")+' · '+esc(q.from)+' → '+esc(q.to)+' · '+esc(fmtDT(q.at||0))+(d ? ' · '+esc(d.medName||'—')+' ('+(d.verdict==="approved"?'approuvé':'non approuvé')+' le '+esc(fmtD(d.at))+')' : '')+'</small></div>'+trfTagHtml(st)+'</div>' }).join("")
+    return '<div class="nrow" data-tk="'+esc(k)+'"><div><b>'+esc(q.nom)+' '+esc(q.prenom)+'</b><small>'+esc(q.mat||"")+' · '+esc(q.from)+' → '+esc(q.to)+' · '+esc(fmtDT(q.at||0))+(d ? ' · '+esc(d.medName||'—')+' ('+(d.verdict==="approved"?'approuvé':'non approuvé')+' le '+esc(fmtD(d.at))+')' : '')+'</small><br><small>Motif : '+(String(q.motif||"").trim() ? esc(String(q.motif).trim()) : '<i>non renseigné</i>')+'</small></div>'+trfTagHtml(st)+'</div>' }).join("")
     + (ks.length>shown.length ? '<button class="back" data-a="x_thmore" style="margin-top:8px;padding:8px 12px">Afficher plus ('+(ks.length-shown.length)+' restants)</button>' : '');
 }
 function thMedHtml(){
@@ -3469,11 +3469,11 @@ function showInvoice(f, m, bk, mode, soft, proc){
   var okT = sumC(L.filter(function(x){return x.ok!==false})), rjT = sumC(L.filter(function(x){return x.ok===false}));
   var nok = L.filter(function(x){return x.ok!==false}).length, nrj = L.length-nok;
   var VIEW0 = VIEW; VIEW = {t:"invoice", f:f, m:m, mode:mode, stage:stageP?"P":"D", proc:proc}; BACK = bk;
-  var cols = (edit?'<th>Valide</th>':'')+'<th>Nom</th><th>Matricule</th><th>Rang</th><th>Âge</th><th>Sexe</th><th>Prestation</th><th>Coût</th>'+(edit?'':'<th>Statut</th>'), nc = edit?8:8;
+  var cols = (edit?'<th>Valide</th>':'')+'<th>Nom</th><th>Matricule</th><th>Rang</th><th>Âge</th><th>Sexe</th><th>Date</th><th>Prestation</th><th>Coût</th>'+(edit?'':'<th>Statut</th>'), nc = 9;
   var body = L.map(function(x){
     var rej = x.ok===false, st = rej ? '<span class="tag rej">Rejetée'+(x.src==="prov"?' (province)':(x.src==="del"?' (délégué)':''))+' — '+esc(x.reason||"?")+'</span>' : '<span class="tag good">Validée</span>';
     var tr = '<tr'+(rej?' style="opacity:.8"':'')+'>'+(edit?(x.src==="del"?'<td><small>—</small></td>':'<td><input type="checkbox" class="ckc" data-ck="'+esc(x.id)+'"'+(rej?'':' checked')+' aria-label="Prestation valide"></td>'):'')
-      +'<td>'+esc(x.nom)+(edit && x.src==="del" ? '<br><small style="color:var(--ko)">Rejetée par le délégué — '+esc(x.reason||"")+'</small>' : '')+'</td><td>'+esc(x.mat)+'</td><td>'+esc(x.rang)+'</td><td>'+esc(x.age)+'</td><td>'+esc(x.sx)+'</td><td>'+esc(x.pr)+'</td><td>'+x.cout+' $</td>'+(edit?'':'<td>'+st+(rej&&x.detail?'<br><small>'+esc(x.detail)+'</small>':'')+'</td>')+'</tr>';
+      +'<td>'+esc(x.nom)+(edit && x.src==="del" ? '<br><small style="color:var(--ko)">Rejetée par le délégué — '+esc(x.reason||"")+'</small>' : '')+'</td><td>'+esc(x.mat)+'</td><td>'+esc(x.rang)+'</td><td>'+esc(x.age)+'</td><td>'+esc(x.sx)+'</td><td>'+esc(lineDate(x))+'</td><td>'+esc(x.pr)+'</td><td>'+x.cout+' $</td>'+(edit?'':'<td>'+st+(rej&&x.detail?'<br><small>'+esc(x.detail)+'</small>':'')+'</td>')+'</tr>';
     if(edit && rej && x.src!=="del") tr += '<tr><td colspan="'+nc+'" style="text-align:left"><div class="rsn"><b>Raison du rejet</b><select data-rs="'+esc(x.id)+'"><option value="">— Choisir la raison —</option>'+REASONS.map(function(r){return '<option'+(x.reason===r?' selected':'')+'>'+esc(r)+'</option>'}).join("")+'</select>'
       +(x.reason==="Autre"?'<input type="text" data-rd="'+esc(x.id)+'" placeholder="Précisez le détail…" value="'+esc(x.detail||"")+'">':'')+'</div></td></tr>';
     return tr;
@@ -3483,7 +3483,7 @@ function showInvoice(f, m, bk, mode, soft, proc){
   VIEW.open = OPN;
   var acc = edit ? '' : '<div class="sec" style="margin-top:6px">Par type de prestation (touchez pour le détail)</div>' + Object.keys(G).sort().map(function(k){ var g = G[k], on = !!OPN[k];
       return '<div class="tg" data-tg="'+esc(k)+'" style="cursor:pointer;padding:10px 0;border-top:1px solid var(--line)"><div style="display:flex;justify-content:space-between;gap:10px"><b>'+(on?'▾ ':'▸ ')+esc(k)+'</b><b>'+money(g.s)+'</b></div><small style="color:var(--muted)">'+g.n+' validée(s)'+(g.rows.length-g.n?' · '+(g.rows.length-g.n)+' rejetée(s)':'')+'</small></div>'
-        + (on ? '<div style="padding:0 0 8px 14px">'+g.rows.map(function(x){ return '<div class="line"><dt>'+esc(x.nom)+'<br><small>'+esc(x.mat)+' · rang '+esc(x.rang)+' · '+esc(x.age)+' ans · '+esc(x.sx)+'</small></dt><dd>'+x.cout+' $'+(x.ok===false?'<br><small style="color:var(--ko)">Rejetée — '+esc(x.reason||"")+'</small>':'')+'</dd></div>' }).join("")+'</div>' : '') }).join("") + '<div class="sec" style="margin-top:14px">Détail de toutes les prestations</div>';
+        + (on ? '<div style="padding:0 0 8px 14px">'+g.rows.map(function(x){ return '<div class="line"><dt>'+esc(x.nom)+'<br><small>'+esc(x.mat)+' · rang '+esc(x.rang)+' · '+esc(x.age)+' ans · '+esc(x.sx)+(x.dt ? ' · '+esc(lineDate(x)) : '')+'</small></dt><dd>'+x.cout+' $'+(x.ok===false?'<br><small style="color:var(--ko)">Rejetée — '+esc(x.reason||"")+'</small>':'')+'</dd></div>' }).join("")+'</div>' : '') }).join("") + '<div class="sec" style="margin-top:14px">Détail de toutes les prestations</div>';
   var h = '<button class="back" id="bk">← Retour</button>'+(prov ? finalReportHtml(f,m,iv) : '')+'<div class="card"><p class="sub" style="text-align:center;margin:0 0 8px"><b>Facture mensuelle — '+esc(f)+'</b><br>'+esc(monthLabel(m))+'</p>'
     + (edit?'<p class="sub" style="margin:0 0 8px">'+(stageP?'Facture clôturée par le délégué. Décochez les prestations à rejeter au niveau provincial : une raison vous sera demandée, puis saisissez votre observation.':'Toutes les prestations sont cochées (valides). Décochez celles à retirer de cette facture : une raison vous sera demandée.')+'</p>':'')
     + acc + '<div class="tw"><table class="mini"><thead><tr>'+cols+'</tr></thead><tbody>'+body+'</tbody></table></div>'
@@ -3529,6 +3529,8 @@ function repHtml(L){
   return '<div class="note warn" style="margin-top:10px"><b>Prestations rattachées à ce mois ('+R.length+')</b> — dont la date appartient à un autre mois<br>'
     + R.map(function(x){ return '<small>'+esc(fmtD(new Date(x.d+"T12:00:00").getTime()))+' · '+esc(x.nom)+' · '+esc(x.pr)+' · '+esc(x.cout)+' $ · '+esc(x.why||"")+'</small>' }).join("<br>")+'</div>';
 }
+/* date de la prestation d'une ligne de facture (jj/mm/aaaa) ; « — » pour une ancienne ligne sans date */
+function lineDate(x){ var d = x && x.dt; return d && /^\d{4}-\d{2}-\d{2}$/.test(d) ? d.slice(8,10)+"/"+d.slice(5,7)+"/"+d.slice(0,4) : "—" }
 function invLine(p){
   var r = patientRow(p), a = r ? ageOf(r[3], new Date(p.at||Date.now())) : null;
   var o = {nom:p.nom+" "+p.prenom, mat:p.mat, rang:p.rang, age:a===null?"—":String(a), sx:r?(r[4]||"—"):"—", pr:p.type, cout:+p.cout||0, dt:dayKey(p.at||0)};
