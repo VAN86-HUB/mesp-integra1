@@ -4601,14 +4601,34 @@ setInterval(idleCheck, 1000);
 document.addEventListener("visibilitychange", function(){ if(!document.hidden) idleCheck() });
 
 /* --- facturation clôturée : top 10 FOSA / patients --- */
-var BIL = {k:"month", o:-1, v:"", cm:""};
-var BILK = [["month","Mois"],["quarter","Trimestre"],["year","Année"]];
+var BIL = {k:"month", o:-1, v:"", cm:"", g:"all"};
+var BILK = [["month","Mois"],["quarter","Trimestre"],["semester","Semestre"],["year","Année"]], BILG = [["all","Toutes les villes"],["city","Par ville"],["fosa","Par FOSA"]];
 function bilBounds(){
   var d = new Date(), y = d.getFullYear(), mo = d.getMonth(), a, b, lab;
   if(BIL.k==="month"){ var i = y*12+mo+BIL.o; a = i; b = i; lab = monthLabel(Math.floor(i/12)+"-"+String(i%12+1).padStart(2,"0")) }
   else if(BIL.k==="quarter"){ var q = y*4+Math.floor(mo/3)+BIL.o, qy = Math.floor(q/4), qn = q%4; a = qy*12+qn*3; b = a+2; lab = "T"+(qn+1)+" "+qy+" ("+["janv.–mars","avr.–juin","juil.–sept.","oct.–déc."][qn]+")" }
+  else if(BIL.k==="semester"){ var h = y*2+Math.floor(mo/6)+BIL.o, hy = Math.floor(h/2), hn = h%2; a = hy*12+hn*6; b = a+5; lab = "S"+(hn+1)+" "+hy+" ("+(hn ? "juil.–déc." : "janv.–juin")+")" }
   else { var yy = y+BIL.o; a = yy*12; b = yy*12+11; lab = "Année "+yy }
   return {a:a, b:b, lab:lab};
+}
+/* tranches d'âge des patients (prestations validées des factures clôturées par la province), groupées selon BIL.g */
+function bilAgeGroups(){
+  var bd = bilBounds(), G = {}, seen = {};
+  Object.keys(INV).forEach(function(k){
+    var iv = INV[k]; if(!iv || !iv.prov || !iv.month) return;
+    var p = iv.month.split("-"), mi = +p[0]*12+(+p[1]-1); if(mi<bd.a || mi>bd.b) return;
+    var c = iv.lvl || levelOfFosa(iv.fosa) || "—"; if(BIL.v && c!==BIL.v) return;
+    var key = BIL.g==="fosa" ? iv.fosa : (BIL.g==="city" ? c : "all");
+    var o = G[key] || (G[key] = {k:key, c:BIL.g==="fosa" ? c : "", g:gridNew(), n:0});
+    (iv.prov.lines||[]).forEach(function(x){ if(x.ok===false) return; var u = key+"|"+x.mat+"|"+x.rang; if(seen[u]) return; seen[u] = 1; o.n++;
+      var a = parseInt(x.age,10); gridAdd(o.g, isNaN(a) ? null : a, x.sx, x.rang) });
+  });
+  return Object.keys(G).sort(function(a,b){ return G[b].n-G[a].n || String(a).localeCompare(String(b)) }).map(function(k){ return G[k] });
+}
+function bilAgeHtml(){
+  var L = bilAgeGroups(); if(!L.length) return "";
+  return L.map(function(o){ var t = BIL.g==="all" ? (BIL.v ? 'Ville '+esc(BIL.v) : 'Toutes les villes') : esc(o.k)+(o.c ? ' <small style="color:var(--muted)">· '+esc(o.c)+'</small>' : '');
+    return '<div class="card"><div class="sec">Tranches d\'âge — '+t+' ('+fmt(o.n)+' patient'+(o.n>1?'s':'')+')</div>'+gridHtml(o.g)+'</div>' }).join("");
 }
 function bilData(){
   var bd = bilBounds(), fos = {}, pat = {}, nInv = 0, tot = 0, nPres = 0, rej = 0;
@@ -4708,6 +4728,7 @@ function renderBil(){
   var D = bilData(), kp = function(v,l){ return '<div class="kpi"><b>'+v+'</b><span>'+l+'</span></div>' };
   var bar = '<div class="card"><div class="tabs" style="margin:0 0 8px">'+BILK.map(function(x){ return '<button data-bk="'+x[0]+'"'+(BIL.k===x[0]?' class="on"':'')+'>'+x[1]+'</button>' }).join("")+'</div>'
     + '<div style="display:flex;align-items:center;justify-content:space-between;gap:10px"><button class="back" data-bn="-1" style="padding:6px 12px">‹</button><b style="text-align:center">'+esc(D.bd.lab)+'</b><button class="back" data-bn="1" style="padding:6px 12px"'+(BIL.o>=0?' disabled':'')+'>›</button></div>'
+    + '<div class="tabs" style="margin:8px 0">'+BILG.map(function(x){ return '<button data-bg="'+x[0]+'"'+(BIL.g===x[0]?' class="on"':'')+'>'+x[1]+'</button>' }).join("")+'</div>'
     + '<label class="lbl" for="bv">Ville</label><select id="bv"><option value="">Toutes les villes</option>'+levels().map(function(L){ return '<option value="'+esc(L)+'"'+(BIL.v===L?' selected':'')+'>'+esc(L)+'</option>' }).join("")+'</select>'
     + '<p class="sub" style="margin:8px 0 0">Uniquement les factures <b>clôturées par la province</b> ; les prestations rejetées ne sont pas comptées.</p></div>';
   var pc = D.nAll ? Math.round(D.nInv/D.nAll*100) : 0;
@@ -4719,6 +4740,7 @@ function renderBil(){
   if(!D.nInv) h += '<div class="card"><p class="sub" style="margin:0">Aucune facture clôturée sur cette période'+(BIL.v?' pour la ville '+esc(BIL.v):'')+'.</p></div>';
   else {
     h += '<div class="enc" style="margin:0 0 10px"><button data-a="bilxls" class="goodb">Exporter les classements en Excel (.xlsx)</button></div>';
+    h += bilAgeHtml();
     h += '<div class="card"><div class="sec">Top 10 — FOSA les plus coûteuses</div>'+barRows(D.topF.map(function(x,i){ return [(i+1)+'. '+x.k, x.s, money(x.s)+' · '+x.n+' prest.'] }))+'</div>';
     h += '<div class="card"><div class="sec">Top 10 — patients les plus consommateurs</div>'+barRows(D.topP.map(function(x,i){ return [(i+1)+'. '+x.nom+' ('+x.mat+' · rang '+x.rang+')', x.s, money(x.s)+' · '+x.n+' prest.'+(Object.keys(x.f).length>1?' · '+Object.keys(x.f).length+' FOSA':'')] }))+'</div>';
   }
@@ -4747,7 +4769,8 @@ $("v2d").addEventListener("click", function(e){
   var rw = t.closest && t.closest(".nrow");
   if(rw && rw.dataset.cm){ BIL.cm = rw.dataset.cm; renderBil(); window.scrollTo(0,0); return }
   if(rw && rw.dataset.inv){ var xv = rw.dataset.inv.split("|"); showInvoice(xv[0], xv[1], function(){ go("v2"); sub(4) }); return }
-  if(t.dataset && t.dataset.bk){ BIL.k = t.dataset.bk; BIL.o = BIL.k==="month" ? -1 : (BIL.k==="quarter" ? -1 : 0); renderBil() }
+  if(t.dataset && t.dataset.bg){ BIL.g = t.dataset.bg; renderBil() }
+  else if(t.dataset && t.dataset.bk){ BIL.k = t.dataset.bk; BIL.o = BIL.k==="year" ? 0 : -1; renderBil() }
   else if(t.dataset && t.dataset.bn){ BIL.o = Math.min(0, BIL.o+(+t.dataset.bn)); renderBil() }
 });
 
