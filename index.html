@@ -3477,7 +3477,17 @@ function finalReportHtml(f, m, iv){
 function invLinesOf(f, m, iv){
   if(iv && iv.lines) return iv.lines;
   var d = idraft(f,m);
-  return invRows(f,m).map(function(p){ var x = invLine(p), q = d[p.id] || {ok:true}; x.id = p.id; x.ok = q.ok!==false; if(!x.ok){ x.reason = q.reason||""; x.detail = q.detail||"" } return x });
+  var out = [];
+  invRows(f,m).forEach(function(p){ var x = invLine(p), q = d[p.id] || {ok:true}; x.id = p.id; x.ok = q.ok!==false; if(!x.ok){ x.reason = q.reason||""; x.detail = q.detail||"" }
+    var its = p.items;
+    if(x.ok && its && its.length>1){ x.mi = true;
+      var rm = (q.rm||[]).filter(function(i){ return i>=0 && i<its.length }), kp = [], gn = [];
+      its.forEach(function(t,i){ (rm.indexOf(i)<0 ? kp : gn).push([t.n, t.q, t.c]) });
+      if(gn.length && kp.length){ x.pr = multiLabel(kp); x.cout = multiTotal(kp); x.rm = rm; out.push(x);
+        var y = Object.assign({}, x, {id:p.id+"#r", ok:false, part:true, pr:multiLabel(gn), cout:multiTotal(gn), reason:"Prestation retirée par le délégué", detail:""}); delete y.rm; delete y.mi; out.push(y); return }
+    }
+    out.push(x) });
+  return out;
 }
 function showInvoice(f, m, bk, mode, soft, proc){
   var iv = INV[invId(f,m)], prov = iv && iv.prov, stageP = invProvStage(iv, f);
@@ -3490,11 +3500,15 @@ function showInvoice(f, m, bk, mode, soft, proc){
   var nok = L.filter(function(x){return x.ok!==false}).length, nrj = L.length-nok;
   var VIEW0 = VIEW; VIEW = {t:"invoice", f:f, m:m, mode:mode, stage:stageP?"P":"D", proc:proc}; BACK = bk;
   var cols = (edit?'<th>Valide</th>':'')+'<th>Nom</th><th>Matricule</th><th>Rang</th><th>Âge</th><th>Sexe</th><th>Date</th><th>Prestation</th><th>Coût</th>'+(edit?'':'<th>Statut</th>'), nc = 9;
+  var MXO = (VIEW0 && VIEW0.t==="invoice" && VIEW0.f===f && VIEW0.m===m && VIEW0.mx) || {}; VIEW.mx = MXO;
   var body = L.map(function(x){
     var rej = x.ok===false, st = rej ? '<span class="tag rej">Rejetée'+(x.src==="prov"?' (province)':(x.src==="del"?' (délégué)':''))+' — '+esc(x.reason||"?")+'</span>' : '<span class="tag good">Validée</span>';
-    var tr = '<tr'+(rej?' style="opacity:.8"':'')+'>'+(edit?(x.src==="del"?'<td><small>—</small></td>':'<td><input type="checkbox" class="ckc" data-ck="'+esc(x.id)+'"'+(rej?'':' checked')+' aria-label="Prestation valide"></td>'):'')
-      +'<td>'+esc(x.nom)+(edit && x.src==="del" ? '<br><small style="color:var(--ko)">Rejetée par le délégué — '+esc(x.reason||"")+'</small>' : '')+'</td><td>'+esc(x.mat)+'</td><td>'+esc(x.rang)+'</td><td>'+esc(x.age)+'</td><td>'+esc(x.sx)+'</td><td>'+esc(lineDate(x))+'</td><td>'+esc(x.pr)+'</td><td>'+x.cout+' $</td>'+(edit?'':'<td>'+st+(rej&&x.detail?'<br><small>'+esc(x.detail)+'</small>':'')+'</td>')+'</tr>';
-    if(edit && rej && x.src!=="del") tr += '<tr><td colspan="'+nc+'" style="text-align:left"><div class="rsn"><b>Raison du rejet</b><select data-rs="'+esc(x.id)+'"><option value="">— Choisir la raison —</option>'+REASONS.map(function(r){return '<option'+(x.reason===r?' selected':'')+'>'+esc(r)+'</option>'}).join("")+'</select>'
+    var tr = '<tr'+(rej?' style="opacity:.8"':'')+'>'+(edit?((x.src==="del"||x.part)?'<td><small>—</small></td>':'<td><input type="checkbox" class="ckc" data-ck="'+esc(x.id)+'"'+(rej?'':' checked')+' aria-label="Prestation valide"></td>'):'')
+      +'<td>'+esc(x.nom)+(edit && (x.src==="del"||x.part) ? '<br><small style="color:var(--ko)">Rejetée par le délégué — '+esc(x.reason||"")+'</small>' : '')+'</td><td>'+esc(x.mat)+'</td><td>'+esc(x.rang)+'</td><td>'+esc(x.age)+'</td><td>'+esc(x.sx)+'</td><td>'+esc(lineDate(x))+'</td><td>'+esc(x.pr)+(edit && !stageP && x.mi ? '<br><button type="button" class="mxb" data-mx="'+esc(x.id)+'" style="padding:4px 8px;font-size:12px;margin-top:4px">'+(MXO[x.id]?'▾':'▸')+' Modifier les prestations</button>' : '')+'</td><td>'+x.cout+' $</td>'+(edit?'':'<td>'+st+(rej&&x.detail?'<br><small>'+esc(x.detail)+'</small>':'')+'</td>')+'</tr>';
+    if(edit && x.mi && !stageP && MXO[x.id]){ var po = PREST[x.id], rmx = x.rm || [];
+      tr += '<tr><td colspan="'+nc+'" style="text-align:left"><div class="rsn"><b>Prestations de ce bloc</b><small style="display:block;margin:2px 0 6px">Décochez une prestation pour la retirer : le coût est recalculé et la prestation retirée est enregistrée comme rejet.</small>'
+        + ((po && po.items) || []).map(function(t,i){ return '<label style="display:flex;gap:10px;align-items:center;padding:4px 0"><input type="checkbox" data-it="'+esc(x.id)+'" data-ix="'+i+'"'+(rmx.indexOf(i)<0?' checked':'')+' style="width:20px;height:20px"> <span style="flex:1">'+esc(t.n)+(t.q>1?' ×'+t.q:'')+'</span><b>'+(Math.round(t.q*t.c*100)/100)+' $</b></label>' }).join("")+'</div></td></tr>' }
+    if(edit && rej && x.src!=="del" && !x.part) tr += '<tr><td colspan="'+nc+'" style="text-align:left"><div class="rsn"><b>Raison du rejet</b><select data-rs="'+esc(x.id)+'"><option value="">— Choisir la raison —</option>'+REASONS.map(function(r){return '<option'+(x.reason===r?' selected':'')+'>'+esc(r)+'</option>'}).join("")+'</select>'
       +(x.reason==="Autre"?'<input type="text" data-rd="'+esc(x.id)+'" placeholder="Précisez le détail…" value="'+esc(x.detail||"")+'">':'')+'</div></td></tr>';
     return tr;
   }).join("");
@@ -3527,6 +3541,8 @@ function showInvoice(f, m, bk, mode, soft, proc){
   if(soft) show("v3"); else go("v3");
 }
 $("v3").addEventListener("click", function(e){
+  var m0 = e.target.closest && e.target.closest("[data-mx]");
+  if(m0 && VIEW && VIEW.t==="invoice" && VIEW.mode==="edit"){ var o0 = VIEW.mx || (VIEW.mx = {}); o0[m0.dataset.mx] = !o0[m0.dataset.mx]; invSoft(); return }
   var t = e.target.closest && e.target.closest("[data-tg]"); if(!t || !VIEW || VIEW.t!=="invoice") return;
   var k = t.dataset.tg, o = VIEW.open || (VIEW.open = {}); o[k] = !o[k];
   var y = window.scrollY; showInvoice(VIEW.f, VIEW.m, BACK, VIEW.mode, true); window.scrollTo(0, y);
@@ -3535,7 +3551,12 @@ function invSoft(){ var y = window.scrollY; showInvoice(VIEW.f, VIEW.m, BACK, "e
 $("v3").addEventListener("change", function(e){
   var t = e.target; if(!VIEW || VIEW.t!=="invoice" || VIEW.mode!=="edit" || !t.dataset) return;
   var d = VIEW.stage==="P" ? pdraft(VIEW.f, VIEW.m).l : idraft(VIEW.f, VIEW.m);
-  if(t.dataset.ck){ d[t.dataset.ck] = t.checked ? {ok:true} : {ok:false, reason:"", detail:""}; invSoft() }
+  if(t.dataset.it){
+    var id = t.dataset.it, ix = +t.dataset.ix, po = PREST[id], n0 = po && po.items ? po.items.length : 0, q0 = d[id] || (d[id] = {ok:true}), rm = (q0.rm||[]).slice();
+    if(!t.checked && rm.indexOf(ix)<0) rm.push(ix); if(t.checked) rm = rm.filter(function(i){ return i!==ix });
+    if(rm.length>=n0){ toast("Au moins une prestation doit rester : sinon décochez tout le bloc"); invSoft(); return }
+    q0.ok = true; q0.rm = rm.sort(function(a,b){return a-b}); invSoft() }
+  else if(t.dataset.ck){ d[t.dataset.ck] = t.checked ? {ok:true} : {ok:false, reason:"", detail:""}; invSoft() }
   else if(t.dataset.rs){ var q = d[t.dataset.rs] || (d[t.dataset.rs] = {ok:false}); q.ok = false; q.reason = t.value; if(t.value!=="Autre") q.detail = ""; invSoft(); if(t.value==="Autre"){ var i = document.querySelector('[data-rd="'+t.dataset.rs+'"]'); if(i) i.focus() } }
 });
 $("v3").addEventListener("input", function(e){
