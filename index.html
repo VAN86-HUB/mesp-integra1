@@ -391,6 +391,13 @@ $("out").addEventListener("click", function(e){ var tr = e.target.closest("tr[da
 
 /* ---------- blocage de carte ---------- */
 var BLK = {}, BLKF = null, BLKR1 = ["Fausse identité (Fraude)","Une carte de plus","Décédé(e)","Autre"], BLKR2 = ["Pac + de 18 ans","Pac enceinte","Fausse identité (Fraude)","Une carte de plus","Décédé(e)","Autre"];
+/* « Une carte de plus » : seule la carte désignée est bloquée, le patient garde ses droits grâce à son autre carte (collection « cartes », rien ne s'efface) */
+var CARDS = {}, CARDL = ["Carte d'origine","Duplicata 1","Duplicata 2","Duplicata 3","Duplicata 4","Duplicata 5"];
+function cardsNote(k){
+  var c = CARDS[k], it = c && Array.isArray(c.items) ? c.items : []; if(!it.length) return "";
+  return '<div class="note warn"><b>🪪 Carte'+(it.length>1?'s':'')+' bloquée'+(it.length>1?'s':'')+'</b> — le patient conserve ses droits aux soins grâce à son autre carte.'
+    + it.map(function(x){ return '<div style="margin-top:4px">'+esc(x.c)+' : bloquée le '+esc(fmtDT(x.at||0))+' par '+esc(agName(x.by, x.byN))+(x.role==="assistant"?" (assistant)":" (délégué)")+(x.fosa?' — '+esc(x.fosa):'')+(x.obs?' · '+esc(x.obs):'')+'</div>' }).join("")+'</div>';
+}
 function blkReasons(rang){ return NOENC.indexOf(rang)>=0 ? BLKR1 : BLKR2 }
 function rsn(o){
   if(!o || !o.reason) return "—";
@@ -455,9 +462,10 @@ function blkFormHtml(k, rang){
   return '<div class="card" id="blkform" style="border:2px solid var(--ko)"><b style="color:var(--ko)">Bloquer la carte</b>'
     + '<label class="lbl" for="bl_r">Raison du blocage</label><select id="bl_r"><option value="">— Choisir une raison —</option>'+blkReasons(rang).map(function(x){ return '<option value="'+esc(x)+'"'+(F.r===x?' selected':'')+'>'+esc(x)+'</option>' }).join("")+'</select>'
     + '<div id="bl_xw"'+(F.r==="Décédé(e)" ? '' : ' class="hide"')+'><label class="lbl" for="bl_dd">Date du décès (obligatoire)</label><input id="bl_dd" type="date" max="'+dayKey(Date.now())+'" value="'+esc(F.dd||"")+'"><label class="lbl" for="bl_s">Source d\'information (obligatoire)</label><input id="bl_s" type="text" autocomplete="off" placeholder="Acte de décès, famille, état civil, structure…" value="'+esc(F.s||"")+'">'+(rang==="00" ? '<p class="sub" style="margin:8px 0 0">Titulaire (rang 00) : sans rang 02 dans la famille, le dossier passe en « Maintien de droit » pendant 6 mois, puis « Hors maintien de droit ».</p>' : '')+'</div>'
+    + '<div id="bl_cw"'+(F.r==="Une carte de plus" ? '' : ' class="hide"')+'><label class="lbl" for="bl_c">Carte à bloquer (obligatoire)</label><select id="bl_c"><option value="">— Choisir la carte —</option>'+CARDL.map(function(x){ var dj = ((CARDS[F.k]||{}).items||[]).some(function(y){ return y.c===x }); return '<option value="'+esc(x)+'"'+(F.c===x?' selected':'')+(dj?' disabled':'')+'>'+esc(x)+(dj?' (déjà bloquée)':'')+'</option>' }).join("")+'</select><div class="note wait" style="margin-top:8px">Seule la carte choisie sera bloquée. Le patient conserve son droit aux soins grâce à son autre carte ; le blocage est simplement noté dans son profil.</div></div>'
     + '<div id="bl_dw"'+(F.r==="Autre" ? '' : ' class="hide"')+'><label class="lbl" for="bl_d">Précisez la raison (obligatoire)</label><textarea id="bl_d" rows="2" placeholder="Saisissez la raison…">'+esc(F.d)+'</textarea></div>'
     + '<label class="lbl" for="bl_o">Observation</label><textarea id="bl_o" rows="2" placeholder="Observation (facultative)…">'+esc(F.o)+'</textarea>'
-    + '<div class="note warn" style="margin-top:10px">Une fois la carte bloquée, le patient n\'a plus accès aux soins, sauf traitement en cours (jusqu\'à la fin de l\'épisode) ou autorisation spéciale accordée par l\'assistant.</div>'
+    + '<div class="note warn'+(F.r==="Une carte de plus" ? ' hide' : '')+'" id="bl_wn" style="margin-top:10px">Une fois la carte bloquée, le patient n\'a plus accès aux soins, sauf traitement en cours (jusqu\'à la fin de l\'épisode) ou autorisation spéciale accordée par l\'assistant.</div>'
     + '<div class="enc"><button class="spec" data-a="blkok">Confirmer le blocage</button><button data-a="blkno" style="background:var(--card);color:var(--text);border:1px solid var(--line)">Annuler</button></div></div>';
 }
 async function doBlock(i){
@@ -472,6 +480,17 @@ async function doBlock(i){
     if(!String(F.s||"").trim()){ toast("Saisissez la source d'information"); if($("bl_s")) $("bl_s").focus(); return }
   }
   if(!AG || !(ROLE==="delegue" || ROLE==="assistant")){ toast("Action non autorisée"); return }
+  if(F.r==="Une carte de plus"){
+    if(CARDL.indexOf(F.c)<0){ toast("Choisissez la carte à bloquer"); var e3 = $("bl_c"); if(e3) e3.focus(); return }
+    var oc = CARDS[k], oit = oc && Array.isArray(oc.items) ? oc.items : [];
+    if(oit.some(function(y){ return y.c===F.c })){ toast("Cette carte est déjà signalée comme bloquée"); return }
+    var nowc = Date.now(), item = {c:F.c, at:nowc, by:ME.id, byN:AG.n, role:ROLE, lvl:AG.v, fosa:FOSA||"", obs:String(F.o||"").trim()};
+    try{
+      if(oc) await DBX.doc("cartes/"+k).update({items:oit.concat([item])}); else await DBX.doc("cartes/"+k).set({pk:k, mat:CUR.mat, rang:r[0], nom:r[1], prenom:r[2], lvl:AG.v, items:[item]});
+      CARDS[k] = Object.assign({}, oc||{pk:k, mat:CUR.mat, rang:r[0], nom:r[1], prenom:r[2], lvl:AG.v}, {items:oit.concat([item])}); BLKF = null; toast("« "+F.c+" » bloquée : le patient garde ses droits"); drawDetail(i) }
+    catch(e){ toast("Blocage impossible : "+(e.message||e.code||e)) }
+    return;
+  }
   var now = Date.now(), prev = BLK[k], det = F.r==="Autre" ? String(F.d).trim() : "", obs = String(F.o||"").trim();
   var dec = F.r==="Décédé(e)", dod = dec ? F.dd : "", src = dec ? String(F.s).trim() : "";
   var h02 = false; CUR.rows.forEach(function(r2){ if(r2[0]==="02" && !isDead(CUR.mat, r2)) h02 = true });
@@ -484,11 +503,11 @@ async function doBlock(i){
 $("v3").addEventListener("click", function(e){
   var a = e.target.dataset && e.target.dataset.a; if(!a || !VIEW || VIEW.t!=="detail") return;
   var r = CUR && CUR.rows[VIEW.i]; if(!r) return;
-  if(a==="blk"){ BLKF = {k:rkey(CUR.mat,r), r:"", d:"", o:"", dd:"", s:""}; drawDetail(VIEW.i); var x = $("bl_r"); if(x) x.focus() }
+  if(a==="blk"){ BLKF = {k:rkey(CUR.mat,r), r:"", d:"", o:"", dd:"", s:"", c:""}; drawDetail(VIEW.i); var x = $("bl_r"); if(x) x.focus() }
   else if(a==="blkno"){ BLKF = null; drawDetail(VIEW.i) }
   else if(a==="blkok") doBlock(VIEW.i);
 });
-$("v3").addEventListener("change", function(e){ if(e.target.id==="bl_r" && BLKF){ BLKF.r = e.target.value; $("bl_dw").classList.toggle("hide", BLKF.r!=="Autre"); $("bl_xw").classList.toggle("hide", BLKF.r!=="Décédé(e)") } else if(e.target.id==="bl_dd" && BLKF) BLKF.dd = e.target.value });
+$("v3").addEventListener("change", function(e){ if(e.target.id==="bl_r" && BLKF){ BLKF.r = e.target.value; $("bl_dw").classList.toggle("hide", BLKF.r!=="Autre"); $("bl_xw").classList.toggle("hide", BLKF.r!=="Décédé(e)"); $("bl_cw").classList.toggle("hide", BLKF.r!=="Une carte de plus"); $("bl_wn").classList.toggle("hide", BLKF.r==="Une carte de plus") } else if(e.target.id==="bl_c" && BLKF) BLKF.c = e.target.value; else if(e.target.id==="bl_dd" && BLKF) BLKF.dd = e.target.value });
 $("v3").addEventListener("input", function(e){ if(!BLKF) return; if(e.target.id==="bl_d") BLKF.d = e.target.value; else if(e.target.id==="bl_o") BLKF.o = e.target.value; else if(e.target.id==="bl_s") BLKF.s = e.target.value; else if(e.target.id==="bl_dd") BLKF.dd = e.target.value });
 
 /* ---------- rapport des cartes bloquées ---------- */
@@ -990,7 +1009,7 @@ function drawDetail(i){
   VIEW = {t:"detail", i:i};
   BACK = function(){ if(FROM==="notif"){ go("v6"); renderNotif() } else go("v1") };
   var bst = blkState(CUR.mat, r);
-  var h = '<button class="back" id="bk">← Retour</button><div class="card">'+head(r,age)+info(CUR.mat,r,age)+encLine(k)+(bst && bst.b ? blkBanner(bst) : blkLiftNote(k))+famBanner(famInfo(CUR.mat, CUR.rows), bst)+(!(bst && bst.b) && (ROLE==="delegue" || ROLE==="assistant") && DBX ? blkFormHtml(k, r[0]) : "")+(vOnly() ? "" : ctxBanners(r));
+  var h = '<button class="back" id="bk">← Retour</button><div class="card">'+head(r,age)+info(CUR.mat,r,age)+encLine(k)+cardsNote(k)+(bst && bst.b ? blkBanner(bst) : blkLiftNote(k))+famBanner(famInfo(CUR.mat, CUR.rows), bst)+(!(bst && bst.b) && (ROLE==="delegue" || ROLE==="assistant") && DBX ? blkFormHtml(k, r[0]) : "")+(vOnly() ? "" : ctxBanners(r));
   if(ROLE==="delegue" && bst){
     if(bst.spec) h += '<div class="note good">✔ Autorisation spéciale accordée'+(specAuth(k).ref?' (réf. '+esc(specAuth(k).ref)+')':'')+' — encodage possible jusqu\'au '+esc(fmtD(specEnd(specAuth(k))))+'.</div>' + encHtml();
     else if(bst.ep) h += encHtml();
@@ -1217,6 +1236,7 @@ async function initShared(){
       PREST = {}; snap.docs.forEach(function(d){ PREST[d.id] = d.data() });
       refreshAll();
     }, function(){});
+    DBX.collection("cartes").onSnapshot(function(snap){ CARDS = {}; snap.docs.forEach(function(d){ CARDS[d.id] = d.data() }); refreshAll() }, function(){});
     DBX.collection("blocks").onSnapshot(function(snap){ BLK = {}; snap.docs.forEach(function(d){ BLK[d.id] = d.data() }); markLocks(); refreshAll() }, function(){});
     var firstT = true;
     DBX.collection("transfers").onSnapshot(function(snap){
@@ -4327,7 +4347,7 @@ async function pageAll(table, cols, apply){
 async function backupAll(){
   var msg = $("bkmsg"), b = $("bkjson"); b.disabled = true;
   try{
-    var colls = ["agents","provinces","fosas","assign","prestations","transfers","trfdec","requests","blocks","invoices","reports"], out = {application:"MESP Integra", exporte_le:new Date().toISOString(), exporte_par:AG.c, collections:{}}, tot = 0;
+    var colls = ["agents","provinces","fosas","assign","prestations","transfers","trfdec","requests","blocks","cartes","invoices","reports"], out = {application:"MESP Integra", exporte_le:new Date().toISOString(), exporte_par:AG.c, collections:{}}, tot = 0;
     for(var i = 0; i<colls.length; i++){
       msg.textContent = "Lecture : "+colls[i]+"…";
       var rows = await pageAll("docs", "id,data", function(q){ return q.eq("coll", colls[i]).order("id") }), o = {};
