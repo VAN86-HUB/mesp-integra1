@@ -119,6 +119,8 @@ button:disabled.hist{opacity:.45;cursor:not-allowed}
 .col small{color:var(--muted)}
 table.mini th,table.mini td{padding:6px 8px;text-align:right}table.mini th:first-child,table.mini td:first-child{text-align:left}
 table.mini th[colspan],table.mini th[rowspan]{text-align:center}
+.twg table.mini{width:100%;font-size:13px}.twg table.mini th,.twg table.mini td{padding:6px 5px}
+@media (min-width:900px){.tw.twg{overflow:visible}.twg table.mini{font-size:14px;table-layout:auto}.twg table.mini th,.twg table.mini td{padding:8px 12px}}
 input,textarea,select{scroll-margin-top:22vh!important}
 .tabs{flex-wrap:wrap}.tabs button{flex:1 1 30%}
 .aboutb{background:none;border:0;color:var(--muted);font-size:.82rem;text-decoration:underline;cursor:pointer;padding:6px 10px;width:auto}
@@ -1048,7 +1050,7 @@ function showDetail(i){ drawDetail(i); go("v3") }
 /* le délégué ne choisit pas le médecin : l'application envoie au premier médecin disponible de la ville */
 function medPick(city){
   var ms = medsOfCity(city); if(!ms.length) return {none:true};
-  var ok = ms.filter(function(a){ return !medStOut(a.c) }); if(!ok.length) return {c:"", n:""};
+  var ok = ms.filter(function(a){ return !medStOut(a.c) }); if(!ok.length) ok = ms.slice(); /* tous indisponibles : la demande va quand même au premier médecin de la liste (un autre médecin peut la reprendre) */
   var rk = {dispo:0, dispo_bg:1, occupe:2, absent:3, "":4};
   var load = function(c){ var n = 0; Object.keys(REQ).forEach(function(k){ var q = REQ[k]; if(q && q.status==="pending" && q.medTo===c) n++ }); Object.keys(TRF).forEach(function(k){ var q = TRF[k]; if(trfFlow(q) && !TRD[k] && q.medTo===c) n++ }); return n };
   ok.sort(function(a,b){ var ra = rk[medSt(a.c)], rb = rk[medSt(b.c)]; if(ra!==rb) return ra-rb; var la = load(a.c), lb = load(b.c); if(la!==lb) return la-lb; return a.n.localeCompare(b.n) });
@@ -1104,7 +1106,7 @@ async function showReview(k){
   if(q.status==="pending" && isApprover() && lvlOK(q) && reqDecOK(q))
     h += (kindOf(q)==="spec" ? '<label class="lbl" for="dur">Durée de validité de l\'autorisation</label><select id="dur"><option value="7">7 jours</option><option value="14">14 jours</option></select>' : '') + '<label class="lbl" for="dec">Détail de la décision</label><textarea id="dec" rows="3" placeholder="Saisissez le détail…"></textarea><div class="enc"><button class="goodb" data-a="ok">Autoriser</button><button class="spec" data-a="no">Refuser</button></div>';
   else h += (q.status==="pending" && ROLE==="assistant" ? '<div class="note wait">Information : cette demande est examinée par le médecin conseil. Vous ne pouvez pas la décider.</div>' : '')+'<div class="note '+stCls(q)+'">'+stText(q)+(q.status==="authorized"&&kindOf(q)==="spec"?' — valable '+(q.days||30)+' jours (jusqu\'au '+esc(fmtD(specEnd(q)))+')':'')+'</div>'+(q.decision?'<p class="sub" style="margin:8px 0 0">Détail : '+esc(q.decision)+'</p>':'');
-  if(ROLE==="medecin") xMark("rq_"+k); else if(ROLE==="assistant") xMark("ar_"+k);
+  if(ROLE==="medecin") xMark("rq_"+k); else if(ROLE==="assistant") xMark((q.status==="pending" ? "ar_" : "ad_")+k);
   $("v3").innerHTML = h + xReqBlock(k) + '</div>'; go("v3"); var d=$("dec"); if(d) setTimeout(function(){d.focus()},80);
 }
 async function decide(k, st){
@@ -1201,7 +1203,7 @@ function notify(c){
 /* « nouveau » = pas encore ouvert sur cet appareil ni sur les autres (collection xseen), limité aux 7 derniers jours */
 function xRecent(at){ return Date.now()-(at||0) < 7*864e5 }
 function nrow(k,q,mode,sub){
-  var dot = ((mode==="mine" && q.status!=="pending" && q.seen===false) || (mode==="rev" && ROLE==="assistant" && xRecent(q.at) && !xSeen("ar_"+k))) ? '<span class="dot"></span>' : '';
+  var dot = ((mode==="mine" && q.status!=="pending" && q.seen===false) || (mode==="rev" && ROLE==="assistant" && xRecent(q.at) && !xSeen((q.status==="pending" ? "ar_" : "ad_")+k))) ? '<span class="dot"></span>' : '';
   return '<div class="nrow" data-k="'+esc(k)+'" data-m="'+mode+'"><div>'+dot+'<b>'+esc(q.nom)+' '+esc(q.prenom)+'</b><small>'+esc(q.mat)+' · rang '+esc(q.rang)+' · '+esc(KLAB[kindOf(q)])+(q.fosa?' ('+esc(q.fosa)+')':'')+(sub?' · '+esc(sub):'')+'</small></div><span class="tag '+stCls(q)+'">'+(q.status==="authorized"?"Autorisé":(q.status==="refused"?"Non autorisé":"En attente"))+'</span></div>';
 }
 async function renderNotif(){
@@ -1212,7 +1214,10 @@ async function renderNotif(){
   if(ROLE==="assistant"){
     var pend = keys.filter(function(k){return REQ[k].status==="pending" && lvlOK(REQ[k])});
     h += '<div class="card"><b>Demandes en attente du médecin conseil — ville '+esc(AG.v)+' ('+pend.length+')</b><p class="sub" style="margin:6px 0 0">Information seulement : la décision appartient au médecin conseil.</p>'+(pend.length?'':'<p class="sub" style="margin:8px 0 0">Aucune demande en attente.</p>')
-      + pend.map(function(k){return nrow(k,REQ[k],"rev","par "+nm(REQ[k].by))}).join("")+'</div>' + trfEtatHtml() + trfAsstHtml();
+      + pend.map(function(k){return nrow(k,REQ[k],"rev","par "+nm(REQ[k].by))}).join("")+'</div>';
+    var dec = keys.filter(function(k){ var q = REQ[k]; return q.status!=="pending" && lvlOK(q) && xRecent(q.at) });
+    if(dec.length) h += '<div class="card"><b>Décisions du médecin conseil — 7 derniers jours ('+dec.length+')</b>' + dec.slice(0,40).map(function(k){return nrow(k,REQ[k],"rev","par "+nm(REQ[k].by))}).join("")+'</div>';
+    h += trfEtatHtml() + trfAsstHtml();
   }
   if(ROLE==="delegue"){
     h += remindHtml();
@@ -2552,7 +2557,7 @@ function gridHtml(g){
     var t1 = x[0]+x[2], t2 = x[1]+x[3];
     return '<tr><td style="text-align:left;white-space:nowrap">'+b+'</td><td>'+c(x[0])+'</td><td>'+c(x[1])+'</td><td>'+c(x[2])+'</td><td>'+c(x[3])+'</td><td>'+c(t1)+'</td><td>'+c(t2)+'</td><td><b>'+c(t1+t2)+'</b></td></tr>' }).join("");
   var u1 = T[0]+T[2], u2 = T[1]+T[3];
-  return '<div class="tw"><table class="mini"><thead><tr><th rowspan="2">Tranche d\'âge</th><th colspan="2">Homme</th><th colspan="2">Femme</th><th colspan="2">Total 1</th><th>Total 2</th></tr><tr><th>Titulaire</th><th>PAC</th><th>Titulaire</th><th>PAC</th><th>Titulaire</th><th>PAC</th><th>Tit. + PAC</th></tr></thead><tbody>'+rows
+  return '<div class="tw twg"><table class="mini"><thead><tr><th rowspan="2">Tranche d\'âge</th><th colspan="2">Homme</th><th colspan="2">Femme</th><th colspan="2">Total 1</th><th>Total 2</th></tr><tr><th>Titulaire</th><th>PAC</th><th>Titulaire</th><th>PAC</th><th>Titulaire</th><th>PAC</th><th>Tit. + PAC</th></tr></thead><tbody>'+rows
     + '<tr style="font-weight:800"><td style="text-align:left">Total</td><td>'+fmt(T[0])+'</td><td>'+fmt(T[1])+'</td><td>'+fmt(T[2])+'</td><td>'+fmt(T[3])+'</td><td>'+fmt(u1)+'</td><td>'+fmt(u2)+'</td><td>'+fmt(u1+u2)+'</td></tr></tbody></table></div>'
     + '<p class="sub" style="margin:6px 0 0">Titulaire = rang 00 · PAC = personnes à charge (autres rangs).'+(g.nsx?' Sexe non renseigné (non repris dans le tableau) : '+g.nsx+'.':'')+'</p>';
 }
@@ -4601,8 +4606,8 @@ setInterval(idleCheck, 1000);
 document.addEventListener("visibilitychange", function(){ if(!document.hidden) idleCheck() });
 
 /* --- facturation clôturée : top 10 FOSA / patients --- */
-var BIL = {k:"month", o:-1, v:"", cm:"", g:"all"};
-var BILK = [["month","Mois"],["quarter","Trimestre"],["semester","Semestre"],["year","Année"]], BILG = [["all","Toutes les villes"],["city","Par ville"],["fosa","Par FOSA"]];
+var BIL = {k:"month", o:-1, v:"", cm:""};
+var BILK = [["month","Mois"],["quarter","Trimestre"],["semester","Semestre"],["year","Année"]];
 function bilBounds(){
   var d = new Date(), y = d.getFullYear(), mo = d.getMonth(), a, b, lab;
   if(BIL.k==="month"){ var i = y*12+mo+BIL.o; a = i; b = i; lab = monthLabel(Math.floor(i/12)+"-"+String(i%12+1).padStart(2,"0")) }
@@ -4610,25 +4615,6 @@ function bilBounds(){
   else if(BIL.k==="semester"){ var h = y*2+Math.floor(mo/6)+BIL.o, hy = Math.floor(h/2), hn = h%2; a = hy*12+hn*6; b = a+5; lab = "S"+(hn+1)+" "+hy+" ("+(hn ? "juil.–déc." : "janv.–juin")+")" }
   else { var yy = y+BIL.o; a = yy*12; b = yy*12+11; lab = "Année "+yy }
   return {a:a, b:b, lab:lab};
-}
-/* tranches d'âge des patients (prestations validées des factures clôturées par la province), groupées selon BIL.g */
-function bilAgeGroups(){
-  var bd = bilBounds(), G = {}, seen = {};
-  Object.keys(INV).forEach(function(k){
-    var iv = INV[k]; if(!iv || !iv.prov || !iv.month) return;
-    var p = iv.month.split("-"), mi = +p[0]*12+(+p[1]-1); if(mi<bd.a || mi>bd.b) return;
-    var c = iv.lvl || levelOfFosa(iv.fosa) || "—"; if(BIL.v && c!==BIL.v) return;
-    var key = BIL.g==="fosa" ? iv.fosa : (BIL.g==="city" ? c : "all");
-    var o = G[key] || (G[key] = {k:key, c:BIL.g==="fosa" ? c : "", g:gridNew(), n:0});
-    (iv.prov.lines||[]).forEach(function(x){ if(x.ok===false) return; var u = key+"|"+x.mat+"|"+x.rang; if(seen[u]) return; seen[u] = 1; o.n++;
-      var a = parseInt(x.age,10); gridAdd(o.g, isNaN(a) ? null : a, x.sx, x.rang) });
-  });
-  return Object.keys(G).sort(function(a,b){ return G[b].n-G[a].n || String(a).localeCompare(String(b)) }).map(function(k){ return G[k] });
-}
-function bilAgeHtml(){
-  var L = bilAgeGroups(); if(!L.length) return "";
-  return L.map(function(o){ var t = BIL.g==="all" ? (BIL.v ? 'Ville '+esc(BIL.v) : 'Toutes les villes') : esc(o.k)+(o.c ? ' <small style="color:var(--muted)">· '+esc(o.c)+'</small>' : '');
-    return '<div class="card"><div class="sec">Tranches d\'âge — '+t+' ('+fmt(o.n)+' patient'+(o.n>1?'s':'')+')</div>'+gridHtml(o.g)+'</div>' }).join("");
 }
 function bilData(){
   var bd = bilBounds(), fos = {}, pat = {}, nInv = 0, tot = 0, nPres = 0, rej = 0;
@@ -4680,6 +4666,22 @@ function vgData(){
   list.forEach(function(r){ tot.dem += r.dem; tot.rd += r.rd; tot.rp += r.rp; tot.pay += r.pay; tot.n += r.n });
   return {bd:bd, list:list, tot:tot};
 }
+/* tranches d'âge des patients : mêmes factures clôturées, même période et mêmes regroupements que le tableau */
+function vgAgeHtml(){
+  var bd = vgBounds(), G = {}, seen = {}, d0 = new Date(), cur = d0.getFullYear()*12+d0.getMonth();
+  Object.keys(INV).forEach(function(k){
+    var iv = INV[k]; if(!iv || !iv.month) return;
+    var q = iv.month.split("-"), mi = +q[0]*12+(+q[1]-1); if(mi<bd.a || mi>bd.b || mi>=cur) return;
+    var c = iv.lvl || levelOfFosa(iv.fosa) || "—"; if(VG.v && c!==VG.v) return;
+    var key = VG.g==="fosa" ? iv.fosa : (VG.g==="city" ? c : "all");
+    var o = G[key] || (G[key] = {k:key, c:VG.g==="fosa" ? c : "", g:gridNew(), n:0});
+    (iv.prov ? iv.prov.lines : iv.lines || []).forEach(function(x){ if(!x || x.ok===false) return; var u = key+"|"+x.mat+"|"+x.rang; if(seen[u]) return; seen[u] = 1; o.n++;
+      var a = parseInt(x.age,10); gridAdd(o.g, isNaN(a) ? null : a, x.sx, x.rang) });
+  });
+  var L = Object.keys(G).sort(function(a,b){ return G[b].n-G[a].n || String(a).localeCompare(String(b)) }).map(function(k){ return G[k] });
+  return L.map(function(o){ var t = VG.g==="all" ? (VG.v ? 'Ville '+esc(VG.v) : 'Toutes les villes') : esc(o.k)+(o.c ? ' <small style="color:var(--muted)">· '+esc(o.c)+'</small>' : '');
+    return '<div class="card"><div class="sec">Tranches d\'âge — '+t+' ('+fmt(o.n)+' patient'+(o.n>1?'s':'')+')</div>'+gridHtml(o.g)+'</div>' }).join("");
+}
 function renderVG(){
   if(ROLE!=="national") return;
   var D = vgData(), c = function(v){ return '<td style="text-align:right;white-space:nowrap">'+money(v)+'</td>' };
@@ -4695,6 +4697,7 @@ function renderVG(){
     var body = D.list.map(function(r){ return '<tr><td>'+(VG.g==="all" ? (VG.v ? esc(VG.v) : 'Toutes les villes') : esc(r.k)+(r.c ? '<small style="display:block;color:var(--muted)">'+esc(r.c)+'</small>' : ''))+'</td>'+c(r.dem)+c(r.rd)+c(r.rp)+c(r.rd+r.rp)+c(r.pay)+'</tr>' }).join("");
     var foot = D.list.length>1 ? '<tr style="font-weight:700;border-top:2px solid var(--line)"><td>Total</td>'+c(D.tot.dem)+c(D.tot.rd)+c(D.tot.rp)+c(D.tot.rd+D.tot.rp)+c(D.tot.pay)+'</tr>' : '';
     h += '<div class="card" style="padding:8px"><div style="overflow-x:auto"><table style="width:100%;min-width:560px;border-collapse:collapse;font-size:13px">'+head+body+foot+'</table></div></div>';
+    h += vgAgeHtml();
   }
   $("v2k").innerHTML = h;
 }
@@ -4728,7 +4731,6 @@ function renderBil(){
   var D = bilData(), kp = function(v,l){ return '<div class="kpi"><b>'+v+'</b><span>'+l+'</span></div>' };
   var bar = '<div class="card"><div class="tabs" style="margin:0 0 8px">'+BILK.map(function(x){ return '<button data-bk="'+x[0]+'"'+(BIL.k===x[0]?' class="on"':'')+'>'+x[1]+'</button>' }).join("")+'</div>'
     + '<div style="display:flex;align-items:center;justify-content:space-between;gap:10px"><button class="back" data-bn="-1" style="padding:6px 12px">‹</button><b style="text-align:center">'+esc(D.bd.lab)+'</b><button class="back" data-bn="1" style="padding:6px 12px"'+(BIL.o>=0?' disabled':'')+'>›</button></div>'
-    + '<div class="tabs" style="margin:8px 0">'+BILG.map(function(x){ return '<button data-bg="'+x[0]+'"'+(BIL.g===x[0]?' class="on"':'')+'>'+x[1]+'</button>' }).join("")+'</div>'
     + '<label class="lbl" for="bv">Ville</label><select id="bv"><option value="">Toutes les villes</option>'+levels().map(function(L){ return '<option value="'+esc(L)+'"'+(BIL.v===L?' selected':'')+'>'+esc(L)+'</option>' }).join("")+'</select>'
     + '<p class="sub" style="margin:8px 0 0">Uniquement les factures <b>clôturées par la province</b> ; les prestations rejetées ne sont pas comptées.</p></div>';
   var pc = D.nAll ? Math.round(D.nInv/D.nAll*100) : 0;
@@ -4740,7 +4742,6 @@ function renderBil(){
   if(!D.nInv) h += '<div class="card"><p class="sub" style="margin:0">Aucune facture clôturée sur cette période'+(BIL.v?' pour la ville '+esc(BIL.v):'')+'.</p></div>';
   else {
     h += '<div class="enc" style="margin:0 0 10px"><button data-a="bilxls" class="goodb">Exporter les classements en Excel (.xlsx)</button></div>';
-    h += bilAgeHtml();
     h += '<div class="card"><div class="sec">Top 10 — FOSA les plus coûteuses</div>'+barRows(D.topF.map(function(x,i){ return [(i+1)+'. '+x.k, x.s, money(x.s)+' · '+x.n+' prest.'] }))+'</div>';
     h += '<div class="card"><div class="sec">Top 10 — patients les plus consommateurs</div>'+barRows(D.topP.map(function(x,i){ return [(i+1)+'. '+x.nom+' ('+x.mat+' · rang '+x.rang+')', x.s, money(x.s)+' · '+x.n+' prest.'+(Object.keys(x.f).length>1?' · '+Object.keys(x.f).length+' FOSA':'')] }))+'</div>';
   }
@@ -4769,8 +4770,7 @@ $("v2d").addEventListener("click", function(e){
   var rw = t.closest && t.closest(".nrow");
   if(rw && rw.dataset.cm){ BIL.cm = rw.dataset.cm; renderBil(); window.scrollTo(0,0); return }
   if(rw && rw.dataset.inv){ var xv = rw.dataset.inv.split("|"); showInvoice(xv[0], xv[1], function(){ go("v2"); sub(4) }); return }
-  if(t.dataset && t.dataset.bg){ BIL.g = t.dataset.bg; renderBil() }
-  else if(t.dataset && t.dataset.bk){ BIL.k = t.dataset.bk; BIL.o = BIL.k==="year" ? 0 : -1; renderBil() }
+  if(t.dataset && t.dataset.bk){ BIL.k = t.dataset.bk; BIL.o = BIL.k==="year" ? 0 : -1; renderBil() }
   else if(t.dataset && t.dataset.bn){ BIL.o = Math.min(0, BIL.o+(+t.dataset.bn)); renderBil() }
 });
 
@@ -5370,7 +5370,7 @@ function hlNew(el){
   }catch(e){}
   HLBUSY = false;
 }
-["v6","v8","v13"].forEach(function(id){ var el = $(id); if(!el || !window.MutationObserver) return; new MutationObserver(function(){ hlNew(el) }).observe(el, {childList:true, subtree:true}) });
+["v2","v3","v6","v7","v8","v13"].forEach(function(id){ var el = $(id); if(!el || !window.MutationObserver) return; new MutationObserver(function(){ hlNew(el) }).observe(el, {childList:true, subtree:true}) });
 function xId(p){ return (p||"s")+"_"+Date.now().toString(36)+Math.random().toString(36).slice(2,6) }
 function xMine(sh){ return !!AG && !!sh && Array.isArray(sh.to) && sh.to.indexOf(AG.c)>=0 }
 function xNames(codes){ return (codes||[]).map(function(c){ var a = agentByCode(c); return a ? a.n : c }) }
@@ -5389,6 +5389,31 @@ function xPending(){
   return 0;
 }
 function medTrfPending(){ return ROLE==="medecin" ? Object.keys(TRF).filter(function(k){ var q = TRF[k]; return trfFlow(q) && !TRD[k] && (!q.medTo || q.medTo===AG.c || medStOut(q.medTo)) }).sort(function(a,b){ return (TRF[a].at||0)-(TRF[b].at||0) }) : [] }
+/* rappel du médecin conseil : demande d'urgence ou de transfert restée sans réponse depuis 5 minutes (puis toutes les 5 minutes) */
+var REM5 = {}, REMMS = 5*60*1000;
+function medOverdue(){
+  if(ROLE!=="medecin" || !AG) return [];
+  var now = Date.now(), L = [], mine = function(q){ return !q.medTo || q.medTo===AG.c || medStOut(q.medTo) };
+  medReqPending().forEach(function(k){ var q = REQ[k]; if(mine(q) && q.at && now-q.at>=REMMS && now-q.at<864e5) L.push({k:"r"+k, q:q}) });
+  medTrfPending().forEach(function(k){ var q = TRF[k]; if(q && q.at && now-q.at>=REMMS && now-q.at<864e5) L.push({k:"t"+k, q:q}) });
+  return L;
+}
+function medRemindTick(){
+  var b = $("medrem"), L = medOverdue();
+  if(!L.length){ if(b) b.remove(); return }
+  var now = Date.now(), due = L.filter(function(x){ return now-(REM5[x.k]||0)>=REMMS });
+  var old = Math.floor((now-Math.min.apply(null, L.map(function(x){ return x.q.at })))/60000);
+  if(!b && !due.length) return;
+  if(!b){ b = document.createElement("div"); b.id = "medrem"; b.setAttribute("role","alert");
+    b.style.cssText = "position:fixed;left:8px;right:8px;top:calc(8px + env(safe-area-inset-top,0px));z-index:9999;background:#b91c1c;color:#fff;border-radius:12px;padding:12px 14px;box-shadow:0 6px 24px rgba(0,0,0,.35);display:flex;gap:10px;align-items:center;max-width:640px;margin:0 auto";
+    b.innerHTML = '<div style="flex:1"><b id="medrem_t"></b><div style="font-size:.85rem;opacity:.92">Ces demandes attendent votre décision.</div></div><button type="button" id="medrem_o" style="background:#fff;color:#b91c1c;border:0;border-radius:8px;padding:8px 12px;font-weight:700">Ouvrir</button><button type="button" id="medrem_x" aria-label="Fermer" style="background:transparent;color:#fff;border:0;font-size:1.3rem;padding:4px 8px">✕</button>';
+    document.body.appendChild(b);
+    $("medrem_o").onclick = function(){ b.remove(); try{ openView("v13") }catch(e){} };
+    $("medrem_x").onclick = function(){ b.remove() } }
+  $("medrem_t").textContent = "⏰ Rappel : "+L.length+" demande"+(L.length>1?"s":"")+" sans réponse (jusqu'à "+old+" min)";
+  if(due.length){ due.forEach(function(x){ REM5[x.k] = now }); alertNew(); try{ if(navigator.vibrate) navigator.vibrate([500,200,500,200,500]) }catch(e){} sndTitle() }
+}
+setInterval(function(){ try{ medRemindTick() }catch(e){} }, 30000);
 function xTabs(){ if(!AG) return; var n = xPending(); setTab("v13", (ROLE==="medecin" ? "🔔 Avis" : (ROLE==="chef" ? "Dossiers" : "Avis médicaux"))+(n?" ("+n+")":"")) }
 function xRefreshShare(){
   if($("v3").classList.contains("hide") || !VIEW || VIEW.t!=="share") return;
