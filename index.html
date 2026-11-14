@@ -541,7 +541,7 @@ function blkEvents(list){
   return ev.sort(function(a,b){ return (b.at||0)-(a.at||0) });
 }
 function blkInd(list){
-  var mats = {}, cnt = {libre:0, lev:0, spec:0, ep:0, sans:0}, reason = {}, city = {}, ag = [0,0,0,0,0], sx = {F:0,M:0,N:0}, rg = {t:0,a:0}, byAg = {};
+  var mats = {}, cnt = {libre:0, lev:0, spec:0, ep:0, sans:0}, reason = {}, city = {}, ag = [0,0,0,0,0], sx = {F:0,M:0,N:0}, rg = {t:0,a:0}, byAg = {}, grid = gridNew();
   list.forEach(function(b){ mats[b.mat] = 1 });
   Object.keys(mats).forEach(function(m){
     var rows = (DB && DB.H.bio[m]) || [], seen = {};
@@ -553,13 +553,13 @@ function blkInd(list){
     if(act){
       reason[b.reason] = (reason[b.reason]||0)+1; city[b.lvl||"—"] = (city[b.lvl||"—"]||0)+1;
       var r = blkRowOf(b), a = r ? ageOf(r[3], new Date()) : (b.dob ? ageOf(b.dob, new Date()) : null);
-      ag[a===null ? 4 : (a<5 ? 0 : (a<18 ? 1 : (a<60 ? 2 : 3)))]++; var sxv = r ? r[4] : b.sexe; sx[sxv==="F"||sxv==="M" ? sxv : "N"]++;
+      ag[a===null ? 4 : (a<5 ? 0 : (a<18 ? 1 : (a<60 ? 2 : 3)))]++; var sxv = r ? r[4] : b.sexe; sx[sxv==="F"||sxv==="M" ? sxv : "N"]++; gridAdd(grid, a, sxv, b.rang, {mat:b.mat, rang:b.rang, nom:b.nom, prenom:b.prenom});
       if(NOENC.indexOf(b.rang)>=0) rg.t++; else rg.a++;
     }
     histOf(b).forEach(function(e){ if(ROLE!=="national" && e.lvl!==AG.v) return; var o = byAg[e.by] || (byAg[e.by] = {n:agName(e.by, e.byN), b:0, u:0}); if(e.a==="unblock") o.u++; else o.b++ });
   });
   var tot = cnt.libre+cnt.lev+cnt.spec+cnt.ep+cnt.sans, accessible = tot-cnt.sans;
-  return {mats:Object.keys(mats).length, tot:tot, acc:accessible, cnt:cnt, reason:reason, city:city, age:ag, sx:sx, rg:rg, byAg:byAg, act:list.filter(function(b){return b.st!=="lifted"}).length, lifted:list.filter(function(b){return b.st==="lifted"}).length};
+  return {mats:Object.keys(mats).length, tot:tot, acc:accessible, cnt:cnt, reason:reason, city:city, age:ag, grid:grid, sx:sx, rg:rg, byAg:byAg, act:list.filter(function(b){return b.st!=="lifted"}).length, lifted:list.filter(function(b){return b.st==="lifted"}).length};
 }
 function blkRowHtml(b){
   var act = b.st!=="lifted", who = agName(b.by, b.byN);
@@ -585,8 +585,7 @@ function blkBodyHtml(){
       + '<p class="sub" style="margin:10px 0 0">Accessibles : non bloquées '+fmt(c.libre)+' · débloquées '+fmt(c.lev)+' · autorisation spéciale '+fmt(c.spec)+' · traitement en cours '+fmt(c.ep)+'.</p></div>';
     var rs = Object.keys(I.reason).sort(function(a,b){ return I.reason[b]-I.reason[a] });
     h += '<div class="card"><div class="sec">Cartes actuellement bloquées par raison ('+I.act+')</div>'+(rs.length ? barRows(rs.map(function(k){ return [k, I.reason[k], I.reason[k]+' · '+Math.round(100*I.reason[k]/(I.act||1))+' %'] })) : '<p class="sub" style="margin:0">Aucune carte bloquée.</p>')+'</div>';
-    var ages = AGEB.map(function(b,i){ return [b, I.age[i]] }).filter(function(x){ return x[1]>0 });
-    h += '<div class="card"><div class="sec">Profil des cartes bloquées</div>'+(ages.length ? barRows(ages.map(function(x){ return [x[0], x[1], x[1]+' · '+Math.round(100*x[1]/(I.act||1))+' %'] })) : '<p class="sub" style="margin:0">Aucune donnée.</p>')
+    h += '<div class="card"><div class="sec">Profil des cartes bloquées</div>'+(I.act ? gridHtml(I.grid, "Profil des cartes bloquées — tranches d'âge") : '<p class="sub" style="margin:0">Aucune donnée.</p>')
       + '<p class="sub" style="margin:10px 0 0">Femmes : '+I.sx.F+' · Hommes : '+I.sx.M+(I.sx.N?' · Non renseigné : '+I.sx.N:'')+' · Titulaires (rangs 00, 01, 02) : '+I.rg.t+' · Autres rangs : '+I.rg.a+'</p></div>';
     if(ROLE==="national"){ var cs = Object.keys(I.city).sort(function(a,b){ return I.city[b]-I.city[a] }); h += '<div class="card"><div class="sec">Cartes bloquées par ville</div>'+(cs.length ? barRows(cs.map(function(k){ return [k, I.city[k], String(I.city[k])] })) : '<p class="sub" style="margin:0">Aucune.</p>')+'</div>' }
     var ags = Object.keys(I.byAg).map(function(k){ return I.byAg[k] }).sort(function(a,b){ return (b.b+b.u)-(a.b+a.u) });
@@ -622,17 +621,17 @@ function blkPdf(){
 function abOf(a){ return a===null ? 4 : (a<5 ? 0 : (a<18 ? 1 : (a<60 ? 2 : 3))) }
 function famInd(){
   var now = new Date(), bio = (DB && DB.H.bio) || {}, mats = Object.keys(bio), isPac = function(g){ return g>=10 && g<=25 };
-  var I = {fam:mats.length, dec:{tot:0, tit:0, pac:0, age:[0,0,0,0,0], city:{}}, a18:{tot:0, blk:0, sans:0, reason:{}, age:[0,0]}, fraud:{act:0, lift:0, tit:0, oth:0, city:{}}, enc:{act:0, city:{}},
-    mt:{f:0, p:0, age:[0,0,0,0,0], list:[]}, hm:{f:0, p:0, age:[0,0,0,0,0], list:[]}, f02:0};
+  var I = {fam:mats.length, dec:{tot:0, tit:0, pac:0, age:[0,0,0,0,0], grid:gridNew(), city:{}}, a18:{tot:0, blk:0, sans:0, reason:{}, age:[0,0]}, fraud:{act:0, lift:0, tit:0, oth:0, city:{}}, enc:{act:0, city:{}},
+    mt:{f:0, p:0, age:[0,0,0,0,0], grid:gridNew(), list:[]}, hm:{f:0, p:0, age:[0,0,0,0,0], grid:gridNew(), list:[]}, f02:0};
   mats.forEach(function(m){ bio[m].forEach(function(r){ if(isPac(parseInt(r[0],10))){ var a = ageOf(r[3], now); if(a!==null && a>=18) I.a18.tot++ } }) });
   Object.keys(BLK).forEach(function(k){
     var b = BLK[k]; if(!b) return; var act = b.st!=="lifted", g = parseInt(b.rang,10), city = b.lvl||"—";
     if(act && b.reason==="Décédé(e)"){
       I.dec.tot++; if(NOENC.indexOf(b.rang)>=0) I.dec.tit++; else I.dec.pac++; I.dec.city[city] = (I.dec.city[city]||0)+1;
-      var dd = b.dod ? new Date(b.dod+"T12:00:00") : null, ad = (dd && b.dob) ? ageOf(b.dob, dd) : null; I.dec.age[abOf(ad)]++;
+      var dd = b.dod ? new Date(b.dod+"T12:00:00") : null, ad = (dd && b.dob) ? ageOf(b.dob, dd) : null; I.dec.age[abOf(ad)]++; gridAdd(I.dec.grid, ad, b.sexe, b.rang, {mat:b.mat, rang:b.rang, nom:b.nom, prenom:b.prenom});
       if(b.rang==="00"){
         var fi = famInfo(b.mat);
-        if(fi){ var t = fi.s==="maintien" ? I.mt : I.hm; t.f++; t.p += fi.n; (bio[b.mat]||[]).forEach(function(r){ t.age[abOf(r[3] ? ageOf(r[3], now) : null)]++ });
+        if(fi){ var t = fi.s==="maintien" ? I.mt : I.hm; t.f++; t.p += fi.n; (bio[b.mat]||[]).forEach(function(r){ var ar = r[3] ? ageOf(r[3], now) : null; t.age[abOf(ar)]++; gridAdd(t.grid, ar, r[4], r[0], {mat:b.mat, rang:r[0], nom:r[1], prenom:r[2]}) });
           t.list.push({id:k, nom:b.nom, prenom:b.prenom, mat:b.mat, dod:b.dod, end:fi.end, n:fi.n, left:fi.left, city:city}) }
         else if((bio[b.mat]||[]).some(function(r){ return r[0]==="02" && !isDead(b.mat, r) })) I.f02++;
       }
@@ -651,7 +650,7 @@ function famBodyHtml(){
   var bands = function(a, tot){ var it = AGEB.map(function(b,i){ return [b, a[i], a[i]+' · '+pc(a[i], tot)] }).filter(function(x){ return x[1]>0 }); return it.length ? barRows(it) : '<p class="sub" style="margin:0">Aucune donnée.</p>' };
   var cityRows = function(o){ var ks = Object.keys(o).sort(function(a,b){ return o[b]-o[a] }); return ks.length ? barRows(ks.map(function(k){ return [k, o[k], String(o[k])] })) : '<p class="sub" style="margin:0">Aucune.</p>' };
   h += '<div class="card"><div class="sec">Décès enregistrés</div><div class="kpis">'+kp(fmt(I.dec.tot),"décès au total")+kp(fmt(I.dec.tit),"titulaires (rangs 00, 01, 02)")+kp(fmt(I.dec.pac),"autres rangs")+'</div>'
-    + '<div class="sec" style="margin-top:12px">Décès par tranche d\'âge (âge au décès)</div>'+bands(I.dec.age, I.dec.tot)
+    + '<div class="sec" style="margin-top:12px">Décès par tranche d\'âge (âge au décès)</div>'+(I.dec.tot ? gridHtml(I.dec.grid, "Décès par tranche d'âge (âge au décès)") : '<p class="sub" style="margin:0">Aucune donnée.</p>')
     + '<div class="sec" style="margin-top:12px">Décès par ville</div>'+cityRows(I.dec.city)+'</div>';
   h += '<div class="card"><div class="sec">Rangs 10 à 25 de 18 ans et plus</div><div class="kpis">'+kp(fmt(I.a18.tot),"matricules concernés")+kp(fmt(I.a18.sans)+' · '+pc(I.a18.sans, I.a18.tot),"sans carte bloquée")+kp(fmt(I.a18.blk)+' · '+pc(I.a18.blk, I.a18.tot),"carte bloquée")+'</div>'
     + '<p class="sub" style="margin:10px 0 0">Cartes bloquées : 18 à 59 ans '+I.a18.age[0]+' · 60 ans et + '+I.a18.age[1]+(Object.keys(I.a18.reason).length ? ' · raisons : '+Object.keys(I.a18.reason).map(function(k){ return esc(k)+' '+I.a18.reason[k] }).join(', ') : '')+'.</p></div>';
@@ -660,7 +659,7 @@ function famBodyHtml(){
   h += '<div class="card"><div class="sec">Pac signalées enceintes avec carte bloquée</div><div class="kpis">'+kp(fmt(I.enc.act),"cartes bloquées")+'</div>'+(I.enc.act ? '<div class="sec" style="margin-top:12px">Par ville</div>'+cityRows(I.enc.city) : '')+'</div>';
   var fam = function(t, titre, note){
     return '<div class="card"><div class="sec">'+titre+'</div><div class="kpis">'+kp(fmt(t.f),"familles")+kp(fmt(t.p),"matricules (personnes)")+'</div><p class="sub" style="margin:8px 0 0">'+note+'</p>'
-      + '<div class="sec" style="margin-top:12px">Tranches d\'âge des membres</div>'+bands(t.age, t.p)
+      + '<div class="sec" style="margin-top:12px">Tranches d\'âge des membres</div>'+(t.p ? gridHtml(t.grid, titre+" — tranches d'âge des membres") : '<p class="sub" style="margin:0">Aucune donnée.</p>')
       + (t.list.length ? '<div class="sec" style="margin-top:12px">Familles ('+t.list.length+(t.list.length>100 ? ', 100 premières' : '')+')</div>'+t.list.slice(0,100).map(function(x){
         return '<div class="nrow" data-blk="'+esc(x.id)+'"><div><b>'+esc(x.nom)+' '+esc(x.prenom)+'</b> <small>('+esc(x.mat)+' · '+x.n+' matricule'+(x.n>1?'s':'')+')</small><small>Décès le '+esc(x.dod.split("-").reverse().join("/"))+' · fin du maintien le '+esc(fmtD(x.end))+(x.left>0 ? ' · '+x.left+' j restants' : '')+' · '+esc(x.city)+'</small></div><b>›</b></div>' }).join("") : '')+'</div>';
   };
@@ -672,13 +671,13 @@ function famBodyHtml(){
 function famPdf(){
   var I = famInd(), L = [{t:"INDICATEURS NATIONAUX : DROITS ET DÉCÈS", s:16, b:1},{t:"Niveau national    Édité le "+fmtDT(Date.now())},{t:" "}];
   var bands = function(a){ AGEB.forEach(function(b,i){ if(a[i]) L.push({t:"      "+noacc(b)+" : "+a[i]}) }) }, cities = function(o){ Object.keys(o).sort(function(x,y){ return o[y]-o[x] }).forEach(function(k){ L.push({t:"      "+noacc(k)+" : "+o[k]}) }) };
-  L.push({t:"Décès : "+I.dec.tot+"    titulaires (00, 01, 02) : "+I.dec.tit+"    autres rangs : "+I.dec.pac, b:1},{t:"   Tranches d'âge (âge au décès)"}); bands(I.dec.age); L.push({t:"   Par ville"}); cities(I.dec.city);
+  L.push({t:"Décès : "+I.dec.tot+"    titulaires (00, 01, 02) : "+I.dec.tit+"    autres rangs : "+I.dec.pac, b:1},{t:"   Tranches d'âge (âge au décès)"}); gridLines(I.dec.grid).forEach(function(x){ L.push(x) }); L.push({t:"   Par ville"}); cities(I.dec.city);
   L.push({t:" "},{t:"Rangs 10 à 25 de 18 ans et plus : "+I.a18.tot+"    sans carte bloquée : "+I.a18.sans+"    carte bloquée : "+I.a18.blk, b:1},{t:"   Cartes bloquées : 18 à 59 ans "+I.a18.age[0]+" - 60 ans et + "+I.a18.age[1]});
   Object.keys(I.a18.reason).forEach(function(k){ L.push({t:"      "+noacc(k)+" : "+I.a18.reason[k]}) });
   L.push({t:" "},{t:"Fraude (fausse identité) : "+I.fraud.act+" cartes bloquées, "+I.fraud.lift+" débloquées    titulaires "+I.fraud.tit+" / autres rangs "+I.fraud.oth, b:1}); cities(I.fraud.city);
   L.push({t:" "},{t:"Pac signalées enceintes avec carte bloquée : "+I.enc.act, b:1}); cities(I.enc.city);
   [[I.mt,"Familles en maintien de droit"],[I.hm,"Familles hors maintien de droit"]].forEach(function(p){ var t = p[0];
-    L.push({t:" "},{t:p[1]+" : "+t.f+" familles - "+t.p+" matricules", b:1},{t:"   Tranches d'âge des membres"}); bands(t.age);
+    L.push({t:" "},{t:p[1]+" : "+t.f+" familles - "+t.p+" matricules", b:1},{t:"   Tranches d'âge des membres"}); gridLines(t.grid).forEach(function(x){ L.push(x) });
     t.list.slice(0,300).forEach(function(x){ L.push({t:"   "+noacc(x.nom+" "+x.prenom).slice(0,30)+" ("+x.mat+") - "+x.n+" mat. - décès le "+x.dod.split("-").reverse().join("/")+" - fin "+fmtD(x.end)+" - "+noacc(x.city)}) }) });
   L.push({t:" "},{t:"Dossiers maintenus actifs grâce à un rang 02 (titulaire décédé) : "+I.f02+"    Familles dans la base : "+I.fam});
   savePdf("Droits_et_deces_"+dayKey(Date.now())+".pdf", L);
@@ -2549,22 +2548,81 @@ var FPROV = {}, AG = null, ROLE = null, MYF = [], SCOPE = [], ASSIGN = {}, REPOR
 /* tranches d'âge détaillées × sexe × titulaire (rang 00) / PAC (autres rangs) */
 var AGEN = ["0 à 2 ans","3 à 5 ans","6 à 10 ans","11 à 17 ans","18 à 24 ans","25 à 39 ans","40 à 54 ans","55 à 64 ans","65 à 79 ans","80 ans et +","Non renseigné"];
 function ageNOf(a){ if(a===null||a===undefined||isNaN(a)) return 10; return a<=2?0:a<=5?1:a<=10?2:a<=17?3:a<=24?4:a<=39?5:a<=54?6:a<=64?7:a<=79?8:9 }
-function gridNew(){ var g = {b:[], nsx:0}; AGEN.forEach(function(){ g.b.push([0,0,0,0]) }); return g }
-function gridAdd(g, a, sx, rang){ if(sx!=="M" && sx!=="F"){ g.nsx++; return } g.b[ageNOf(a)][(sx==="F"?2:0)+(String(rang)==="00"?0:1)]++ }
-function gridHtml(g){
-  var T = [0,0,0,0], c = function(v){ return v ? fmt(v) : '<span style="color:var(--muted)">0</span>' };
-  var rows = AGEN.map(function(b,i){ var x = g.b[i]; if(i===10 && !(x[0]+x[1]+x[2]+x[3])) return ""; x.forEach(function(v,j){ T[j] += v });
-    var t1 = x[0]+x[2], t2 = x[1]+x[3];
-    return '<tr><td style="text-align:left;white-space:nowrap">'+b+'</td><td>'+c(x[0])+'</td><td>'+c(x[1])+'</td><td>'+c(x[2])+'</td><td>'+c(x[3])+'</td><td>'+c(t1)+'</td><td>'+c(t2)+'</td><td><b>'+c(t1+t2)+'</b></td></tr>' }).join("");
-  var u1 = T[0]+T[2], u2 = T[1]+T[3];
+var GRIDS = {}, GRIDN = 0, GRK = ["h0","h1","f0","f1","t0","t1","t2","H","F","A"];
+function gridNew(){ var g = {b:[], nsx:0, p:[], id:"g"+(++GRIDN), t:"Tranches d'âge"}; AGEN.forEach(function(){ g.b.push([0,0,0,0]) }); return g }
+/* who = {mat, rang, nom, prenom, ids:[prestations]} : sert à ouvrir la liste des patients d'une case */
+function gridAdd(g, a, sx, rang, who){ if(sx!=="M" && sx!=="F"){ g.nsx++; return } var b = ageNOf(a), c = (sx==="F"?2:0)+(String(rang)==="00"?0:1); g.b[b][c]++; if(who) g.p.push([b, c, a, who]) }
+function gridSel(key){ return {h0:function(c){return c===0}, h1:function(c){return c===1}, f0:function(c){return c===2}, f1:function(c){return c===3}, t0:function(c){return c===0||c===2}, t1:function(c){return c===1||c===3}, t2:function(){return true}, H:function(c){return c<2}, F:function(c){return c>=2}, A:function(){return true}}[key] }
+var GRKL = {h0:"Homme · Titulaire", h1:"Homme · PAC", f0:"Femme · Titulaire", f1:"Femme · PAC", t0:"Titulaires (hommes + femmes)", t1:"PAC (hommes + femmes)", t2:"Titulaires + PAC", H:"Hommes (titulaires + PAC)", F:"Femmes (titulaires + PAC)", A:"Ensemble"};
+function gridTot(g){ var T = [0,0,0,0]; g.b.forEach(function(x){ x.forEach(function(v,j){ T[j] += v }) }); return T }
+function gridHtml(g, title){
+  if(title) g.t = title; GRIDS[g.id] = g; var ks = Object.keys(GRIDS); if(ks.length>80) delete GRIDS[ks[0]];
+  var T = gridTot(g), c = function(v, b, k){ return v ? '<td class="gc" data-gc="'+g.id+'|'+b+'|'+k+'" style="cursor:pointer;text-decoration:underline;color:var(--accent)">'+fmt(v)+'</td>' : '<td><span style="color:var(--muted)">0</span></td>' };
+  var rows = AGEN.map(function(b,i){ var x = g.b[i]; if(i===10 && !(x[0]+x[1]+x[2]+x[3])) return "";
+    return '<tr><td style="text-align:left;white-space:nowrap">'+b+'</td>'+c(x[0],i,"h0")+c(x[1],i,"h1")+c(x[2],i,"f0")+c(x[3],i,"f1")+c(x[0]+x[2],i,"t0")+c(x[1]+x[3],i,"t1")+c(x[0]+x[1]+x[2]+x[3],i,"t2") + '</tr>' }).join("");
+  var u1 = T[0]+T[2], u2 = T[1]+T[3], H = T[0]+T[1], F = T[2]+T[3], A = H+F;
   return '<div class="tw twg"><table class="mini"><thead><tr><th rowspan="2">Tranche d\'âge</th><th colspan="2">Homme</th><th colspan="2">Femme</th><th colspan="2">Total 1</th><th>Total 2</th></tr><tr><th>Titulaire</th><th>PAC</th><th>Titulaire</th><th>PAC</th><th>Titulaire</th><th>PAC</th><th>Tit. + PAC</th></tr></thead><tbody>'+rows
-    + '<tr style="font-weight:800"><td style="text-align:left">Total</td><td>'+fmt(T[0])+'</td><td>'+fmt(T[1])+'</td><td>'+fmt(T[2])+'</td><td>'+fmt(T[3])+'</td><td>'+fmt(u1)+'</td><td>'+fmt(u2)+'</td><td>'+fmt(u1+u2)+'</td></tr></tbody></table></div>'
-    + '<p class="sub" style="margin:6px 0 0">Titulaire = rang 00 · PAC = personnes à charge (autres rangs).'+(g.nsx?' Sexe non renseigné (non repris dans le tableau) : '+g.nsx+'.':'')+'</p>';
+    + '<tr style="font-weight:800;border-top:2px solid var(--line)"><td style="text-align:left">Total 3</td>'+c(T[0],-1,"h0")+c(T[1],-1,"h1")+c(T[2],-1,"f0")+c(T[3],-1,"f1")+c(u1,-1,"t0")+c(u2,-1,"t1")+c(A,-1,"t2")+'</tr>'
+    + '<tr style="font-weight:800"><td style="text-align:left">Total 4</td>'+c(H,-1,"H").replace("<td ",'<td colspan="2" ')+c(F,-1,"F").replace("<td ",'<td colspan="2" ')+c(A,-1,"A").replace("<td ",'<td colspan="3" ')+'</tr></tbody></table></div>'
+    + '<p class="sub" style="margin:6px 0 0">Titulaire = rang 00 · PAC = personnes à charge (autres rangs). Total 3 = cumul par colonne · Total 4 = cumul Hommes | cumul Femmes | ensemble.'+(g.nsx?' Sexe non renseigné (non repris dans le tableau) : '+g.nsx+'.':'')+' Touchez un chiffre pour voir les patients.</p>'
+    + '<div class="enc" style="margin-top:8px"><button class="back" data-gx="xlsx|'+g.id+'" style="padding:6px 12px">Exporter (Excel)</button> <button class="back" data-gx="pdf|'+g.id+'" style="padding:6px 12px">Exporter (PDF)</button></div>';
 }
-function gridLines(g){ var L = [], T = [0,0,0,0];
-  AGEN.forEach(function(b,i){ var x = g.b[i], n = x[0]+x[1]+x[2]+x[3]; if(!n) return; x.forEach(function(v,j){ T[j] += v });
-    L.push({t:"   "+noacc(b)+" : H "+x[0]+"/"+x[1]+" - F "+x[2]+"/"+x[3]+" - Titulaires "+(x[0]+x[2])+" - PAC "+(x[1]+x[3])+" - Total "+n}) });
-  L.unshift({t:"   (H/F = titulaire/PAC) Total : H "+T[0]+"/"+T[1]+" - F "+T[2]+"/"+T[3]+" - "+(T[0]+T[1]+T[2]+T[3])}); if(g.nsx) L.push({t:"   Sexe non renseigne (hors tableau) : "+g.nsx}); return L }
+function gridData(g){
+  var T = gridTot(g), H = ["Tranche d'âge","Homme Titulaire","Homme PAC","Femme Titulaire","Femme PAC","Total 1 Titulaire","Total 1 PAC","Total 2 Tit.+PAC"], R = [];
+  AGEN.forEach(function(b,i){ var x = g.b[i]; if(i===10 && !(x[0]+x[1]+x[2]+x[3])) return; R.push([b, x[0], x[1], x[2], x[3], x[0]+x[2], x[1]+x[3], x[0]+x[1]+x[2]+x[3]]) });
+  var A = T[0]+T[1]+T[2]+T[3];
+  R.push(["Total 3", T[0], T[1], T[2], T[3], T[0]+T[2], T[1]+T[3], A]);
+  R.push(["Total 4 (Hommes | Femmes | Ensemble)", T[0]+T[1], "", T[2]+T[3], "", "", "", A]);
+  return {h:H, r:R};
+}
+function gridLines(g){ var L = [], T = gridTot(g), A = T[0]+T[1]+T[2]+T[3];
+  AGEN.forEach(function(b,i){ var x = g.b[i], n = x[0]+x[1]+x[2]+x[3]; if(!n) return;
+    L.push({t:"   "+noacc(b)+" : H tit. "+x[0]+" / PAC "+x[1]+" - F tit. "+x[2]+" / PAC "+x[3]+" - Total 1 : tit. "+(x[0]+x[2])+" / PAC "+(x[1]+x[3])+" - Total 2 : "+n}) });
+  L.push({t:"   Total 3 : H tit. "+T[0]+" / PAC "+T[1]+" - F tit. "+T[2]+" / PAC "+T[3]+" - tit. "+(T[0]+T[2])+" / PAC "+(T[1]+T[3])+" - "+A, b:1});
+  L.push({t:"   Total 4 : Hommes "+(T[0]+T[1])+" - Femmes "+(T[2]+T[3])+" - Ensemble "+A, b:1});
+  if(g.nsx) L.push({t:"   Sexe non renseigne (hors tableau) : "+g.nsx}); return L }
+/* --- liste des patients d'une case du tableau, puis traitement et impression de la fiche --- */
+var AGST = null;
+function ageOrigin(){ var v = curView(); return {v:v, y:window.pageYOffset||0, html:(v==="v3" ? $("v3").innerHTML : null), VIEW:VIEW, BACK:BACK} }
+function ageRestore(o){ BACKING = true; try{ if(o.v==="v3"){ $("v3").innerHTML = o.html; VIEW = o.VIEW; BACK = o.BACK; go("v3") } else go(o.v||"v0") }finally{ BACKING = false } restoreY(o.y) }
+function agePanel(){ var el = $("agepl"); if(!el){ el = document.createElement("div"); el.id = "agepl"; el.style.cssText = "position:fixed;inset:0;z-index:9000;background:var(--bg);overflow:auto;padding:16px 14px 40px"; document.body.appendChild(el) } el.style.display = "block"; return el }
+function ageClose(){ var el = $("agepl"); if(el) el.style.display = "none" }
+function treatsOf(w){ var ids = (w.ids||[]).filter(function(i){ return PREST[i] });
+  if(!ids.length) ids = Object.keys(PREST).filter(function(i){ var p = PREST[i]; return p && p.mat===w.mat && String(p.rang)===String(w.rang) });
+  return ids.sort(function(a,b){ return (PREST[b].at||0)-(PREST[a].at||0) }) }
+function ageList(gid, b, key, keep){
+  var g = GRIDS[gid], sel = gridSel(key); if(!g || !sel) return; if(!keep) AGST = {org:ageOrigin()}; AGST.g = gid; AGST.b = b; AGST.k = key;
+  var L = g.p.filter(function(x){ return (b<0 || x[0]===b) && sel(x[1]) }).sort(function(x,y){ return String(x[3].nom||"").localeCompare(String(y[3].nom||""),"fr") });
+  var el = agePanel(), ttl = (b<0 ? "Toutes les tranches" : AGEN[b])+" · "+GRKL[key];
+  el.innerHTML = '<div style="max-width:820px;margin:0 auto"><button class="back" id="agex">← Retour</button><div class="card"><b>'+esc(g.t)+'</b><div class="sec" style="margin:6px 0">'+esc(ttl)+' — '+fmt(L.length)+' patient'+(L.length>1?'s':'')+'</div>'
+    + L.slice(0,400).map(function(x,i){ var w = x[3], n = (w.ids && w.ids.length) || treatsOf(w).length;
+      return '<div class="nrow" data-ap="'+i+'"><div><b>'+esc((w.nom||"")+" "+(w.prenom||""))+'</b><small>'+esc(w.mat)+' · rang '+esc(w.rang)+' · '+(x[2]===null||x[2]===undefined||isNaN(x[2]) ? 'âge non renseigné' : x[2]+' an'+(x[2]>1?'s':''))+' · '+(n ? n+' traitement'+(n>1?'s':'') : 'aucun traitement enregistré')+'</small></div><b>›</b></div>' }).join("")
+    + (L.length>400 ? '<p class="sub">400 premiers patients affichés sur '+fmt(L.length)+'.</p>' : '')+'</div></div>';
+  AGST.L = L; window.scrollTo(0,0); el.scrollTop = 0;
+}
+function agePatient(i){
+  var x = AGST && AGST.L && AGST.L[i]; if(!x) return; var w = x[3], ids = treatsOf(w), back = function(){ ageRestore(AGST.org); ageList(AGST.g, AGST.b, AGST.k, true) };
+  if(ids.length===1){ ageClose(); showFiche(ids[0], null, back); return }
+  if(ids.length>1){ var el = agePanel();
+    el.innerHTML = '<div style="max-width:820px;margin:0 auto"><button class="back" id="agex2">← Retour à la liste</button><div class="card"><b>'+esc((w.nom||"")+" "+(w.prenom||""))+'</b><div class="sec" style="margin:6px 0">'+ids.length+' traitements</div>'
+      + ids.map(function(id){ var p = PREST[id]; return '<div class="nrow" data-at="'+esc(id)+'"><div><b>'+esc(p.type||"Prestation")+'</b><small>'+esc(frDate(dayKey(p.at||0)))+' · '+esc(p.fosa||"")+' · '+money(+p.cout||0)+'</small></div><b>›</b></div>' }).join("")+'</div></div>';
+    AGST.pi = i; return }
+  /* aucun traitement : fiche d'identité du patient */
+  var rows = (DB && DB.H.bio[w.mat]) || [], r = null; rows.forEach(function(q){ if(String(q[0])===String(w.rang)) r = q });
+  ageClose(); VIEW = {t:"ageid", m:w.mat+"|"+w.rang}; BACK = back; CUR = {mat:w.mat, ok:(DB ? findIdx(DB,w.mat)>=0 : false), rows:rows};
+  var rr = r ? [r[0],r[1],r[2],r[3],r[4]] : [w.rang, w.nom, w.prenom, "", ""], age = rr[3] ? ageOf(rr[3], new Date()) : null;
+  $("v3").innerHTML = '<button class="back" id="bk">← Retour</button><div class="card">'+head(rr,age)+info(w.mat,rr,age)+'<p class="sub" style="margin:10px 0 0">Aucun traitement enregistré pour ce patient.</p></div>'; go("v3");
+}
+document.addEventListener("click", function(e){
+  var t = e.target && e.target.closest ? e.target.closest("[data-gc],[data-gx],[data-ap],[data-at],#agex,#agex2") : null; if(!t) return;
+  if(t.dataset.gc){ var q = t.dataset.gc.split("|"); ageList(q[0], +q[1], q[2]); return }
+  if(t.dataset.gx){ var z = t.dataset.gx.split("|"), g = GRIDS[z[1]]; if(!g) return; var D = gridData(g), nm = "Tranches_age_"+dayKey(Date.now());
+    if(z[0]==="xlsx") exportXlsx(nm, "Tranches d'âge", D.h, D.r); else exportPdfTable(nm, g.t, "Édité le "+frDate(dayKey(Date.now()))+" · Titulaire = rang 00, PAC = autres rangs · Total 3 = cumul par colonne · Total 4 = cumul Hommes | Femmes | Ensemble", D.h, D.r); return }
+  if(t.dataset.ap!==undefined){ agePatient(+t.dataset.ap); return }
+  if(t.dataset.at){ var id = t.dataset.at, st = AGST, back = function(){ ageRestore(st.org); ageList(st.g, st.b, st.k, true); agePatient(st.pi) }; ageClose(); showFiche(id, null, back); return }
+  if(t.id==="agex"){ ageClose(); return }
+  if(t.id==="agex2"){ ageList(AGST.g, AGST.b, AGST.k, true) }
+});
 var AGEB = ["0 à 4 ans","5 à 17 ans","18 à 59 ans","60 ans et +","Non renseigné"];
 function plainS(s){ return String(s||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase() }
 function isDel(a){ return plainS(a.f).indexOf("delegue")===0 }
@@ -3103,10 +3161,11 @@ function monthsList(n){ var o = [], d = new Date(); d.setDate(1); for(var i=0;i<
 function invId(f, m){ return f.toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"")+"_"+m }
 function statsOf(rows){
   var pats = {}, ty = {}, ag = [0,0,0,0,0], sx = {F:0,M:0,N:0}, urg = 0, grid = gridNew();
-  rows.forEach(function(p){ var k = pkOfP(p); if(!pats[k]) pats[k] = p; var o = ty[p.type] || (ty[p.type] = {n:0,s:0}); o.n++; o.s += +p.cout||0; if(p.urgence) urg++ });
+  var idsBy = {};
+  rows.forEach(function(p){ var k = pkOfP(p); (idsBy[k] = idsBy[k] || []).push(p.id); if(!pats[k]) pats[k] = p; var o = ty[p.type] || (ty[p.type] = {n:0,s:0}); o.n++; o.s += +p.cout||0; if(p.urgence) urg++ });
   Object.keys(pats).forEach(function(k){
     var p = pats[k], r = patientRow(p), a = r ? ageOf(r[3], new Date(p.at||Date.now())) : null;
-    ag[a===null ? 4 : (a<5 ? 0 : (a<18 ? 1 : (a<60 ? 2 : 3)))]++; sx[r && (r[4]==="F" || r[4]==="M") ? r[4] : "N"]++; gridAdd(grid, a, r ? r[4] : "", p.rang);
+    ag[a===null ? 4 : (a<5 ? 0 : (a<18 ? 1 : (a<60 ? 2 : 3)))]++; sx[r && (r[4]==="F" || r[4]==="M") ? r[4] : "N"]++; gridAdd(grid, a, r ? r[4] : "", p.rang, {mat:p.mat, rang:p.rang, nom:p.nom, prenom:p.prenom, ids:idsBy[k]});
   });
   return {n:rows.length, tot:sumC(rows), pat:Object.keys(pats).length, urg:urg, age:ag, sx:sx, grid:grid,
     types:Object.keys(ty).map(function(k){ return {k:k, n:ty[k].n, s:ty[k].s} }).sort(function(a,b){return b.s-a.s})};
@@ -3119,7 +3178,7 @@ function statsHtml(st){
   var kp = function(v,l){ return '<div class="kpi"><b>'+v+'</b><span>'+l+'</span></div>' };
   var h = '<div class="card"><div class="kpis">'+kp(fmt(st.n),"prestations")+kp(money(st.tot),"coût total")+kp(fmt(st.pat),"bénéficiaires")+kp(st.n?money(st.tot/st.n):"—","coût moyen")+kp(fmt(st.urg),"urgences avérées")+'</div></div>';
   if(st.types.length) h += '<div class="card"><div class="sec">Par type de prestation</div>'+barRows(st.types.map(function(t){ return [t.k, t.s, money(t.s)+' · '+t.n] }))+'</div>';
-  h += '<div class="card"><div class="sec">Tranches d\'âge (bénéficiaires)</div>'+(st.pat?gridHtml(st.grid):'<p class="sub" style="margin:0">Aucune donnée.</p>')
+  h += '<div class="card"><div class="sec">Tranches d\'âge (bénéficiaires)</div>'+(st.pat?gridHtml(st.grid,"Tranches d'âge (bénéficiaires)"):'<p class="sub" style="margin:0">Aucune donnée.</p>')
     + '<p class="sub" style="margin:10px 0 0">Femmes : '+st.sx.F+' · Hommes : '+st.sx.M+(st.sx.N?' · Non renseigné : '+st.sx.N:'')+'</p></div>';
   return h;
 }
@@ -3900,7 +3959,7 @@ function identStats(){
       st.rg[r[0]] = (st.rg[r[0]]||0) + 1;
       st.sx[r[4]==="F"||r[4]==="M" ? r[4] : "N"]++;
       var a = r[3] ? ageOf(r[3], now) : null;
-      st.age[a===null ? 4 : (a<5 ? 0 : (a<18 ? 1 : (a<60 ? 2 : 3)))]++; gridAdd(st.grid, a, r[4], r[0]);
+      st.age[a===null ? 4 : (a<5 ? 0 : (a<18 ? 1 : (a<60 ? 2 : 3)))]++; gridAdd(st.grid, a, r[4], r[0], {mat:m, rang:r[0], nom:r[1], prenom:r[2]});
       if(a===null) st.nodob++;
       if(a!==null && a>=18 && NOENC.indexOf(r[0])<0) st.pac++;
       var f = F[r[5]] || "—"; st.fos[f] = (st.fos[f]||0) + 1;
@@ -3919,7 +3978,7 @@ function renderIdent(){
     + '<p class="sub" style="margin:10px 0 0">Personnes concernées : '+fmt(st.persInD)+' assurables · '+fmt(st.pers-st.persInD)+' non assurables</p></div>';
   var rgs = Object.keys(st.rg).sort().map(function(k){ return [ "Rang "+k, st.rg[k], fmt(st.rg[k])+' · '+pct(st.rg[k],st.pers) ] });
   h += '<div class="card"><div class="sec">Par rang</div>'+barRows(rgs)+'</div>';
-  h += '<div class="card"><div class="sec">Tranches d\'âge</div>'+gridHtml(st.grid)+'<p class="sub" style="margin:10px 0 0">Femmes : '+fmt(st.sx.F)+' ('+pct(st.sx.F,st.pers)+') · Hommes : '+fmt(st.sx.M)+' ('+pct(st.sx.M,st.pers)+')'+(st.sx.N?' · Non renseigné : '+st.sx.N:'')+'</p></div>';
+  h += '<div class="card"><div class="sec">Tranches d\'âge</div>'+gridHtml(st.grid,"Personnes identifiées — tranches d'âge")+'<p class="sub" style="margin:10px 0 0">Femmes : '+fmt(st.sx.F)+' ('+pct(st.sx.F,st.pers)+') · Hommes : '+fmt(st.sx.M)+' ('+pct(st.sx.M,st.pers)+')'+(st.sx.N?' · Non renseigné : '+st.sx.N:'')+'</p></div>';
   var top = Object.keys(st.fos).sort(function(a,b){ return st.fos[b]-st.fos[a] }), nf = top.length;
   h += '<div class="card"><div class="sec">FOSA d\'affectation — '+nf+' FOSA (15 premières)</div>'+barRows(top.slice(0,15).map(function(k){ return [k, st.fos[k], fmt(st.fos[k])+' · '+pct(st.fos[k],st.pers)] }))+'</div>';
   $("v2c").innerHTML = h;
@@ -4674,13 +4733,14 @@ function vgAgeHtml(){
     var q = iv.month.split("-"), mi = +q[0]*12+(+q[1]-1); if(mi<bd.a || mi>bd.b || mi>=cur) return;
     var c = iv.lvl || levelOfFosa(iv.fosa) || "—"; if(VG.v && c!==VG.v) return;
     var key = VG.g==="fosa" ? iv.fosa : (VG.g==="city" ? c : "all");
-    var o = G[key] || (G[key] = {k:key, c:VG.g==="fosa" ? c : "", g:gridNew(), n:0});
-    (iv.prov ? iv.prov.lines : iv.lines || []).forEach(function(x){ if(!x || x.ok===false) return; var u = key+"|"+x.mat+"|"+x.rang; if(seen[u]) return; seen[u] = 1; o.n++;
-      var a = parseInt(x.age,10); gridAdd(o.g, isNaN(a) ? null : a, x.sx, x.rang) });
+    var o = G[key] || (G[key] = {k:key, c:VG.g==="fosa" ? c : "", g:gridNew(), n:0, w:{}});
+    (iv.prov ? iv.prov.lines : iv.lines || []).forEach(function(x){ if(!x || x.ok===false) return; var u = x.mat+"|"+x.rang, w = o.w[u];
+      if(w){ if(x.id) w.ids.push(x.id); return } w = o.w[u] = {mat:x.mat, rang:x.rang, nom:x.nom, prenom:x.prenom, ids:x.id ? [x.id] : []}; o.n++;
+      var a = parseInt(x.age,10); gridAdd(o.g, isNaN(a) ? null : a, x.sx, x.rang, w) });
   });
   var L = Object.keys(G).sort(function(a,b){ return G[b].n-G[a].n || String(a).localeCompare(String(b)) }).map(function(k){ return G[k] });
   return L.map(function(o){ var t = VG.g==="all" ? (VG.v ? 'Ville '+esc(VG.v) : 'Toutes les villes') : esc(o.k)+(o.c ? ' <small style="color:var(--muted)">· '+esc(o.c)+'</small>' : '');
-    return '<div class="card"><div class="sec">Tranches d\'âge — '+t+' ('+fmt(o.n)+' patient'+(o.n>1?'s':'')+')</div>'+gridHtml(o.g)+'</div>' }).join("");
+    return '<div class="card"><div class="sec">Tranches d\'âge — '+t+' ('+fmt(o.n)+' patient'+(o.n>1?'s':'')+')</div>'+gridHtml(o.g, "Tranches d'âge — "+(VG.g==="all" ? (VG.v ? "ville "+VG.v : "toutes les villes") : o.k)+" — "+vgBounds().lab)+'</div>' }).join("");
 }
 function renderVG(){
   if(ROLE!=="national") return;
