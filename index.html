@@ -239,6 +239,25 @@ input[type=password],input[type=date],input#lc{width:100%;font:inherit;font-size
 .hrerr{color:var(--ko);font-size:.9rem;margin:8px 0 0}
 .hrmsg{padding:30px 10px;text-align:center;color:var(--muted)}
 @media print{#hr{position:static}}
+.hrkio{position:fixed;inset:0;z-index:9300;background:#0b2a17;color:#fff;display:flex;flex-direction:column;align-items:center;gap:14px;padding:18px 16px;overflow:auto}
+.hrkio .hrkh{width:100%;max-width:900px;display:flex;justify-content:space-between;align-items:center;gap:10px}
+.hrkio .hrkh small{display:block;opacity:.75;text-transform:capitalize}
+.hrkio .hrkm{display:flex;gap:10px}
+.hrkio .hrkm button{font-size:1.1rem;font-weight:800;padding:12px 28px;border-radius:14px;border:2px solid #ffffff55;background:transparent;color:#fff;cursor:pointer}
+.hrkio .hrkm button.on{background:#fff;color:#0b2a17}
+.hrkio .hrkc{width:100%;max-width:520px;text-align:center}
+.hrkio .hrkc label{display:block;margin-bottom:8px;opacity:.85}
+.hrkio #hrkin{width:100%;font-size:2rem;text-align:center;letter-spacing:.08em;padding:14px;border-radius:14px;border:0;text-transform:uppercase;color:#111}
+.hrkmsg{min-height:1.6em;margin:10px 0 0;font-weight:700;font-size:1.05rem}
+.hrkmsg.ok{color:#8dffa6}.hrkmsg.ko{color:#ffb4a8}
+.hrkl{width:100%;max-width:900px;background:#fff;color:#111;border-radius:14px;padding:8px;max-height:44vh;overflow:auto}
+.hrkl.hide{display:none}
+.hrkl table{width:100%;border-collapse:collapse}.hrkl th,.hrkl td{padding:8px 10px;text-align:left;border-bottom:1px solid #e5e5e5}
+.hrkr{display:inline-block;padding:3px 12px;border:3px solid #d62d20;border-radius:999px;font-weight:800}
+.hrkio video{position:fixed;right:12px;bottom:12px;width:110px;border-radius:10px;opacity:.9;transform:scaleX(-1)}
+.hrkst{opacity:.7;margin-top:auto}
+.hrsm select{width:auto;font-size:.85rem;padding:7px 8px;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--text)}
+.hrmc textarea{resize:vertical}
 </style>
 <link rel="manifest" href="manifest.webmanifest"><link rel="icon" type="image/png" href="icon-192.png"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="theme-color" content="#0d6e5b">
 <script src="config.js"></script>
@@ -2798,40 +2817,129 @@ document.addEventListener("click", function(e){
 });
 function demoHr(S){
   if(S.hr) return S.hr;
-  var H = S.hr = {hr_unites:{}, hr_postes:{}, hr_agents:{}, hr_famille:{}, hr_contacts:{}, hr_pieces:{}, hr_acces:{}, J:[], n:0};
-  var U = function(id,nom,type,parent,o){ H.hr_unites[id] = {id:id, nom:nom, type:type, parent_id:parent||null, ordre:o||0, actif:true} };
-  U("u_dg","Direction générale","direction",null,1); U("u_dt","Direction technique nationale","direction","u_dg",1); U("u_daf","Direction administrative et financière","direction","u_dg",2);
-  U("u_rh","Service des ressources humaines","service","u_daf",1); U("u_inf","Service informatique","service","u_dt",1);
-  U("u_kin","Kinshasa","ville","u_dg",3); U("u_kor","Kasaï-Oriental","ville","u_dg",4); U("u_lub","Lubumbashi","ville","u_dg",5);
-  var P = function(id,i,u,g,n){ H.hr_postes[id] = {id:id, intitule:i, unite_id:u, grade:g, effectif_prevu:n, actif:true} };
+  var H = S.hr = {hr_mutations:{}, hr_actes:{}, hr_entites:{}, hr_unites:{}, hr_postes:{}, hr_agents:{}, hr_famille:{}, hr_contacts:{}, hr_pieces:{}, hr_acces:{}, hr_presences:{}, hr_presence_alertes:{}, hr_conges:{}, J:[], n:0};
+  H.hr_entites.national = {id:"national", nom:"Siège national", type:"national", actif:true, heure_debut:"08:00", conge_annuel:30};
+  H.hr_entites.kinshasa = {id:"kinshasa", nom:"Kinshasa", type:"province", actif:true, heure_debut:"08:00", conge_annuel:30};
+  H.hr_entites["kasai-oriental"] = {id:"kasai-oriental", nom:"Kasaï-Oriental", type:"province", actif:true, heure_debut:"08:00", conge_annuel:30};
+  var U = function(id,nom,type,parent,e,o){ H.hr_unites[id] = {id:id, nom:nom, type:type, parent_id:parent||null, entite_id:e, ordre:o||0, actif:true} };
+  U("u_dg","Direction générale","direction",null,"national",1); U("u_dt","Direction technique nationale","direction","u_dg","national",1); U("u_daf","Direction administrative et financière","direction","u_dg","national",2);
+  U("u_rh","Service des ressources humaines","service","u_daf","national",1); U("u_inf","Service informatique","service","u_dt","national",1);
+  U("u_kin","Coordination provinciale de Kinshasa","antenne",null,"kinshasa",1); U("u_kor","Coordination du Kasaï-Oriental","antenne",null,"kasai-oriental",1);
+  var P = function(id,i,u,g,n,e){ H.hr_postes[id] = {id:id, intitule:i, unite_id:u, grade:g, effectif_prevu:n, actif:true, entite_id:e||"national"} };
   P("p_dg","Directeur général","u_dg","A1",1); P("p_dt","Directeur technique","u_dt","A1",1); P("p_ast","Assistant du Directeur technique","u_dt","A2",2); P("p_daf","Directeur administratif et financier","u_daf","A1",1);
-  P("p_rh","Chef de service RH","u_rh","A2",1); P("p_inf","Analyste programmeur","u_inf","B1",3); P("p_asv","Assistant de ville","u_kin","B1",2); P("p_del","Délégué mutualiste","u_kin","B2",4);
+  P("p_rh","Chef de service RH","u_rh","A2",1); P("p_inf","Analyste programmeur","u_inf","B1",3);
+  P("pk_asv","Assistant de ville","u_kin","B1",2,"kinshasa"); P("pk_del","Délégué mutualiste","u_kin","B2",4,"kinshasa");
+  P("po_asv","Assistant de ville","u_kor","B1",1,"kasai-oriental"); P("po_del","Délégué mutualiste","u_kor","B2",2,"kasai-oriental");
   var rows = [
-   ["Kalala","Mbuyi","Jean","M","1966-03-12","u_dg","p_dg","actif","2005-01-10"],["Tshimanga","Ilunga","Marie","F","1972-07-30","u_dt","p_dt","actif","2008-04-01"],
-   ["Mufwar","","Van","M","1984-11-02","u_dt","p_ast","actif","2012-02-15"],["Ngoy","Kabeya","Christine","F","1990-05-21","u_dt","p_ast","actif","2016-09-01"],
-   ["Lukusa","Tshibola","Patrick","M","1961-01-18","u_daf","p_daf","actif","1998-06-01"],["Mwamba","Kasongo","Berthe","F","1979-09-09","u_rh","p_rh","actif","2010-03-01"],
-   ["Banza","Kitenge","Joël","M","1993-12-25","u_inf","p_inf","actif","2019-07-01"],["Mutombo","Nsimba","Aimée","F","1996-04-14","u_inf","p_inf","actif","2021-01-11"],
-   ["Kazadi","Mpoyi","David","M","2001-08-08","u_kin","p_asv","actif","2023-02-01"],["Ilunga","Mukendi","Sylvie","F","1969-02-27","u_kin","p_del","actif","2002-10-01"],
-   ["Tshisekedi","Kanku","Alain","M","1975-06-03","u_kin","p_del","suspendu","2009-05-01"],["Mbombo","Ntumba","Rachel","F","1987-10-19","u_kor","","actif","2015-01-01"],
-   ["Kabongo","Lubaki","Samuel","M","","","","actif",""],["Nzuzi","Makiese","Gisèle","F","1958-12-01","u_lub","","retraite","1992-01-01"],["Okito","Bolenge","Eric","M","1980-03-30","u_kin","p_del","sorti","2011-01-01"]
+   ["Kalala","Mbuyi","Jean","M","1966-03-12","u_dg","p_dg","actif","2005-01-10","national"],["Tshimanga","Ilunga","Marie","F","1972-07-30","u_dt","p_dt","actif","2008-04-01","national"],
+   ["Mufwar","","Van","M","1984-11-02","u_dt","p_ast","actif","2012-02-15","national"],["Ngoy","Kabeya","Christine","F","1990-05-21","u_dt","p_ast","actif","2016-09-01","national"],
+   ["Lukusa","Tshibola","Patrick","M","1961-01-18","u_daf","p_daf","actif","1998-06-01","national"],["Mwamba","Kasongo","Berthe","F","1979-09-09","u_rh","p_rh","actif","2010-03-01","national"],
+   ["Banza","Kitenge","Joël","M","1993-12-25","u_inf","p_inf","actif","2019-07-01","national"],["Mutombo","Nsimba","Aimée","F","1996-04-14","u_inf","p_inf","actif","2021-01-11","national"],
+   ["Kazadi","Mpoyi","David","M","2001-08-08","u_kin","pk_asv","actif","2023-02-01","kinshasa"],["Ilunga","Mukendi","Sylvie","F","1969-02-27","u_kin","pk_del","actif","2002-10-01","kinshasa"],
+   ["Tshisekedi","Kanku","Alain","M","1975-06-03","u_kin","pk_del","suspendu","2009-05-01","kinshasa"],["Mbombo","Ntumba","Rachel","F","1987-10-19","u_kor","","actif","2015-01-01","kasai-oriental"],
+   ["Kabongo","Lubaki","Samuel","M","","","","actif","","national"],["Nzuzi","Makiese","Gisèle","F","1958-12-01","","","retraite","1992-01-01","national"],["Okito","Bolenge","Eric","M","1980-03-30","u_kin","pk_del","sorti","2011-01-01","kinshasa"],
+   ["Kapinga","Wa Mbuyi","Flora","F","1983-06-06","u_kor","po_asv","actif","2014-03-03","kasai-oriental"],["Tshala","Muamba","Didier","M","1991-09-19","","","actif","2020-08-01","kinshasa"]
   ];
-  rows.forEach(function(r,i){ var id = "dag"+i; H.n++; H.hr_agents[id] = {id:id, matricule_rh:"RH-"+String(i+1).padStart(5,"0"), nom:r[0].toUpperCase(), postnom:r[1]?r[1].toUpperCase():null, prenom:r[2], sexe:r[3], date_naissance:r[4]||null, lieu_naissance:r[4]?"Kinshasa":null, etat_civil:i%2?"Marié(e)":"Célibataire", nationalite:"Congolaise", adresse:null, telephone:i%4===0?null:"+24381000"+String(1000+i), email:null, poste_id:r[6]||null, unite_id:r[5]||null, grade:null, echelon:null, statut:r[7], date_embauche:r[8]||null, date_sortie:r[7]==="sorti"?"2024-06-30":null, motif_sortie:r[7]==="sorti"?"Démission":null, code_app:null, photo_path:null} });
+  rows.forEach(function(r,i){ var id = "dag"+i; H.n++; H.hr_agents[id] = {id:id, matricule_rh:"RH-"+String(i+1).padStart(5,"0"), nom:r[0].toUpperCase(), postnom:r[1]?r[1].toUpperCase():null, prenom:r[2], sexe:r[3], date_naissance:r[4]||null, lieu_naissance:r[4]?"Kinshasa":null, etat_civil:i%2?"Marié(e)":"Célibataire", nationalite:"Congolaise", adresse:null, telephone:i%4===0?null:"+24381000"+String(1000+i), email:null, poste_id:r[6]||null, unite_id:r[5]||null, grade:null, echelon:null, statut:r[7], date_embauche:r[8]||null, date_sortie:r[7]==="sorti"?"2024-06-30":null, motif_sortie:r[7]==="sorti"?"Démission":null, code_app:null, photo_path:null, entite_id:r[9]} });
   H.hr_famille.f1 = {id:"f1", agent_id:"dag2", lien:"conjoint", nom:"MUFWAR", prenom:"Épouse", sexe:"F", date_naissance:"1987-01-01", matricule_mesp:null, a_charge:true};
   H.hr_famille.f2 = {id:"f2", agent_id:"dag2", lien:"enfant", nom:"MUFWAR", prenom:"Curtis", sexe:"M", date_naissance:"2012-05-05", matricule_mesp:null, a_charge:true};
   H.hr_contacts.c1 = {id:"c1", agent_id:"dag2", nom:"Famille Mufwar", lien:"frère", telephone:"+243810000000"};
+  var nm = function(a){ return [a.nom,a.postnom,a.prenom].filter(Boolean).join(" ") };
+  var sn = function(a){ var p = H.hr_postes[a.poste_id]; return {matricule_rh:a.matricule_rh, nom:nm(a), sexe:a.sexe, date_naissance:a.date_naissance, grade:a.grade, echelon:a.echelon, date_embauche:a.date_embauche, statut:a.statut, poste:p?p.intitule:null} };
+  H.hr_mutations.m1 = {id:"m1", agent_id:"dag15", entite_origine:"kasai-oriental", entite_destination:"kinshasa", motif:"Rapprochement familial", statut:"proposee", propose_par:"DEMO-kasai-oriental", propose_le:new Date(Date.now()-864e5).toISOString(), decide_par:null, decide_le:null, decision_motif:null, poste_destination_id:null, unite_destination_id:null, snapshot:sn(H.hr_agents.dag15)};
+  H.hr_actes.a1 = {id:"a1", agent_id:"dag9", entite_id:"kinshasa", type:"promotion", details:{grade:"B1", echelon:"2", motif:"Ancienneté et résultats"}, statut:"en_attente", demandeur:"DEMO-kinshasa", demande_le:new Date(Date.now()-36e5*5).toISOString(), decideur:null, decide_le:null, decision_motif:null, snapshot:sn(H.hr_agents.dag9)};
+  var DJ = function(n){ return new Date(Date.now()-n*864e5).toLocaleDateString("en-CA",{timeZone:"Africa/Kinshasa"}) }, TI = function(n,hm){ return new Date(DJ(n)+"T"+hm+":00+01:00").toISOString() };
+  [["dag9",1,"07:52","16:30"],["dag10",1,"08:20","16:45"],["dag8",1,"07:58","16:10"],["dag0",1,"07:40","17:00"],["dag2",1,"08:35","17:05"],["dag15",1,"07:55","16:20"]].forEach(function(r,i){ var a = H.hr_agents[r[0]]; H.hr_presences["pp"+i] = {id:"pp"+i, entite_id:a.entite_id, agent_id:a.id, jour:DJ(r[1]), arrivee:TI(r[1],r[2]), depart:TI(r[1],r[3]), photo_arrivee:null, photo_depart:null, observation:null, suspect:false} });
+  H.hr_conges.c1 = {id:"c1", entite_id:"kinshasa", agent_id:"dag9", type:"annuel", date_debut:DJ(0), date_fin:DJ(-4), jours:5, motif:"Congé annuel", statut:"approuve", demande_par:"DEMO-kinshasa", demande_le:new Date(Date.now()-5*864e5).toISOString(), decide_par:"DEMO-kinshasa", decide_le:new Date(Date.now()-4*864e5).toISOString(), decision_motif:null};
+  H.hr_conges.c2 = {id:"c2", entite_id:"kinshasa", agent_id:"dag8", type:"maladie", date_debut:DJ(-7), date_fin:DJ(-9), jours:3, motif:"Repos médical", statut:"demande", demande_par:"DEMO-kinshasa", demande_le:new Date().toISOString(), decide_par:null, decide_le:null, decision_motif:null};
+  H.hr_acces.K1 = {code:"K1", nom:"DRH Kinshasa (démo)", niveau:"drh", entite_id:"kinshasa"};
   return H;
+}
+function demoHrStats(S){
+  var H = demoHr(S), on = function(a){ return a.statut==="actif" || a.statut==="suspendu" };
+  return Object.keys(H.hr_entites).map(function(k){ return H.hr_entites[k] }).filter(function(e){ return e.actif!==false }).map(function(e){
+    var ag = Object.keys(H.hr_agents).map(function(i){ return H.hr_agents[i] }).filter(function(a){ return a.entite_id===e.id && on(a) }), ps = Object.keys(H.hr_postes).map(function(i){ return H.hr_postes[i] }).filter(function(p){ return p.entite_id===e.id && p.actif!==false });
+    var prevu = 0, vac = 0; ps.forEach(function(p){ var o = ag.filter(function(a){ return a.poste_id===p.id }).length; prevu += +p.effectif_prevu||0; vac += Math.max(0, (+p.effectif_prevu||0)-o) });
+    return {entite_id:e.id, nom:e.nom, type:e.type, effectif:ag.length, hommes:ag.filter(function(a){ return a.sexe==="M" }).length, femmes:ag.filter(function(a){ return a.sexe==="F" }).length, prevu:prevu, vacants:vac, sans_poste:ag.filter(function(a){ return !a.poste_id }).length, incomplets:ag.filter(function(a){ return !a.date_naissance || !a.sexe || !a.unite_id || !a.poste_id || !a.telephone }).length};
+  }).sort(function(a,b){ return (a.type==="national"?0:1)-(b.type==="national"?0:1) || a.nom.localeCompare(b.nom) });
+}
+function demoHrRpc(S, n, a){
+  var H = demoHr(S), me = HRM.as || "national", actor = "DEMO-"+me, now = new Date().toISOString(), E = function(m){ return {data:null, error:{message:m}} };
+  var on = function(x){ return x.statut==="actif" || x.statut==="suspendu" }, list = function(t){ return Object.keys(H[t]).map(function(k){ return H[t][k] }) };
+  var nm = function(x){ return [x.nom,x.postnom,x.prenom].filter(Boolean).join(" ") };
+  var J = function(t, id, act, d){ H.J.push({id:H.J.length+1, at:now, acteur:"DEMO", action:act, table_name:t, ligne_id:id, details:d||null}) };
+  var snap = function(x){ var p = H.hr_postes[x.poste_id]; return {matricule_rh:x.matricule_rh, nom:nm(x), sexe:x.sexe, date_naissance:x.date_naissance, grade:x.grade, echelon:x.echelon, date_embauche:x.date_embauche, statut:x.statut, poste:p?p.intitule:null} };
+  var occ = function(pid, except){ return list("hr_agents").filter(function(x){ return x.poste_id===pid && on(x) && x.id!==except }).length };
+  if(n==="hr_mutation_proposer"){
+    var ag = H.hr_agents[a.p_agent]; if(!ag || ag.entite_id!==me) return E("Agent introuvable dans votre entité");
+    if(!on(ag)) return E("Seul un agent en service peut être muté"); if(!String(a.p_motif||"").trim()) return E("Le motif est obligatoire");
+    if(a.p_dest===me) return E("L'entité d'accueil doit être différente"); if(!H.hr_entites[a.p_dest]) return E("Entité d'accueil inconnue");
+    if(list("hr_mutations").some(function(m){ return m.agent_id===ag.id && m.statut==="proposee" })) return E("Une mutation est déjà en cours pour cet agent");
+    var id = "m"+Date.now().toString(36)+Math.random().toString(36).slice(2,5); H.hr_mutations[id] = {id:id, agent_id:ag.id, entite_origine:me, entite_destination:a.p_dest, motif:String(a.p_motif).trim(), statut:"proposee", propose_par:actor, propose_le:now, decide_par:null, decide_le:null, decision_motif:null, poste_destination_id:null, unite_destination_id:null, snapshot:snap(ag)}; J("hr_mutations", id, "insert"); return {data:id, error:null};
+  }
+  if(n==="hr_mutation_repondre"){
+    var m = H.hr_mutations[a.p_id]; if(!m || m.entite_destination!==me) return E("Mutation introuvable"); if(m.statut!=="proposee") return E("Cette mutation est déjà traitée");
+    if(!a.p_accepter){ if(!String(a.p_motif||"").trim()) return E("Le motif du refus est obligatoire"); Object.assign(m, {statut:"refusee", decide_par:actor, decide_le:now, decision_motif:String(a.p_motif).trim()}); J("hr_mutations", m.id, "update"); return {data:null, error:null} }
+    var ag2 = H.hr_agents[m.agent_id], p = H.hr_postes[a.p_poste]; if(!ag2 || ag2.entite_id!==m.entite_origine || !on(ag2)) return E("L'agent n'est plus disponible pour une mutation");
+    if(!p || p.entite_id!==m.entite_destination || p.actif===false) return E("Choisissez un poste de votre entité");
+    if(occ(p.id) >= p.effectif_prevu) return E("Poste complet : "+p.intitule+" (effectif prévu "+p.effectif_prevu+")");
+    if(a.p_unite && (!H.hr_unites[a.p_unite] || H.hr_unites[a.p_unite].entite_id!==m.entite_destination)) return E("Unité d'une autre entité");
+    Object.assign(ag2, {entite_id:m.entite_destination, poste_id:p.id, unite_id:a.p_unite||null}); Object.assign(m, {statut:"executee", decide_par:actor, decide_le:now, poste_destination_id:p.id, unite_destination_id:a.p_unite||null}); J("hr_mutations", m.id, "update"); return {data:null, error:null};
+  }
+  if(n==="hr_mutation_annuler"){ var m2 = H.hr_mutations[a.p_id]; if(!m2 || m2.entite_origine!==me || m2.statut!=="proposee") return E("Mutation introuvable ou déjà traitée"); Object.assign(m2, {statut:"annulee", decide_par:actor, decide_le:now}); J("hr_mutations", m2.id, "update"); return {data:null, error:null} }
+  if(n==="hr_acte_demander"){
+    var g = H.hr_agents[a.p_agent], d = a.p_details||{}; if(!g || g.entite_id!==me) return E("Agent introuvable dans votre entité");
+    if(list("hr_actes").some(function(x){ return x.agent_id===g.id && x.statut==="en_attente" })) return E("Un acte est déjà en attente de validation pour cet agent");
+    if(a.p_type==="promotion"){ if(!d.grade) return E("Le nouveau grade est obligatoire") }
+    else if(a.p_type==="suspension"){ if(g.statut!=="actif") return E("Seul un agent actif peut être suspendu"); if(!d.motif) return E("Le motif est obligatoire") }
+    else if(a.p_type==="reintegration"){ if(g.statut!=="suspendu") return E("Seul un agent suspendu peut être réintégré") }
+    else if(a.p_type==="sortie"){ if(!on(g)) return E("Cet agent est déjà sorti"); if(["licenciement","demission","deces","fin_contrat","retraite"].indexOf(d.motif)<0) return E("Motif de sortie invalide"); if(!d.date_effet) return E("La date d'effet est obligatoire") }
+    else return E("Type d'acte inconnu");
+    var id2 = "a"+Date.now().toString(36)+Math.random().toString(36).slice(2,5); H.hr_actes[id2] = {id:id2, agent_id:g.id, entite_id:g.entite_id, type:a.p_type, details:d, statut:"en_attente", demandeur:actor, demande_le:now, decideur:null, decide_le:null, decision_motif:null, snapshot:snap(g)}; J("hr_actes", id2, "insert"); return {data:id2, error:null};
+  }
+  if(n==="hr_acte_decider"){
+    if(me!=="national") return E("Seule la DRH nationale valide les actes sensibles");
+    var x = H.hr_actes[a.p_id]; if(!x) return E("Acte introuvable"); if(x.statut!=="en_attente") return E("Cet acte est déjà traité"); if(x.demandeur===actor) return E("Vous ne pouvez pas valider votre propre demande");
+    if(!a.p_valider){ if(!String(a.p_motif||"").trim()) return E("Le motif du rejet est obligatoire"); Object.assign(x, {statut:"rejete", decideur:actor, decide_le:now, decision_motif:String(a.p_motif).trim()}); J("hr_actes", x.id, "update"); return {data:null, error:null} }
+    var t = H.hr_agents[x.agent_id], d2 = x.details;
+    if(x.type==="promotion") Object.assign(t, {grade:d2.grade, echelon:d2.echelon||null});
+    else if(x.type==="suspension") t.statut = "suspendu"; else if(x.type==="reintegration") t.statut = "actif";
+    else if(x.type==="sortie") Object.assign(t, {statut:d2.motif==="retraite"?"retraite":"sorti", date_sortie:d2.date_effet, motif_sortie:{licenciement:"Licenciement", demission:"Démission", deces:"Décès", fin_contrat:"Fin de contrat", retraite:"Retraite"}[d2.motif], poste_id:null});
+    Object.assign(x, {statut:"valide", decideur:actor, decide_le:now, decision_motif:a.p_motif||null}); J("hr_actes", x.id, "update"); return {data:null, error:null};
+  }
+  if(n==="hr_acte_annuler"){ var y = H.hr_actes[a.p_id]; if(!y || y.entite_id!==me || y.statut!=="en_attente") return E("Acte introuvable ou déjà traité"); Object.assign(y, {statut:"annule", decideur:actor, decide_le:now}); J("hr_actes", y.id, "update"); return {data:null, error:null} }
+  return E("Fonction inconnue");
 }
 function demoHq(S, t){
   var H = demoHr(S), q = {op:"s", f:[], pl:null, ord:null, rng:null, lim:null}, pk = HRT[t];
-  var api = { select:function(){ return api }, eq:function(c,v){ q.f.push([c,v]); return api }, order:function(c,o){ q.ord = [c, !(o && o.ascending===false)]; return api }, range:function(a,b){ q.rng = [a,b]; return api }, limit:function(n){ q.lim = n; return api }, upsert:function(p){ q.op = "u"; q.pl = p; return api }, delete:function(){ q.op = "d"; return api },
+  var api = { select:function(){ return api }, eq:function(c,v){ q.f.push([c,v]); return api }, gte:function(c,v){ q.g = [c,v]; return api }, order:function(c,o){ q.ord = [c, !(o && o.ascending===false)]; return api }, range:function(a,b){ q.rng = [a,b]; return api }, limit:function(n){ q.lim = n; return api }, upsert:function(p){ q.op = "u"; q.pl = p; return api }, delete:function(){ q.op = "d"; return api },
     then:function(a,b){ return Promise.resolve(run()).then(a,b) } };
   function J(action, id, d){ H.J.push({id:H.J.length+1, at:new Date().toISOString(), acteur:"DEMO", action:action, table_name:t, ligne_id:id, details:d}) }
+  function chk(r, old){
+    if(t==="hr_presences"){ if(!old && Object.keys(H.hr_presences).some(function(k){ var x = H.hr_presences[k]; return x.agent_id===r.agent_id && x.jour===r.jour })) return "duplicate key value violates unique constraint (agent_id, jour)"; if(!old){ r.arrivee = new Date().toISOString(); r.jour = new Date().toLocaleDateString("en-CA",{timeZone:"Africa/Kinshasa"}); r.depart = null } else { r.arrivee = old.arrivee; r.jour = old.jour; if(old.depart) r.depart = old.depart; else if(r.depart) r.depart = new Date().toISOString() } }
+    if(t==="hr_conges"){ var me = HRM.as || "national", ag = H.hr_agents[r.agent_id];
+      if(!old){ if(r.statut!=="demande") return "Une demande de congé commence au statut « demande »"; if(Object.keys(H.hr_conges).some(function(k){ var c = H.hr_conges[k]; return c.agent_id===r.agent_id && (c.statut==="demande"||c.statut==="approuve") && c.date_debut<=r.date_fin && c.date_fin>=r.date_debut })) return "Cet agent a déjà un congé ou une demande sur cette période" }
+      else if(r.statut!==old.statut){ if(old.statut==="demande" && (r.statut==="approuve"||r.statut==="refuse")){ if(me!=="national" && me!=="kinshasa" && me!=="kasai-oriental") return "Seule la DRH approuve ou refuse un congé"; if(r.statut==="refuse" && !String(r.decision_motif||"").trim()) return "Le motif du refus est obligatoire" } else if(!((old.statut==="demande"||old.statut==="approuve") && r.statut==="annule")) return "Changement de statut non autorisé" }
+      if(r.statut==="approuve" && (!old || old.statut!=="approuve") && r.type==="annuel"){ var droit = (H.hr_entites[r.entite_id]||{}).conge_annuel||30, deja = 0; Object.keys(H.hr_conges).forEach(function(k){ var c = H.hr_conges[k]; if(c.id!==r.id && c.agent_id===r.agent_id && c.type==="annuel" && c.statut==="approuve" && String(c.date_debut).slice(0,4)===String(r.date_debut).slice(0,4)) deja += c.jours }); if(deja + r.jours > droit) return "Solde insuffisant : "+deja+" jour(s) déjà pris sur "+droit+" cette année" } }
+    return null;
+  }
   function run(){
     if(t==="hr_journal"){ var j = H.J.slice(); if(q.ord && !q.ord[1]) j.reverse(); if(q.lim) j = j.slice(0,q.lim); return {data:JSON.parse(JSON.stringify(j)), error:null} }
     var T = H[t] = H[t] || {};
-    if(q.op==="u"){ var r = JSON.parse(JSON.stringify(q.pl)), old = T[r[pk]]; if(t==="hr_agents" && !r.matricule_rh){ H.n++; r.matricule_rh = "RH-"+String(H.n+100).padStart(5,"0") } T[r[pk]] = Object.assign({}, old, r); J(old?"update":"insert", r[pk], r); return {data:[JSON.parse(JSON.stringify(T[r[pk]]))], error:null} }
+    if(q.op==="u"){ var r = JSON.parse(JSON.stringify(q.pl)), old = T[r[pk]]; if(t==="hr_agents" && !r.matricule_rh){ H.n++; r.matricule_rh = "RH-"+String(H.n+100).padStart(5,"0") } var ce = chk(r, old); if(ce) return {data:null, error:{message:ce}}; T[r[pk]] = Object.assign({}, old, r); J(old?"update":"insert", r[pk], r); return {data:[JSON.parse(JSON.stringify(T[r[pk]]))], error:null} }
     if(q.op==="d"){ var k = q.f[0][1]; delete T[k]; J("delete", k, null); if(t==="hr_agents") ["hr_famille","hr_contacts","hr_pieces"].forEach(function(c){ Object.keys(H[c]).forEach(function(x){ if(H[c][x].agent_id===k) delete H[c][x] }) }); return {data:null, error:null} }
-    var rows = Object.keys(T).map(function(k){ return T[k] }).sort(function(a,b){ return String(a[pk]).localeCompare(String(b[pk])) });
+    var me = HRM.as || "national", nat = me==="national";
+    var rows = Object.keys(T).map(function(k){ return T[k] }).filter(function(r){
+      if(t==="hr_agents") return r.entite_id===me;
+      if(t==="hr_famille" || t==="hr_contacts" || t==="hr_pieces"){ var ag = H.hr_agents[r.agent_id]; return ag && ag.entite_id===me }
+      if(t==="hr_unites" || t==="hr_postes") return nat || r.entite_id===me;
+      if(t==="hr_entites") return nat || r.id===me;
+      if(t==="hr_acces") return nat || r.entite_id===me;
+      if(t==="hr_mutations") return r.entite_origine===me || r.entite_destination===me;
+      if(t==="hr_actes") return nat || r.entite_id===me;
+      if(t==="hr_presences" || t==="hr_presence_alertes" || t==="hr_conges"){ if(r.entite_id!==me) return false; if(q.g && String(r[q.g[0]]) < q.g[1]) return false; return true }
+      return true;
+    }).sort(function(a,b){ return String(a[pk]).localeCompare(String(b[pk])) });
     if(q.rng) rows = rows.slice(q.rng[0], q.rng[1]+1);
     return {data:JSON.parse(JSON.stringify(rows)), error:null};
   }
@@ -2840,19 +2948,31 @@ function demoHq(S, t){
 
 /* ===== MESP RH — étape 1 : dossier du personnel, postes, organigramme, tableau de bord ===== */
 var PORTAL = "", HR_RET = 65;
-var HRT = {hr_unites:"id", hr_postes:"id", hr_agents:"id", hr_famille:"id", hr_contacts:"id", hr_pieces:"id", hr_acces:"code"};
-var HRM = {d:{}, loaded:false, busy:false, err:"", tab:"dash", sel:null, f:{q:"", unite:"", statut:"", sexe:"", band:"", inc:false}, jr:[], blob:{}, photos:{}};
+var HRT = {hr_mutations:"id", hr_actes:"id", hr_entites:"id", hr_unites:"id", hr_postes:"id", hr_agents:"id", hr_famille:"id", hr_contacts:"id", hr_pieces:"id", hr_acces:"code", hr_presences:"id", hr_presence_alertes:"id", hr_conges:"id"};
+var HRM = {as:"national", st:null, stBusy:false, d:{}, loaded:false, busy:false, err:"", tab:"dash", sel:null, f:{q:"", unite:"", statut:"", sexe:"", band:"", inc:false}, jr:[], blob:{}, photos:{}};
 var HR_BANDS = [["Moins de 25 ans",0,24],["25 à 34 ans",25,34],["35 à 44 ans",35,44],["45 à 54 ans",45,54],["55 à 64 ans",55,64],["65 ans et plus",65,200],["Non renseigné",-1,-1]];
 var HR_LIEN = {conjoint:"Conjoint(e)", enfant:"Enfant", pere:"Père", mere:"Mère", autre:"Autre"};
 var HR_ST = {actif:"Actif", suspendu:"Suspendu", retraite:"Retraité", sorti:"Sorti"};
 var HR_UT = {direction:"Direction", service:"Service", ville:"Ville", antenne:"Antenne"};
+var HR_AT = {promotion:"Promotion / changement de grade", suspension:"Suspension", reintegration:"Réintégration", sortie:"Sortie de service"};
+var HR_MS = {licenciement:"Licenciement", demission:"Démission", deces:"Décès", fin_contrat:"Fin de contrat", retraite:"Retraite"};
+var HR_AS = {en_attente:"En attente de validation", valide:"Validé", rejete:"Rejeté", annule:"Annulé"};
+var HR_MT = {proposee:"Proposée", executee:"Acceptée — dossier transféré", refusee:"Refusée", annulee:"Annulée"};
 var HR_PT = ["Diplôme","Pièce d'identité","Acte de naissance","Acte de mariage","Contrat","Autre"];
 function hrId(){ return "h"+Date.now().toString(36)+Math.random().toString(36).slice(2,6) }
 function hrLvl(){
-  if(!AG) return null;
+  if(!AG) return null; if(DEMO) return "drh";
   if(AG.v==="National" && ["autre","medecin","chef"].indexOf(AG.r)<0) return "drh";
   var a = HRM.d.hr_acces && HRM.d.hr_acces[AG.c]; return a ? a.niveau : null;
 }
+function hrEnt(){
+  if(!AG) return null; if(DEMO) return HRM.as || "national";
+  if(AG.v==="National" && ["autre","medecin","chef"].indexOf(AG.r)<0) return "national";
+  var a = HRM.d.hr_acces && HRM.d.hr_acces[AG.c]; return a ? a.entite_id : null;
+}
+function hrNat(){ return hrEnt()==="national" && (hrLvl()==="drh" || hrLvl()==="gestionnaire") }
+function hrEntNom(id){ var e = id && HRM.d.hr_entites && HRM.d.hr_entites[id]; return e ? e.nom : (id==="national" ? "Siège national" : (id||"—")) }
+function hrMine(t){ var e = hrEnt(); return hrList(t).filter(function(x){ return x.entite_id===e }) }
 function hrCanW(){ var l = hrLvl(); return l==="drh" || l==="gestionnaire" }
 function hrList(t){ var d = HRM.d[t] || {}; return Object.keys(d).map(function(k){ return d[k] }) }
 function hrName(a){ return [a.nom, a.postnom, a.prenom].filter(Boolean).join(" ") }
@@ -2863,18 +2983,18 @@ function hrPo(id){ var p = id && HRM.d.hr_postes && HRM.d.hr_postes[id]; return 
 function hrOn(a){ return a.statut==="actif" || a.statut==="suspendu" }
 function hrBand(a){ var g = hrAge(a); if(g==null) return 6; for(var i=0;i<6;i++) if(g>=HR_BANDS[i][1] && g<=HR_BANDS[i][2]) return i; return 6 }
 function hrDesc(id){ var out = [id], ch = hrList("hr_unites").filter(function(u){ return u.parent_id===id }); ch.forEach(function(u){ out = out.concat(hrDesc(u.id)) }); return out }
-function hrTree(parent, depth, out){
-  out = out || []; var l = hrList("hr_unites").filter(function(u){ return (u.parent_id||null)===(parent||null) }).sort(function(a,b){ return (a.ordre-b.ordre) || a.nom.localeCompare(b.nom,"fr") });
-  l.forEach(function(u){ out.push({u:u, d:depth}); hrTree(u.id, depth+1, out) }); return out;
+function hrTree(parent, depth, out, ent){
+  out = out || []; var l = hrList("hr_unites").filter(function(u){ return (u.parent_id||null)===(parent||null) && (!ent || u.entite_id===ent) }).sort(function(a,b){ return (a.ordre-b.ordre) || a.nom.localeCompare(b.nom,"fr") });
+  l.forEach(function(u){ out.push({u:u, d:depth}); hrTree(u.id, depth+1, out, ent) }); return out;
 }
-function hrRoots(){ var all = hrList("hr_unites"), ids = {}; all.forEach(function(u){ ids[u.id] = 1 }); return all.filter(function(u){ return !u.parent_id || !ids[u.parent_id] }) }
+function hrRoots(ent){ var all = hrList("hr_unites").filter(function(u){ return !ent || u.entite_id===ent }), ids = {}; all.forEach(function(u){ ids[u.id] = 1 }); return all.filter(function(u){ return !u.parent_id || !ids[u.parent_id] }) }
 function hrIncomplete(a){ return !a.date_naissance || !a.sexe || !a.unite_id || !a.poste_id || !a.telephone }
 function hrClean(o){ var r = {}; Object.keys(o).forEach(function(k){ r[k] = (o[k]==="" ? null : o[k]) }); return r }
 
 /* ---------- accès aux données ---------- */
 async function hrFetch(t){
   var k = HRT[t], out = {}, from = 0;
-  for(;;){ var r = await SB.from(t).select("*").order(k).range(from, from+999); if(r.error) throw r.error; r.data.forEach(function(x){ out[x[k]] = x }); if(r.data.length<1000) break; from += 1000 }
+  for(;;){ var qy = SB.from(t).select("*"); if(t==="hr_presences") qy = qy.gte("jour", new Date(Date.now()-60*864e5).toLocaleDateString("en-CA")); var r = await qy.order(k).range(from, from+999); if(r.error) throw r.error; r.data.forEach(function(x){ out[x[k]] = x }); if(r.data.length<1000) break; from += 1000 }
   return out;
 }
 async function hrPut(t, row){
@@ -2888,6 +3008,14 @@ async function hrDel(t, id){
   if(t==="hr_unites"){ hrList("hr_unites").forEach(function(u){ if(u.parent_id===id) u.parent_id = null }); hrList("hr_postes").forEach(function(p){ if(p.unite_id===id) p.unite_id = null }); hrList("hr_agents").forEach(function(a){ if(a.unite_id===id) a.unite_id = null }) }
   if(t==="hr_postes") hrList("hr_agents").forEach(function(a){ if(a.poste_id===id) a.poste_id = null });
 }
+function hrActor(){ return DEMO ? "DEMO-"+(HRM.as||"national") : (AG && AG.c) }
+async function hrReload(ts){ for(var i=0;i<ts.length;i++) HRM.d[ts[i]] = await hrFetch(ts[i]) }
+async function hrRpc(fn, args){
+  var r = await SB.rpc(fn, args); if(r.error) throw new Error(r.error.message || "Opération refusée");
+  await hrReload(["hr_mutations","hr_actes","hr_agents","hr_famille","hr_contacts","hr_pieces"]); return r.data;
+}
+function hrPendMut(){ return hrList("hr_mutations").filter(function(m){ return m.statut==="proposee" && m.entite_destination===hrEnt() }) }
+function hrPendActes(){ return hrList("hr_actes").filter(function(x){ return x.statut==="en_attente" && (hrNat() ? true : x.entite_id===hrEnt()) }) }
 async function hrLoad(){
   HRM.busy = true; HRM.err = ""; hrRender();
   try{ for(var t in HRT) HRM.d[t] = await hrFetch(t); HRM.loaded = true }
@@ -2918,28 +3046,29 @@ function hrOpen(){
   var el = $("hr"); if(!el) return; PORTAL = "rh"; el.classList.remove("hide"); el.scrollTop = 0;
   if(!HRM.loaded && !HRM.busy) hrLoad(); else hrRender();
 }
-function hrClose(){ var el = $("hr"); if(el) el.classList.add("hide"); var m = $("hrm"); if(m) m.remove() }
+function hrClose(){ if(typeof hrKClose==="function") hrKClose(); var el = $("hr"); if(el) el.classList.add("hide"); var m = $("hrm"); if(m) m.remove() }
 
 /* ---------- affichage ---------- */
 function hrRender(){
   var el = $("hr"); if(!el || el.classList.contains("hide")) return;
-  var h = '<div class="hrw"><div class="hrh"><h1>MESP RH</h1><div class="hrsm"><button class="hrb" data-hract="refresh">↻ Actualiser</button><button class="hrb" data-hract="portals">☰ Portails</button></div></div>';
+  var h = '<div class="hrw"><div class="hrh"><h1>MESP RH</h1><div class="hrsm">'+(DEMO?'<select id="hras" title="Démonstration : voir comme"><option value="national"'+(HRM.as==="national"?' selected':'')+'>Voir comme : Siège national</option><option value="kinshasa"'+(HRM.as==="kinshasa"?' selected':'')+'>Voir comme : Kinshasa</option><option value="kasai-oriental"'+(HRM.as==="kasai-oriental"?' selected':'')+'>Voir comme : Kasaï-Oriental</option></select>':'')+'<button class="hrb" data-hract="refresh">↻ Actualiser</button><button class="hrb" data-hract="portals">☰ Portails</button></div></div>';
   if(HRM.busy){ el.innerHTML = h+'<p class="hrmsg">Chargement…</p></div>'; return }
   if(HRM.err){ el.innerHTML = h+'<div class="card"><b style="color:var(--ko)">Impossible de charger les données RH</b><p class="sub" style="margin-top:8px">'+esc(HRM.err)+'</p><button class="hrb pri" data-hract="refresh">Réessayer</button></div></div>'; return }
   var lv = hrLvl();
   if(!lv){ el.innerHTML = h+'<div class="card"><b>Accès non autorisé</b><p class="sub" style="margin-top:8px">Votre compte n\'a pas d\'accès au portail RH. Demandez à la DRH de vous l\'attribuer.</p></div></div>'; return }
-  var tabs = [["dash","Tableau de bord"],["agents","Agents"],["orga","Organigramme"],["postes","Postes"]]; if(lv==="drh") tabs.push(["acces","Accès"],["journal","Journal"]);
-  h += '<p class="sub" style="margin:0 0 4px">'+esc(AG.n)+' · accès <b>'+esc({drh:"DRH", gestionnaire:"Gestionnaire", lecture:"Lecture seule"}[lv])+'</b></p>';
+  var nm = hrPendMut().length, na = hrPendActes().length, npa = lv==="drh" ? hrList("hr_presence_alertes").filter(function(x){ return x.statut==="a_confirmer" }).length : 0, ncg = lv==="drh" ? hrList("hr_conges").filter(function(x){ return x.statut==="demande" }).length : 0, tabs = [["dash","Tableau de bord"],["agents","Agents"],["orga","Organigramme"],["postes","Postes"],["mut","Mutations"+(nm?" ("+nm+")":"")],["actes","Actes"+(na?" ("+na+")":"")],["pres","Présences"+(npa?" ⚠":"")],["conges","Congés"+(ncg?" ("+ncg+")":"")]]; if(hrNat()) tabs.push(["entites","Entités"]); if(lv==="drh") tabs.push(["acces","Accès"],["journal","Journal"]);
+  if(!hrEnt()){ el.innerHTML = h+'<div class="card"><b>Accès non rattaché à une entité</b><p class="sub" style="margin-top:8px">Votre accès RH n\'est rattaché à aucune entité. Contactez la DRH.</p></div></div>'; return }
+  h += '<p class="sub" style="margin:0 0 4px">'+esc(AG.n)+' · entité <b>'+esc(hrEntNom(hrEnt()))+'</b> · accès <b>'+esc({drh:"DRH", gestionnaire:"Gestionnaire", lecture:"Lecture seule"}[lv])+'</b></p>';
   h += '<div class="hrt">'+tabs.map(function(t){ return '<button data-hrtab="'+t[0]+'" class="'+(HRM.tab===t[0] && !HRM.sel ? "on" : "")+'">'+t[1]+'</button>' }).join("")+'</div>';
   if(HRM.sel && HRM.d.hr_agents[HRM.sel]) h += hrFiche(HRM.sel);
-  else { HRM.sel = null; h += HRM.tab==="dash" ? hrDash() : HRM.tab==="agents" ? hrAgents() : HRM.tab==="orga" ? hrOrga() : HRM.tab==="postes" ? hrPostes() : HRM.tab==="acces" ? hrAcces() : hrJournal() }
+  else { HRM.sel = null; h += HRM.tab==="dash" ? hrDash() : HRM.tab==="agents" ? hrAgents() : HRM.tab==="orga" ? hrOrga() : HRM.tab==="postes" ? hrPostes() : HRM.tab==="mut" ? hrMut() : HRM.tab==="actes" ? hrActes() : HRM.tab==="pres" ? hrPres() : HRM.tab==="conges" ? hrConges() : HRM.tab==="entites" && hrNat() ? hrEntites() : HRM.tab==="acces" ? hrAcces() : hrJournal() }
   el.innerHTML = h+'</div>';
   if(HRM.sel) hrPhoto(HRM.sel);
 }
 function hrCount(rows, fn){ var n = 0; rows.forEach(function(r){ if(fn(r)) n++ }); return n }
 function hrOcc(pid){ return hrCount(hrList("hr_agents"), function(a){ return a.poste_id===pid && hrOn(a) }) }
-function hrPrevu(ids){ var s = 0; hrList("hr_postes").forEach(function(p){ if(p.actif!==false && ids.indexOf(p.unite_id)>=0) s += +p.effectif_prevu||0 }); return s }
-function hrVacTot(){ var s = 0; hrList("hr_postes").forEach(function(p){ if(p.actif!==false) s += Math.max(0, (+p.effectif_prevu||0) - hrOcc(p.id)) }); return s }
+function hrPrevu(ids){ var s = 0; hrMine("hr_postes").forEach(function(p){ if(p.actif!==false && ids.indexOf(p.unite_id)>=0) s += +p.effectif_prevu||0 }); return s }
+function hrVacTot(){ var s = 0; hrMine("hr_postes").forEach(function(p){ if(p.actif!==false) s += Math.max(0, (+p.effectif_prevu||0) - hrOcc(p.id)) }); return s }
 function hrAnc(a){ if(!a.date_embauche) return null; var e = a.date_sortie && !hrOn(a) ? new Date(a.date_sortie) : new Date(), p = String(a.date_embauche).slice(0,10).split("-").map(Number); return Math.max(0, (e - new Date(p[0],p[1]-1,p[2]))/31557600000) }
 
 function hrDash(){
@@ -2949,12 +3078,14 @@ function hrDash(){
   var sansP = hrCount(on, function(a){ return !a.poste_id }), inc = hrCount(on, hrIncomplete);
   var k = function(l, v, c, f){ return '<div class="kpi'+(f?' cl" data-hf="'+f:'')+'"><small>'+l+'</small><b'+(c?' style="color:var(--'+c+')"':'')+'>'+v+'</b></div>' };
   var h = '<div class="hrk">'+k("Effectif en service", on.length)+k("Hommes", M, "", "sexe:M")+k("Femmes", F, "", "sexe:F")+k("Âge moyen", moy==null?"—":moy+" ans")
+    + (hrNat() && hrLvl()==="drh" ? k("Actes à valider", hrPendActes().length, hrPendActes().length?"ko":"ok", "t:actes") : "") + (hrCanW() ? k("Mutations reçues", hrPendMut().length, hrPendMut().length?"ko":"ok", "t:mut") : "")
     + k("Postes vacants", hrVacTot(), hrVacTot()?"ko":"ok")+k("Retraite ≤ 12 mois", ret.length, ret.length?"ko":"ok", "band:5")+k("Sans poste", sansP, sansP?"ko":"ok")+k("Dossiers incomplets", inc, inc?"ko":"ok", "inc:1")+'</div>';
+  if(hrNat()) h += hrStatsCard();
   /* effectif par unité */
   var rows = [], ex = [], tM = 0, tF = 0, tP = 0, tV = 0;
-  hrTree(null, 0).forEach(function(n){
+  hrTree(null, 0, null, hrEnt()).forEach(function(n){
     var u = n.u, ag = on.filter(function(a){ return a.unite_id===u.id }), m = ag.filter(function(a){ return a.sexe==="M" }).length, f = ag.filter(function(a){ return a.sexe==="F" }).length;
-    var pv = hrPrevu([u.id]), vac = 0; hrList("hr_postes").forEach(function(p){ if(p.unite_id===u.id && p.actif!==false) vac += Math.max(0, (+p.effectif_prevu||0) - hrOcc(p.id)) });
+    var pv = hrPrevu([u.id]), vac = 0; hrMine("hr_postes").forEach(function(p){ if(p.unite_id===u.id && p.actif!==false) vac += Math.max(0, (+p.effectif_prevu||0) - hrOcc(p.id)) });
     tM += m; tF += f; tP += pv; tV += vac;
     rows.push('<tr><td style="padding-left:'+(8+n.d*16)+'px">'+esc(u.nom)+' <small style="color:var(--muted)">'+HR_UT[u.type]+'</small></td><td class="n"'+(m?' data-hf="u:'+u.id+':M"':'')+'>'+m+'</td><td class="n"'+(f?' data-hf="u:'+u.id+':F"':'')+'>'+f+'</td><td class="n"'+(m+f?' data-hf="u:'+u.id+'"':'')+'><b>'+(m+f)+'</b></td><td class="n">'+pv+'</td><td class="n">'+vac+'</td></tr>');
     ex.push([u.nom, HR_UT[u.type], m, f, m+f, pv, vac]);
@@ -2982,6 +3113,19 @@ function hrDash(){
   return h;
 }
 
+async function hrLoadStats(){
+  if(HRM.stBusy) return; HRM.stBusy = true;
+  try{ var r = await SB.rpc("hr_stats_entites"); if(r.error) throw r.error; HRM.st = r.data || [] }catch(e){ HRM.st = []; HRM.stErr = (e && e.message) || String(e) }
+  HRM.stBusy = false; if(HRM.tab==="dash" && !HRM.sel) hrRender();
+}
+function hrStatsCard(){
+  if(HRM.st==null){ hrLoadStats(); return '<div class="card"><h3>Entités (chiffres consolidés)</h3><p class="hrmsg">Chargement…</p></div>' }
+  var rows = HRM.st.filter(function(x){ return x.type!=="national" }), T = {e:0,h:0,f:0,p:0,v:0,s:0,i:0}, ex = [];
+  var tr = rows.map(function(x){ T.e += x.effectif; T.h += x.hommes; T.f += x.femmes; T.p += x.prevu; T.v += x.vacants; T.s += x.sans_poste; T.i += x.incomplets; ex.push([x.nom, x.effectif, x.hommes, x.femmes, x.prevu, x.vacants, x.sans_poste, x.incomplets]);
+    return '<tr><td>'+esc(x.nom)+'</td><td class="n"><b>'+x.effectif+'</b></td><td class="n">'+x.hommes+'</td><td class="n">'+x.femmes+'</td><td class="n">'+x.prevu+'</td><td class="n" style="color:var(--'+(x.vacants?'ko':'ok')+')">'+x.vacants+'</td><td class="n">'+x.sans_poste+'</td><td class="n">'+x.incomplets+'</td></tr>' }).join("");
+  ex.push(["Total", T.e, T.h, T.f, T.p, T.v, T.s, T.i]); HRM.exE = ex;
+  return '<div class="card"><h3>Entités provinciales (chiffres consolidés)</h3><p class="sub">Les dossiers nominatifs des provinces restent dans leurs espaces : le siège n\'en voit que les totaux.</p><div class="tw"><table><thead><tr><th>Entité</th><th class="n">Effectif</th><th class="n">H</th><th class="n">F</th><th class="n">Prévu</th><th class="n">Vacants</th><th class="n">Sans poste</th><th class="n">Incomplets</th></tr></thead><tbody>'+(tr||'<tr><td colspan="8" class="sub">Aucune entité provinciale : créez-les dans l\'onglet Entités.</td></tr>')+(rows.length?'<tr class="tot"><td>Total provinces</td><td class="n">'+T.e+'</td><td class="n">'+T.h+'</td><td class="n">'+T.f+'</td><td class="n">'+T.p+'</td><td class="n">'+T.v+'</td><td class="n">'+T.s+'</td><td class="n">'+T.i+'</td></tr>':'')+'</tbody></table></div><div style="display:flex;gap:8px;margin-top:10px"><button class="hrb" data-hract="xlsx-ent">Excel</button><button class="hrb" data-hract="pdf-ent">PDF</button></div></div>';
+}
 function hrFiltered(){
   var f = HRM.f, q = (f.q||"").toLowerCase().trim(), ids = f.unite==="none" ? null : (f.unite ? hrDesc(f.unite) : null);
   return hrList("hr_agents").filter(function(a){
@@ -2998,7 +3142,7 @@ function hrAgRows(list){
   return list.map(function(a){ var g = hrAge(a); return '<div class="nrow" data-hrag="'+a.id+'"><div><b>'+esc(hrName(a))+'</b> <small>'+esc(a.matricule_rh)+(g!=null?' · '+g+' ans':'')+(a.sexe?' · '+a.sexe:'')+'</small><small style="display:block">'+esc(hrPo(a.poste_id))+' · '+esc(hrUn(a.unite_id))+'</small></div><span class="tag '+(hrOn(a)?'good':'rej')+'">'+HR_ST[a.statut]+'</span></div>' }).join("") || '<p class="sub">Aucun agent pour cette sélection.</p>';
 }
 function hrAgents(){
-  var f = HRM.f, ul = hrTree(null,0).map(function(n){ return '<option value="'+n.u.id+'"'+(f.unite===n.u.id?' selected':'')+'>'+'  '.repeat(n.d)+esc(n.u.nom)+'</option>' }).join("");
+  var f = HRM.f, ul = hrTree(null,0,null,hrEnt()).map(function(n){ return '<option value="'+n.u.id+'"'+(f.unite===n.u.id?' selected':'')+'>'+'  '.repeat(n.d)+esc(n.u.nom)+'</option>' }).join("");
   var h = '<div class="card"><div class="hrf"><input type="search" id="hrq" placeholder="Rechercher : nom, matricule RH, téléphone…" value="'+esc(f.q)+'"><select data-hrf="unite"><option value="">Toutes les unités</option>'+ul+'<option value="none"'+(f.unite==="none"?' selected':'')+'>Sans unité</option></select>'
     + '<select data-hrf="statut"><option value="">Tous statuts</option><option value="__on"'+(f.statut==="__on"?' selected':'')+'>En service</option>'+Object.keys(HR_ST).map(function(s){ return '<option value="'+s+'"'+(f.statut===s?' selected':'')+'>'+HR_ST[s]+'</option>' }).join("")+'</select>'
     + '<select data-hrf="sexe"><option value="">Hommes et femmes</option><option value="M"'+(f.sexe==="M"?' selected':'')+'>Hommes</option><option value="F"'+(f.sexe==="F"?' selected':'')+'>Femmes</option></select>'
@@ -3010,34 +3154,110 @@ function hrAgents(){
 function hrAgentsList(){ var l = hrFiltered(), b = $("hrlist"); if(!b) return; $("hrcnt").textContent = l.length+" agent"+(l.length>1?"s":""); b.innerHTML = hrAgRows(l.slice(0,300))+(l.length>300?'<p class="sub">Affinez la recherche : 300 premiers résultats affichés.</p>':'') }
 
 function hrOrga(){
-  var w = hrCanW(), h = '<div class="card"><h3>Organigramme</h3><p class="sub">Directions, services, villes et antennes. Cliquez sur un nom pour voir ses agents.</p>'+(w?'<button class="hrb pri" data-hract="new-unit">+ Nouvelle unité de premier niveau</button>':'')+'</div><div class="card">';
+  var nat = hrNat(), ents = nat ? hrList("hr_entites").sort(function(a,b){ return (a.type==="national"?0:1)-(b.type==="national"?0:1) || a.nom.localeCompare(b.nom,"fr") }) : [HRM.d.hr_entites[hrEnt()] || {id:hrEnt(), nom:hrEntNom(hrEnt())}];
+  var h = '<div class="card"><h3>Organigramme</h3><p class="sub">'+(nat?'Le niveau national crée les unités de chaque entité. Cliquez sur un nom pour voir ses agents.':'Organigramme de votre entité, défini par le niveau national. Cliquez sur un nom pour voir vos agents de l\'unité.')+'</p>'+(nat?'<button class="hrb pri" data-hract="new-unit">+ Nouvelle unité</button>':'')+'</div>';
   function node(u){
-    var ids = hrDesc(u.id), ag = hrCount(hrList("hr_agents"), function(a){ return hrOn(a) && a.unite_id===u.id }), agT = hrCount(hrList("hr_agents"), function(a){ return hrOn(a) && ids.indexOf(a.unite_id)>=0 });
+    var ids = hrDesc(u.id), mine = u.entite_id===hrEnt(), ag = mine ? hrCount(hrList("hr_agents"), function(a){ return hrOn(a) && a.unite_id===u.id }) : null, agT = mine ? hrCount(hrList("hr_agents"), function(a){ return hrOn(a) && ids.indexOf(a.unite_id)>=0 }) : null;
     var ch = hrList("hr_unites").filter(function(x){ return x.parent_id===u.id }).sort(function(a,b){ return (a.ordre-b.ordre) || a.nom.localeCompare(b.nom,"fr") });
-    return '<li><div class="un"><span><b data-hrunit="'+u.id+'">'+esc(u.nom)+'</b> <small>'+HR_UT[u.type]+(u.actif===false?' · inactive':'')+' · '+ag+' agent'+(ag>1?'s':'')+(ch.length?' (total '+agT+')':'')+' · prévu '+hrPrevu([u.id])+'</small></span>'+(w?'<span><button class="hrb" data-hract="sub-unit" data-id="'+u.id+'">+ Sous-unité</button> <button class="hrb" data-hract="edit-unit" data-id="'+u.id+'">✎</button></span>':'')+'</div>'+(ch.length?'<ul>'+ch.map(node).join("")+'</ul>':'')+'</li>';
+    return '<li><div class="un"><span><b'+(mine?' data-hrunit="'+u.id+'"':'')+'>'+esc(u.nom)+'</b> <small>'+HR_UT[u.type]+(u.actif===false?' · inactive':'')+(mine?' · '+ag+' agent'+(ag>1?'s':'')+(ch.length?' (total '+agT+')':''):'')+' · prévu '+hrPrevu([u.id])+'</small></span>'+(nat?'<span><button class="hrb" data-hract="sub-unit" data-id="'+u.id+'">+ Sous-unité</button> <button class="hrb" data-hract="edit-unit" data-id="'+u.id+'">✎</button></span>':'')+'</div>'+(ch.length?'<ul>'+ch.map(node).join("")+'</ul>':'')+'</li>';
   }
-  var roots = hrRoots().sort(function(a,b){ return (a.ordre-b.ordre) || a.nom.localeCompare(b.nom,"fr") });
-  h += roots.length ? '<ul class="hrtree">'+roots.map(node).join("")+'</ul>' : '<p class="sub">Aucune unité pour le moment.</p>';
-  return h+'</div>';
+  ents.forEach(function(e){
+    var roots = hrRoots(e.id).sort(function(a,b){ return (a.ordre-b.ordre) || a.nom.localeCompare(b.nom,"fr") });
+    h += '<div class="card"><h3>'+esc(e.nom)+'</h3>'+(roots.length ? '<ul class="hrtree">'+roots.map(node).join("")+'</ul>' : '<p class="sub">Aucune unité.</p>')+'</div>';
+  });
+  return h;
 }
 function hrPostes(){
-  var w = hrCanW(), vo = HRM.vo, rows = hrList("hr_postes").filter(function(p){ return !vo || (p.actif!==false && (+p.effectif_prevu||0) > hrOcc(p.id)) }).sort(function(a,b){ return a.intitule.localeCompare(b.intitule,"fr") });
-  var h = '<div class="card"><h3>Postes</h3><div style="display:flex;gap:8px;flex-wrap:wrap">'+(w?'<button class="hrb pri" data-hract="new-poste">+ Nouveau poste</button>':'')+'<button class="hrb'+(vo?' pri':'')+'" data-hract="vac">Postes vacants seulement</button><button class="hrb" data-hract="xlsx-po">Excel</button></div></div><div class="card tw"><table><thead><tr><th>Intitulé</th><th>Unité</th><th>Grade</th><th class="n">Prévu</th><th class="n">Occupé</th><th class="n">Vacant</th>'+(w?'<th></th>':'')+'</tr></thead><tbody>';
-  h += rows.map(function(p){ var o = hrOcc(p.id), v = (+p.effectif_prevu||0)-o; return '<tr><td>'+esc(p.intitule)+(p.actif===false?' <small>(inactif)</small>':'')+'</td><td>'+esc(hrUn(p.unite_id))+'</td><td>'+esc(p.grade||"—")+'</td><td class="n">'+(+p.effectif_prevu||0)+'</td><td class="n">'+o+'</td><td class="n" style="color:var(--'+(v>0?'ko':v<0?'ko':'ok')+')">'+(v>0?v:v<0?'+'+(-v)+' (surnombre)':0)+'</td>'+(w?'<td><button class="hrb" data-hract="edit-poste" data-id="'+p.id+'">✎</button></td>':'')+'</tr>' }).join("")||'<tr><td colspan="7" class="sub">Aucun poste.</td></tr>';
+  var nat = hrNat(), vo = HRM.vo, ent = HRM.pe || "", mineOnly = !nat;
+  var rows = hrList("hr_postes").filter(function(p){ return (mineOnly ? p.entite_id===hrEnt() : (!ent || p.entite_id===ent)) && (!vo || (p.actif!==false && (+p.effectif_prevu||0) > hrOcc(p.id))) }).sort(function(a,b){ return hrEntNom(a.entite_id).localeCompare(hrEntNom(b.entite_id),"fr") || a.intitule.localeCompare(b.intitule,"fr") });
+  var h = '<div class="card"><h3>Postes</h3><p class="sub">'+(nat?'Seul le niveau national crée et modifie les postes et leurs effectifs prévus par entité.':'Postes alloués à votre entité par le niveau national. Vous affectez vos agents à ces postes depuis leur fiche.')+'</p><div style="display:flex;gap:8px;flex-wrap:wrap">'+(nat?'<button class="hrb pri" data-hract="new-poste">+ Nouveau poste</button>':'')+'<button class="hrb'+(vo?' pri':'')+'" data-hract="vac">Postes vacants seulement</button><button class="hrb" data-hract="xlsx-po">Excel</button>'
+    + (nat?'<select id="hrpe" style="width:auto"><option value="">Toutes les entités</option>'+hrList("hr_entites").map(function(e){ return '<option value="'+e.id+'"'+(ent===e.id?' selected':'')+'>'+esc(e.nom)+'</option>' }).join("")+'</select>':'')+'</div></div><div class="card tw"><table><thead><tr><th>Intitulé</th><th>Entité</th><th>Unité</th><th>Grade</th><th class="n">Prévu</th><th class="n">Occupé</th><th class="n">Vacant</th>'+(nat?'<th></th>':'')+'</tr></thead><tbody>';
+  h += rows.map(function(p){ var o = hrOcc(p.id), v = (+p.effectif_prevu||0)-o, vis = p.entite_id===hrEnt(); return '<tr><td>'+esc(p.intitule)+(p.actif===false?' <small>(inactif)</small>':'')+'</td><td>'+esc(hrEntNom(p.entite_id))+'</td><td>'+esc(hrUn(p.unite_id))+'</td><td>'+esc(p.grade||"—")+'</td><td class="n">'+(+p.effectif_prevu||0)+'</td><td class="n">'+(vis?o:'—')+'</td><td class="n" style="color:var(--'+(v>0?'ko':v<0?'ko':'ok')+')">'+(vis?(v>0?v:v<0?'+'+(-v)+' (surnombre)':0):'—')+'</td>'+(nat?'<td><button class="hrb" data-hract="edit-poste" data-id="'+p.id+'">✎</button></td>':'')+'</tr>' }).join("")||'<tr><td colspan="8" class="sub">Aucun poste.</td></tr>';
   return h+'</tbody></table></div>';
 }
+function hrEntites(){
+  var ents = hrList("hr_entites").sort(function(a,b){ return (a.type==="national"?0:1)-(b.type==="national"?0:1) || a.nom.localeCompare(b.nom,"fr") });
+  var h = '<div class="card"><h3>Entités</h3><p class="sub">Le siège national et les provinces. Chaque entité a son propre espace RH.</p><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="hrb pri" data-hract="new-ent">+ Nouvelle entité</button><button class="hrb" data-hract="imp-ent">Importer les provinces de MESP Integra</button></div></div><div class="card">';
+  h += ents.map(function(e){ var np = hrCount(hrList("hr_postes"), function(p){ return p.entite_id===e.id }), nu = hrCount(hrList("hr_unites"), function(u){ return u.entite_id===e.id });
+    return '<div class="nrow"><div><b>'+esc(e.nom)+'</b> <small>'+(e.type==="national"?'Siège':'Province')+' · '+nu+' unité'+(nu>1?'s':'')+' · '+np+' poste'+(np>1?'s':'')+(e.actif===false?' · inactive':'')+'</small></div>'+(e.type==="national"?'':'<span><button class="hrb" data-hract="edit-ent" data-id="'+e.id+'">✎</button></span>')+'</div>' }).join("");
+  return h+'</div>';
+}
 function hrAcces(){
-  var rows = hrList("hr_acces");
-  var h = '<div class="card"><h3>Accès au portail RH</h3><p class="sub">Les agents du niveau national ont automatiquement l\'accès DRH. Les autres agents n\'entrent que s\'ils figurent ici.</p><button class="hrb pri" data-hract="new-acc">+ Donner un accès</button></div><div class="card">';
-  h += rows.map(function(r){ return '<div class="nrow"><div><b>'+esc(r.nom||agName(r.code))+'</b> <small>'+esc(r.code)+'</small></div><span><span class="tag good">'+esc({drh:"DRH", gestionnaire:"Gestionnaire", lecture:"Lecture"}[r.niveau])+'</span> <button class="hrb dan" data-hract="del-acc" data-id="'+esc(r.code)+'">Retirer</button></span></div>' }).join("") || '<p class="sub">Aucun accès supplémentaire.</p>';
+  var nat = hrNat(), rows = hrList("hr_acces").sort(function(a,b){ return String(a.entite_id).localeCompare(String(b.entite_id)) || String(a.nom||"").localeCompare(String(b.nom||"")) });
+  var h = '<div class="card"><h3>Accès au portail RH</h3><p class="sub">'+(nat?'Les agents du niveau national ont automatiquement l\'accès DRH du siège. Pour une province, nommez ici sa DRH : elle gère ensuite elle-même ses gestionnaires.':'Vous donnez et retirez les accès de vos gestionnaires. Le niveau DRH n\'est attribué que par le niveau national.')+'</p><button class="hrb pri" data-hract="new-acc">+ Donner un accès</button></div><div class="card">';
+  h += rows.map(function(r){ var can = nat || r.niveau!=="drh"; return '<div class="nrow"><div><b>'+esc(r.nom||agName(r.code))+'</b> <small>'+esc(r.code)+' · '+esc(hrEntNom(r.entite_id))+'</small></div><span><span class="tag good">'+esc({drh:"DRH", gestionnaire:"Gestionnaire", lecture:"Lecture"}[r.niveau])+'</span> '+(can?'<button class="hrb dan" data-hract="del-acc" data-id="'+esc(r.code)+'">Retirer</button>':'')+'</span></div>' }).join("") || '<p class="sub">Aucun accès supplémentaire.</p>';
   return h+'</div>';
 }
 function hrJournal(){
-  var h = '<div class="card"><h3>Journal des modifications RH</h3><p class="sub">200 dernières opérations.</p>';
+  var h = '<div class="card"><h3>Journal des modifications RH</h3><p class="sub">200 dernières opérations de votre entité.</p>';
   if(!HRM.jrLoaded){ hrLoadJ(); return h+'<p class="hrmsg">Chargement…</p></div>' }
   h += '<div class="tw"><table><thead><tr><th>Date</th><th>Agent</th><th>Action</th><th>Table</th><th>Ligne</th></tr></thead><tbody>'+HRM.jr.map(function(r){ return '<tr><td>'+esc(fmtDT(new Date(r.at).getTime()))+'</td><td>'+esc(agName(r.acteur, r.acteur))+'</td><td>'+esc({insert:"Création", update:"Modification", delete:"Suppression"}[r.action]||r.action)+'</td><td>'+esc(String(r.table_name).replace("hr_",""))+'</td><td>'+esc(r.ligne_id||"")+'</td></tr>' }).join("")+'</tbody></table></div></div>';
   return h;
 }
+function hrSnapTxt(sn){
+  if(!sn) return ""; var g = sn.date_naissance ? ageOf(String(sn.date_naissance).slice(0,10), new Date()) : null;
+  return [sn.matricule_rh, sn.sexe, g!=null ? g+" ans" : null, sn.grade ? "grade "+sn.grade+(sn.echelon?" éch. "+sn.echelon:"") : null, sn.poste ? "poste : "+sn.poste : null, sn.date_embauche ? "embauché le "+hrFD(sn.date_embauche) : null].filter(Boolean).join(" · ");
+}
+function hrMut(){
+  var me = hrEnt(), all = hrList("hr_mutations").sort(function(a,b){ return String(b.propose_le).localeCompare(String(a.propose_le)) }), w = hrCanW();
+  var rec = all.filter(function(m){ return m.statut==="proposee" && m.entite_destination===me }), env = all.filter(function(m){ return m.statut==="proposee" && m.entite_origine===me }), his = all.filter(function(m){ return m.statut!=="proposee" });
+  var row = function(m, btn){ var sn = m.snapshot||{}; return '<div class="nrow" style="cursor:default"><div><b>'+esc(sn.nom||m.agent_id)+'</b> <small>'+esc(hrEntNom(m.entite_origine))+' → '+esc(hrEntNom(m.entite_destination))+' · '+esc(fmtDT(new Date(m.propose_le).getTime()))+'</small><small style="display:block">'+esc(hrSnapTxt(sn))+'</small><small style="display:block">Motif : '+esc(m.motif)+(m.decision_motif?' · Réponse : '+esc(m.decision_motif):'')+'</small></div><span style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end">'+(btn||'<span class="tag '+(m.statut==="executee"?'good':'rej')+'">'+HR_MT[m.statut]+'</span>')+'</span></div>' };
+  var h = '<div class="card"><h3>Mutations entre entités</h3><p class="sub">L\'entité d\'origine propose, l\'entité d\'accueil accepte en choisissant l\'unité et le poste (place libre obligatoire), ou refuse en motivant. À l\'acceptation, le dossier complet suit l\'agent. Pour muter un agent : ouvrez sa fiche, bouton « Proposer une mutation ».</p></div>';
+  h += '<div class="card"><h3>À traiter (reçues)'+(rec.length?' · '+rec.length:'')+'</h3>'+(rec.map(function(m){ return row(m, w ? '<button class="hrb pri" data-hract="mut-ok" data-id="'+m.id+'">Accepter</button><button class="hrb dan" data-hract="mut-no" data-id="'+m.id+'">Refuser</button>' : '<span class="tag rej">En attente</span>') }).join("") || '<p class="sub">Aucune mutation à traiter.</p>')+'</div>';
+  h += '<div class="card"><h3>Envoyées, en attente de réponse</h3>'+(env.map(function(m){ return row(m, w ? '<button class="hrb dan" data-hract="mut-cancel" data-id="'+m.id+'">Annuler</button>' : null) }).join("") || '<p class="sub">Aucune.</p>')+'</div>';
+  h += '<div class="card"><h3>Historique</h3>'+(his.slice(0,60).map(function(m){ return row(m) }).join("") || '<p class="sub">Aucun historique.</p>')+'</div>';
+  return h;
+}
+function hrActeTxt(x){
+  var d = x.details||{};
+  if(x.type==="promotion") return "Nouveau grade : "+(d.grade||"—")+(d.echelon?" · échelon "+d.echelon:"")+(d.motif?" · "+d.motif:"");
+  if(x.type==="suspension") return "Motif : "+(d.motif||"—")+(d.date_effet?" · à compter du "+hrFD(d.date_effet):"");
+  if(x.type==="reintegration") return d.motif ? "Motif : "+d.motif : "Levée de la suspension";
+  return (HR_MS[d.motif]||d.motif||"—")+" · effet le "+hrFD(d.date_effet)+(d.commentaire?" · "+d.commentaire:"");
+}
+function hrActes(){
+  var nat = hrNat(), val = nat && hrLvl()==="drh", me = hrEnt(), all = hrList("hr_actes").filter(function(x){ return nat || x.entite_id===me }).sort(function(a,b){ return String(b.demande_le).localeCompare(String(a.demande_le)) });
+  var att = all.filter(function(x){ return x.statut==="en_attente" }), his = all.filter(function(x){ return x.statut!=="en_attente" });
+  var row = function(x){ var sn = x.snapshot||{}, own = x.demandeur===hrActor(), btn = "";
+    if(x.statut==="en_attente"){
+      if(val) btn = own ? '<span class="tag rej">Votre propre demande</span>' : '<button class="hrb pri" data-hract="act-ok" data-id="'+x.id+'">Valider</button><button class="hrb dan" data-hract="act-no" data-id="'+x.id+'">Rejeter</button>';
+      else if(x.entite_id===me && hrCanW()) btn = '<button class="hrb dan" data-hract="act-cancel" data-id="'+x.id+'">Annuler la demande</button>';
+      else btn = '<span class="tag rej">En attente</span>';
+    } else btn = '<span class="tag '+(x.statut==="valide"?'good':'rej')+'">'+HR_AS[x.statut]+'</span>';
+    return '<div class="nrow" style="cursor:default"><div><b>'+esc(HR_AT[x.type])+' — '+esc(sn.nom||x.agent_id)+'</b> <small>'+esc(hrEntNom(x.entite_id))+' · demandé le '+esc(fmtDT(new Date(x.demande_le).getTime()))+'</small><small style="display:block">'+esc(hrSnapTxt(sn))+'</small><small style="display:block">'+esc(hrActeTxt(x))+(x.decision_motif?' · Décision : '+esc(x.decision_motif):'')+'</small></div><span style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end">'+btn+'</span></div>' };
+  var h = '<div class="card"><h3>Actes sensibles</h3><p class="sub">Promotion, suspension, réintégration et sortie de service sont demandés par l\'entité et validés par la DRH nationale (jamais par la personne qui a fait la demande). Pour en demander un : ouvrez la fiche de l\'agent.</p></div>';
+  h += '<div class="card"><h3>'+(val?'À valider':'En attente de validation')+(att.length?' · '+att.length:'')+'</h3>'+(att.map(row).join("") || '<p class="sub">Aucun acte en attente.</p>')+'</div>';
+  h += '<div class="card"><h3>Historique</h3>'+(his.slice(0,80).map(row).join("") || '<p class="sub">Aucun historique.</p>')+'</div>';
+  return h;
+}
+function hrMutForm(id){
+  var a = HRM.d.hr_agents[id], dest = hrList("hr_entites").filter(function(e){ return e.id!==a.entite_id && e.actif!==false });
+  if(!dest.length){ toast("Aucune autre entité : créez-les dans l'onglet Entités (niveau national)"); return }
+  hrForm("Proposer une mutation — "+hrName(a), [["entite_destination","Entité d'accueil","select",dest.map(function(e){ return [e.id, e.nom] }),1],["motif","Motif de la mutation","area",null,1]], {}, async function(v){
+    await hrRpc("hr_mutation_proposer", {p_agent:id, p_dest:v.entite_destination, p_motif:v.motif}); toast("Mutation proposée à "+hrEntNom(v.entite_destination));
+  });
+}
+function hrMutOk(id){
+  var m = HRM.d.hr_mutations[id], sn = m.snapshot||{};
+  hrForm("Accepter la mutation — "+(sn.nom||""), [["unite_id","Unité d'accueil","select",hrOptsU()],["poste_id","Poste (place libre)","select",hrOptsP().filter(function(o){ return o[0]!=="" }),1]], {}, async function(v){
+    await hrRpc("hr_mutation_repondre", {p_id:id, p_accepter:true, p_poste:v.poste_id, p_unite:v.unite_id||null, p_motif:null}); toast("Mutation acceptée : le dossier est dans votre entité");
+  });
+}
+function hrMutNo(id){
+  hrForm("Refuser la mutation", [["motif","Motif du refus","area",null,1]], {}, async function(v){ await hrRpc("hr_mutation_repondre", {p_id:id, p_accepter:false, p_poste:null, p_unite:null, p_motif:v.motif}); toast("Mutation refusée") });
+}
+function hrActeForm(id, type){
+  var a = HRM.d.hr_agents[id], F, D = {};
+  if(type==="promotion") F = [["grade","Nouveau grade","text",null,1],["echelon","Échelon","text"],["motif","Justification","area"]];
+  else if(type==="suspension") F = [["motif","Motif de la suspension","area",null,1],["date_effet","À compter du","date"]];
+  else if(type==="reintegration") F = [["motif","Motif / décision","area"]];
+  else F = [["motif","Motif de sortie","select",Object.keys(HR_MS).map(function(k){ return [k, HR_MS[k]] }),1],["date_effet","Date d'effet","date",null,1],["commentaire","Commentaire","area"]];
+  hrForm("Demande : "+HR_AT[type]+" — "+hrName(a), F, {grade:a.grade||"", echelon:a.echelon||""}, async function(v){
+    var d = {}; Object.keys(v).forEach(function(k){ if(v[k]!=null && v[k]!=="") d[k] = v[k] });
+    await hrRpc("hr_acte_demander", {p_agent:id, p_type:type, p_details:d}); toast("Demande envoyée au niveau national pour validation");
+  });
+}
+function hrActeNo(id){ hrForm("Rejeter l'acte", [["motif","Motif du rejet","area",null,1]], {}, async function(v){ await hrRpc("hr_acte_decider", {p_id:id, p_valider:false, p_motif:v.motif}); toast("Acte rejeté") }) }
 async function hrLoadJ(){
   try{ var r = await SB.from("hr_journal").select("*").order("id",{ascending:false}).limit(200); if(r.error) throw r.error; HRM.jr = (r.data||[]).sort(function(a,b){ return b.id-a.id }); HRM.jrLoaded = true }
   catch(e){ HRM.jr = []; HRM.jrLoaded = true; toast("Journal indisponible : "+((e&&e.message)||e)) }
@@ -3047,8 +3267,9 @@ async function hrLoadJ(){
 function hrFiche(id){
   var a = HRM.d.hr_agents[id], w = hrCanW(), g = hrAge(a), an = hrAnc(a), fam = hrList("hr_famille").filter(function(x){ return x.agent_id===id }), ct = hrList("hr_contacts").filter(function(x){ return x.agent_id===id }), pc = hrList("hr_pieces").filter(function(x){ return x.agent_id===id });
   var cell = function(l, v){ return '<div><small>'+l+'</small><b>'+(v==null||v===""?"—":esc(v))+'</b></div>' };
-  var h = '<button class="back" data-hrback="1">‹ Retour à la liste</button><div class="card"><div class="hrp"><div class="ph" id="hrph">'+esc((a.nom||"?").slice(0,1))+'</div><div style="flex:1;min-width:200px"><h3 style="margin:0">'+esc(hrName(a))+'</h3><p class="sub" style="margin:2px 0">'+esc(a.matricule_rh)+' · <span class="tag '+(hrOn(a)?'good':'rej')+'">'+HR_ST[a.statut]+'</span></p><div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px">'
-    + (w?'<button class="hrb pri" data-hract="edit-agent" data-id="'+id+'">✎ Modifier</button><button class="hrb" data-hract="photo" data-id="'+id+'">📷 Photo</button>':'')+'<button class="hrb" data-hract="print" data-id="'+id+'">🖨 Imprimer la fiche</button>'+(hrLvl()==="drh"?'<button class="hrb dan" data-hract="del-agent" data-id="'+id+'">Supprimer</button>':'')+'</div></div></div></div>';
+  var pend = hrList("hr_actes").filter(function(x){ return x.agent_id===id && x.statut==="en_attente" })[0], pm = hrList("hr_mutations").filter(function(m){ return m.agent_id===id && m.statut==="proposee" })[0];
+  var h = '<button class="back" data-hrback="1">‹ Retour à la liste</button>'+(pend?'<div class="card" style="border-color:var(--ko)"><b>Acte en attente de validation :</b> '+esc(HR_AT[pend.type])+' — '+esc(hrActeTxt(pend))+'</div>':'')+(pm?'<div class="card" style="border-color:var(--ko)"><b>Mutation proposée</b> vers '+esc(hrEntNom(pm.entite_destination))+' — en attente de réponse.</div>':'')+'<div class="card"><div class="hrp"><div class="ph" id="hrph">'+esc((a.nom||"?").slice(0,1))+'</div><div style="flex:1;min-width:200px"><h3 style="margin:0">'+esc(hrName(a))+'</h3><p class="sub" style="margin:2px 0">'+esc(a.matricule_rh)+' · <span class="tag '+(hrOn(a)?'good':'rej')+'">'+HR_ST[a.statut]+'</span></p><div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px">'
+    + (w?'<button class="hrb pri" data-hract="edit-agent" data-id="'+id+'">✎ Modifier</button><button class="hrb" data-hract="assign" data-id="'+id+'">Affecter à un poste</button>'+(hrOn(a) && !hrList("hr_mutations").some(function(m){ return m.agent_id===id && m.statut==="proposee" }) ? '<button class="hrb" data-hract="mut-new" data-id="'+id+'">⇄ Proposer une mutation</button>' : '')+(!pend && hrOn(a) ? '<button class="hrb" data-hract="act-new" data-id="'+id+'" data-t="promotion">Acte : promotion</button>'+(a.statut==="actif"?'<button class="hrb" data-hract="act-new" data-id="'+id+'" data-t="suspension">Acte : suspension</button>':'<button class="hrb" data-hract="act-new" data-id="'+id+'" data-t="reintegration">Acte : réintégration</button>')+'<button class="hrb" data-hract="act-new" data-id="'+id+'" data-t="sortie">Acte : sortie</button>':'')+'<button class="hrb" data-hract="photo" data-id="'+id+'">📷 Photo</button>':'')+'<button class="hrb" data-hract="print" data-id="'+id+'">🖨 Imprimer la fiche</button>'+(hrLvl()==="drh"?'<button class="hrb dan" data-hract="del-agent" data-id="'+id+'">Supprimer</button>':'')+'</div></div></div></div>';
   h += '<div class="card"><h3>Identité</h3><div class="hrg">'+cell("Sexe", a.sexe==="M"?"Masculin":a.sexe==="F"?"Féminin":"")+cell("Date de naissance", a.date_naissance?hrFD(a.date_naissance)+(g!=null?" ("+g+" ans)":""):"")+cell("Lieu de naissance", a.lieu_naissance)+cell("État civil", a.etat_civil)+cell("Nationalité", a.nationalite)+cell("Adresse", a.adresse)+cell("Téléphone", a.telephone)+cell("E-mail", a.email)+'</div></div>';
   h += '<div class="card"><h3>Affectation</h3><div class="hrg">'+cell("Unité", hrUn(a.unite_id))+cell("Poste", hrPo(a.poste_id))+cell("Grade", a.grade)+cell("Échelon", a.echelon)+cell("Date d\'embauche", a.date_embauche?hrFD(a.date_embauche):"")+cell("Ancienneté", an==null?"":(Math.floor(an)+" an(s) "+Math.floor((an%1)*12)+" mois"))+cell("Compte MESP Integra", a.code_app?agName(a.code_app, a.code_app):"")+(hrOn(a)?"":cell("Date de sortie", a.date_sortie?hrFD(a.date_sortie):"")+cell("Motif de sortie", a.motif_sortie))+'</div></div>';
   h += '<div class="card"><h3>Famille et ayants droit</h3>'+(w?'<button class="hrb" data-hract="new-fam" data-id="'+id+'">+ Ajouter</button>':'')+(fam.map(function(x){ var ga = x.date_naissance ? ageOf(String(x.date_naissance).slice(0,10), new Date()) : null; return '<div class="nrow"><div><b>'+esc([x.nom,x.prenom].filter(Boolean).join(" "))+'</b> <small>'+HR_LIEN[x.lien]+(x.sexe?' · '+x.sexe:'')+(ga!=null?' · '+ga+' ans':'')+(x.a_charge===false?' · pas à charge':'')+(x.matricule_mesp?' · matricule MESP '+esc(x.matricule_mesp):'')+'</small></div>'+(w?'<span><button class="hrb" data-hract="edit-fam" data-id="'+x.id+'">✎</button> <button class="hrb dan" data-hract="del-fam" data-id="'+x.id+'">✕</button></span>':'')+'</div>' }).join("") || '<p class="sub" style="margin-top:8px">Aucun ayant droit enregistré.</p>')+'</div>';
@@ -3085,8 +3306,21 @@ function hrForm(title, fields, vals, onSave){
   });
   var first = m.querySelector("input,select,textarea"); if(first && !/^(file|date)$/.test(first.type)) first.focus();
 }
-function hrOptsU(){ return [["","— Aucune —"]].concat(hrTree(null,0).map(function(n){ return [n.u.id, '  '.repeat(n.d)+n.u.nom] })) }
-function hrOptsP(){ return [["","— Aucun —"]].concat(hrList("hr_postes").sort(function(a,b){ return a.intitule.localeCompare(b.intitule,"fr") }).map(function(p){ return [p.id, p.intitule+(p.unite_id?" ("+hrUn(p.unite_id)+")":"")] })) }
+function hrOptsU(ent){ ent = ent || hrEnt(); return [["","— Aucune —"]].concat(hrTree(null,0,null,ent).map(function(n){ return [n.u.id, '  '.repeat(n.d)+n.u.nom] })) }
+function hrOptsP(ent, cur){
+  ent = ent || hrEnt();
+  return [["","— Aucun —"]].concat(hrList("hr_postes").filter(function(p){ return p.entite_id===ent && p.actif!==false }).sort(function(a,b){ return a.intitule.localeCompare(b.intitule,"fr") }).map(function(p){ var o = hrOcc(p.id), lib = (+p.effectif_prevu||0) - o + (p.id===cur ? 1 : 0); return lib>0 || p.id===cur ? [p.id, p.intitule+(p.unite_id?" ("+hrUn(p.unite_id)+")":"")+" — "+Math.max(lib,0)+" place(s) libre(s)"] : null }).filter(Boolean));
+}
+function hrCheckAffect(row){
+  if(!row.poste_id) return;
+  var p = HRM.d.hr_postes[row.poste_id]; if(!p) throw new Error("Poste introuvable");
+  if(p.entite_id!==row.entite_id) throw new Error("Ce poste n'appartient pas à l'entité de l'agent");
+  if(row.statut==="actif" || row.statut==="suspendu"){
+    var occ = hrCount(hrList("hr_agents"), function(a){ return a.id!==row.id && a.poste_id===p.id && hrOn(a) });
+    if(occ >= (+p.effectif_prevu||0)) throw new Error("Poste complet : "+p.intitule+" (effectif prévu "+(+p.effectif_prevu||0)+")");
+  }
+  if(row.unite_id){ var u = HRM.d.hr_unites[row.unite_id]; if(u && u.entite_id!==row.entite_id) throw new Error("Cette unité n'appartient pas à l'entité de l'agent") }
+}
 function hrAgentForm(a){
   var isNew = !a; a = a || {statut:"actif", nationalite:"Congolaise"};
   var acc = [["","— Aucun —"]].concat(allAgents().map(function(x){ return [x.c, x.n+" ("+x.c+")"] }));
@@ -3094,27 +3328,51 @@ function hrAgentForm(a){
     ["nom","Nom","text",null,1],["postnom","Postnom","text"],["prenom","Prénom","text"],["sexe","Sexe","select",[["","—"],["M","Masculin"],["F","Féminin"]],1],
     ["date_naissance","Date de naissance","date"],["lieu_naissance","Lieu de naissance","text"],["etat_civil","État civil","select",[["","—"],["Célibataire","Célibataire"],["Marié(e)","Marié(e)"],["Divorcé(e)","Divorcé(e)"],["Veuf/Veuve","Veuf/Veuve"]]],["nationalite","Nationalité","text"],
     ["adresse","Adresse","text"],["telephone","Téléphone","tel"],["email","E-mail","email"],
-    ["unite_id","Unité","select",hrOptsU()],["poste_id","Poste","select",hrOptsP()],["grade","Grade","text"],["echelon","Échelon","text"],
-    ["statut","Statut","select",Object.keys(HR_ST).map(function(s){ return [s, HR_ST[s]] })],["date_embauche","Date d'embauche","date"],["date_sortie","Date de sortie","date"],["motif_sortie","Motif de sortie","text"],
-    ["code_app","Compte MESP Integra lié","select",acc]
-  ], a, async function(v){
+    ["unite_id","Unité","select",hrOptsU()],["poste_id","Poste","select",hrOptsP(null, a.poste_id)]
+  ].concat(isNew ? [["grade","Grade","text"],["echelon","Échelon","text"]] : []).concat([["date_embauche","Date d'embauche","date"],["code_app","Compte MESP Integra lié","select",acc]]), a, async function(v){
     v.nom = UPN(v.nom); if(v.postnom) v.postnom = UPN(v.postnom);
-    var row = Object.assign({}, a, hrClean(v)); if(isNew){ row.id = hrId(); row.created_by = AG.c; delete row.matricule_rh }
-    var x = await hrPut("hr_agents", row); HRM.sel = x.id; toast(isNew ? "Agent enregistré : "+x.matricule_rh : "Dossier mis à jour");
+    var row = Object.assign({}, a, hrClean(v)); if(isNew){ row.id = hrId(); row.created_by = AG.c; row.entite_id = hrEnt(); delete row.matricule_rh }
+    hrCheckAffect(row); var x = await hrPut("hr_agents", row); HRM.sel = x.id; toast(isNew ? "Agent enregistré : "+x.matricule_rh : "Dossier mis à jour");
   });
 }
+function hrAssignForm(id){
+  var a = HRM.d.hr_agents[id];
+  hrForm("Affecter à un poste", [["unite_id","Unité","select",hrOptsU(a.entite_id)],["poste_id","Poste (places libres)","select",hrOptsP(a.entite_id, a.poste_id)]], a, async function(v){
+    var row = Object.assign({}, a, hrClean(v)); hrCheckAffect(row); await hrPut("hr_agents", row); toast("Affectation enregistrée");
+  });
+}
+function hrEntOpts(){ return hrList("hr_entites").sort(function(a,b){ return (a.type==="national"?0:1)-(b.type==="national"?0:1) || a.nom.localeCompare(b.nom,"fr") }).map(function(e){ return [e.id, e.nom] }) }
 function hrUnitForm(u, parent){
-  var isNew = !u; u = u || {type:"service", parent_id:parent||"", actif:true, ordre:0};
-  var excl = isNew ? [] : hrDesc(u.id);
-  hrForm(isNew ? "Nouvelle unité" : "Modifier l'unité", [["nom","Nom","text",null,1],["type","Type","select",Object.keys(HR_UT).map(function(k){ return [k, HR_UT[k]] })],["parent_id","Rattachée à","select",hrOptsU().filter(function(o){ return excl.indexOf(o[0])<0 })],["ordre","Ordre d'affichage","number"],["actif","Unité active","check"]], u, async function(v){
-    var row = Object.assign({}, u, hrClean(v)); if(isNew) row.id = hrId(); row.ordre = row.ordre||0; await hrPut("hr_unites", row); toast("Unité enregistrée");
+  var isNew = !u, par = parent ? HRM.d.hr_unites[parent] : null; u = u || {type:"service", parent_id:parent||"", actif:true, ordre:0, entite_id:par ? par.entite_id : hrEnt()};
+  var excl = isNew ? [] : hrDesc(u.id), allU = [["","— Aucune (premier niveau) —"]].concat(hrTree(null,0).map(function(n){ return [n.u.id, '  '.repeat(n.d)+n.u.nom+" ("+hrEntNom(n.u.entite_id)+")"] }).filter(function(o){ return excl.indexOf(o[0])<0 }));
+  hrForm(isNew ? "Nouvelle unité" : "Modifier l'unité", [["nom","Nom","text",null,1],["entite_id","Entité","select",hrEntOpts()],["type","Type","select",Object.keys(HR_UT).map(function(k){ return [k, HR_UT[k]] })],["parent_id","Rattachée à","select",allU],["ordre","Ordre d'affichage","number"],["actif","Unité active","check"]], u, async function(v){
+    var row = Object.assign({}, u, hrClean(v)); if(isNew) row.id = hrId(); row.ordre = row.ordre||0;
+    if(row.parent_id){ var p = HRM.d.hr_unites[row.parent_id]; if(p && p.entite_id!==row.entite_id) throw new Error("L'unité parente doit appartenir à la même entité") }
+    await hrPut("hr_unites", row); toast("Unité enregistrée");
   });
 }
 function hrPosteForm(p){
-  var isNew = !p; p = p || {effectif_prevu:1, actif:true};
-  hrForm(isNew ? "Nouveau poste" : "Modifier le poste", [["intitule","Intitulé","text",null,1],["unite_id","Unité","select",hrOptsU()],["grade","Grade","text"],["effectif_prevu","Effectif prévu","number",null,1],["actif","Poste actif","check"]], p, async function(v){
-    var row = Object.assign({}, p, hrClean(v)); if(isNew) row.id = hrId(); await hrPut("hr_postes", row); toast("Poste enregistré");
+  var isNew = !p; p = p || {effectif_prevu:1, actif:true, entite_id:hrEnt()};
+  var us = [["","— Aucune —"]].concat(hrTree(null,0).map(function(n){ return [n.u.id, n.u.nom+" ("+hrEntNom(n.u.entite_id)+")"] }));
+  hrForm(isNew ? "Nouveau poste" : "Modifier le poste", [["intitule","Intitulé","text",null,1],["entite_id","Entité qui reçoit ce poste","select",hrEntOpts()],["unite_id","Unité","select",us],["grade","Grade","text"],["effectif_prevu","Effectif prévu","number",null,1],["actif","Poste actif","check"]], p, async function(v){
+    var row = Object.assign({}, p, hrClean(v)); if(isNew) row.id = hrId();
+    if(row.unite_id){ var u = HRM.d.hr_unites[row.unite_id]; if(u && u.entite_id!==row.entite_id) throw new Error("L'unité choisie n'appartient pas à l'entité du poste") }
+    if(!isNew){ var o = hrCount(hrList("hr_agents"), function(a){ return a.poste_id===row.id && hrOn(a) }); if(row.effectif_prevu < o && row.entite_id===hrEnt()) throw new Error("Effectif prévu inférieur au nombre d'agents en poste ("+o+")") }
+    await hrPut("hr_postes", row); toast("Poste enregistré");
   });
+}
+function hrEntForm(e){
+  var isNew = !e; e = e || {type:"province", actif:true};
+  hrForm(isNew ? "Nouvelle entité" : "Modifier l'entité", [["nom","Nom (province ou ville)","text",null,1],["heure_debut","Heure d'arrivée attendue (retard au-delà)","text"],["conge_annuel","Droit au congé annuel (jours ouvrés)","number"],["actif","Entité active","check"]], Object.assign({heure_debut:"08:00", conge_annuel:30}, e), async function(v){
+    if(!/^([01]\d|2[0-3]):[0-5]\d$/.test(v.heure_debut||"")) throw new Error("Heure au format HH:MM, par exemple 08:00");
+    var row = Object.assign({}, e, {nom:v.nom, actif:v.actif, heure_debut:v.heure_debut, conge_annuel:v.conge_annuel==null?30:v.conge_annuel}); if(isNew){ row.id = slug(v.nom); if(HRM.d.hr_entites[row.id]) throw new Error("Cette entité existe déjà"); row.type = "province" }
+    await hrPut("hr_entites", row); toast("Entité enregistrée");
+  });
+}
+async function hrImportEnt(){
+  var names = levels().filter(function(n){ return n && n!=="National" }), add = 0;
+  for(var i=0;i<names.length;i++){ var id = slug(names[i]); if(!HRM.d.hr_entites[id]){ await hrPut("hr_entites", {id:id, nom:names[i], type:"province", actif:true}); add++ } }
+  toast(add ? add+" entité(s) créée(s)" : "Toutes les provinces existent déjà"); hrRender();
 }
 function hrFamForm(id, x){
   var isNew = !x; x = x || {lien:"enfant", a_charge:true};
@@ -3137,9 +3395,15 @@ function hrPcForm(id){
   });
 }
 function hrAccForm(){
-  var taken = HRM.d.hr_acces || {}, ag = allAgents().filter(function(x){ return !taken[x.c] });
-  hrForm("Donner un accès RH", [["code","Agent","select",ag.map(function(x){ return [x.c, x.n+" ("+x.c+")"] }),1],["niveau","Niveau","select",[["lecture","Lecture seule"],["gestionnaire","Gestionnaire (lit et modifie)"],["drh","DRH (tout, y compris les accès)"]]]], {niveau:"gestionnaire"}, async function(v){
-    var a = ag.filter(function(x){ return x.c===v.code })[0]; await hrPut("hr_acces", {code:v.code, nom:a?a.n:null, niveau:v.niveau}); toast("Accès enregistré");
+  var nat = hrNat(), ent = hrEnt(), taken = HRM.d.hr_acces || {};
+  var ag = allAgents().filter(function(x){ return !taken[x.c] && (nat || slug(x.v||"")===ent) });
+  var fields = [["code","Agent","select",ag.map(function(x){ return [x.c, x.n+" ("+x.c+" · "+(x.v||"?")+")"] }),1]];
+  if(nat) fields.push(["entite_id","Entité de l'accès","select",hrEntOpts()]);
+  fields.push(["niveau","Niveau","select",(nat ? [["drh","DRH (tout, y compris les accès de son entité)"]] : []).concat([["gestionnaire","Gestionnaire (lit et modifie)"],["lecture","Lecture seule"]])]);
+  hrForm("Donner un accès RH", fields, {niveau:nat?"drh":"gestionnaire", entite_id:nat?"":ent}, async function(v){
+    var a = ag.filter(function(x){ return x.c===v.code })[0], e = nat ? v.entite_id : ent;
+    if(!nat && v.niveau==="drh") throw new Error("Le niveau DRH est attribué par le niveau national");
+    await hrPut("hr_acces", {code:v.code, nom:a?a.n:null, niveau:v.niveau, entite_id:e}); toast("Accès enregistré");
   });
 }
 
@@ -3158,12 +3422,207 @@ function hrPrint(id){
   savePdf("Fiche_RH_"+a.matricule_rh+".pdf", L, {land:false, sign:false, title:"Fiche du personnel"});
 }
 
+/* ---------- PRÉSENCES (arrivée / départ) + CONGÉS ---------- */
+var HR_TZ = "Africa/Kinshasa", HR_FACE_D = 0.5;
+var HR_CT = {annuel:"Congé annuel", maladie:"Maladie", maternite:"Maternité", paternite:"Paternité", permission:"Permission", sans_solde:"Sans solde", autre:"Autre"};
+var HR_CS = {demande:"En attente", approuve:"Approuvé", refuse:"Refusé", annule:"Annulé"};
+function hrToday(){ return new Date().toLocaleDateString("en-CA", {timeZone:HR_TZ}) }
+function hrDayOf(iso){ return new Date(iso).toLocaleDateString("en-CA", {timeZone:HR_TZ}) }
+function hrHM(iso){ return iso ? new Date(iso).toLocaleTimeString("fr-FR", {timeZone:HR_TZ, hour:"2-digit", minute:"2-digit"}) : "—" }
+function hrJours(d1, d2){ var a = new Date(d1+"T00:00:00Z"), b = new Date(d2+"T00:00:00Z"), n = 0; for(; a<=b; a = new Date(a.getTime()+864e5)){ var w = a.getUTCDay(); if(w>=1 && w<=5) n++ } return n }
+function hrEntRow(){ return HRM.d.hr_entites && HRM.d.hr_entites[hrEnt()] || {} }
+function hrDebut(){ return hrEntRow().heure_debut || "08:00" }
+function hrLate(iso){ return iso && hrHM(iso) > hrDebut() }
+function hrPresOf(agentId, day){ return hrList("hr_presences").filter(function(p){ return p.agent_id===agentId && p.jour===day })[0] }
+function hrLeaveOf(agentId, day){ return hrList("hr_conges").filter(function(c){ return c.agent_id===agentId && c.statut==="approuve" && c.date_debut<=day && c.date_fin>=day })[0] }
+function hrSolde(agentId, year){
+  var droit = +hrEntRow().conge_annuel || 0, pris = 0; hrList("hr_conges").forEach(function(c){ if(c.agent_id===agentId && c.type==="annuel" && c.statut==="approuve" && String(c.date_debut).slice(0,4)===String(year)) pris += +c.jours||0 });
+  return {droit:droit, pris:pris, reste:droit-pris};
+}
+function hrRoster(){ return hrList("hr_agents").filter(hrOn).sort(function(a,b){ return hrName(a).localeCompare(hrName(b),"fr") }) }
+
+/* --- onglet Présences --- */
+function hrPresRows(day){
+  var rows = [], today = hrToday(), roster = hrRoster();
+  var pointed = roster.map(function(a){ return {a:a, p:hrPresOf(a.id, day)} }).filter(function(x){ return x.p }).sort(function(x,y){ return String(x.p.arrivee).localeCompare(String(y.p.arrivee)) });
+  pointed.forEach(function(x, i){ rows.push({n:i+1, a:x.a, p:x.p, st:hrLate(x.p.arrivee) ? "Retard" : "À l'heure"}) });
+  var wd = new Date(day+"T00:00:00Z").getUTCDay(), off = wd===0 || wd===6;
+  roster.forEach(function(a){ if(hrPresOf(a.id, day)) return; var l = hrLeaveOf(a.id, day); rows.push({n:"", a:a, p:null, st:l ? "En congé" : (off ? "Week-end" : (day>today ? "—" : (day===today ? "Non pointé" : "Absent")))}) });
+  return rows;
+}
+function hrPres(){
+  var day = HRM.pd || hrToday(), rows = hrPresRows(day), w = hrCanW(), drh = hrLvl()==="drh";
+  var cnt = function(s){ return rows.filter(function(r){ return r.st===s }).length };
+  var pts = rows.filter(function(r){ return r.p }).length, parts = rows.filter(function(r){ return r.p && r.p.depart }).length;
+  var al = hrList("hr_presence_alertes").filter(function(x){ return x.statut==="a_confirmer" });
+  var k = function(l, v, c){ return '<div class="kpi"><small>'+l+'</small><b'+(c?' style="color:var(--'+c+')"':'')+'>'+v+'</b></div>' };
+  var h = '<div class="card"><h3>Présences</h3><div class="hrf"><input type="date" id="hrpd" value="'+day+'" max="'+hrToday()+'"><button class="hrb" data-hract="pres-today">Aujourd\'hui</button>'+(w?'<button class="hrb pri" data-hract="kiosk-open">🖥 Ouvrir l\'écran de pointage</button>':'')+'</div><p class="sub" style="margin:0">Heure d\'arrivée attendue : <b>'+esc(hrDebut())+'</b> (retard au-delà). Les heures sont celles du serveur.</p></div>';
+  h += '<div class="hrk">'+k("Présents", pts)+k("Retards", cnt("Retard"), cnt("Retard")?"ko":"ok")+k("Partis", parts)+k("En congé", cnt("En congé"))+k(day===hrToday()?"Non pointés":"Absents", cnt("Non pointé")+cnt("Absent"), (cnt("Non pointé")+cnt("Absent"))?"ko":"ok")+k("Alertes d'abus", al.length, al.length?"ko":"ok")+'</div>';
+  if(al.length){
+    h += '<div class="card" style="border-color:var(--ko)"><h3>Alertes à confirmer'+(drh?'':' (la DRH tranche)')+'</h3>'+al.map(function(x){ var a1 = HRM.d.hr_agents[x.agent1_id], a2 = HRM.d.hr_agents[x.agent2_id];
+      return '<div class="nrow" style="cursor:default;align-items:flex-start"><div><b>'+esc(a1?hrName(a1):x.agent1_id)+'</b> <small>premier matricule saisi</small><small style="display:block">Le même visage a ensuite tenté le matricule <b>'+esc(a2?a2.matricule_rh+' — '+hrName(a2):x.agent2_id)+'</b> à '+esc(hrHM(x.tente_le))+' ('+(x.mode==="arrivee"?"arrivée":"départ")+') · écart '+(+x.distance||0).toFixed(2)+'</small><span class="hrph" data-pic="'+esc(x.photo||"")+'"></span></div>'
+        + (drh ? '<span style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end"><button class="hrb dan" data-hract="al-ok" data-id="'+x.id+'">Confirmer l\'abus</button><button class="hrb" data-hract="al-fp" data-id="'+x.id+'">Faux positif : enregistrer le pointage refusé</button></span>' : '<span class="tag rej">À confirmer</span>')+'</div>' }).join("")+'</div>';
+  }
+  var ex = [];
+  h += '<div class="card tw"><table><thead><tr><th class="n">N°</th><th>Matricule</th><th>Nom</th><th>Fonction</th><th>Arrivée</th><th>Départ</th><th>État</th><th>Observation</th></tr></thead><tbody>'
+    + rows.map(function(r){ var p = r.p, a = r.a; ex.push([r.n, a.matricule_rh, hrName(a), hrPo(a.poste_id), p?hrHM(p.arrivee):"", p&&p.depart?hrHM(p.depart):"", r.st, p&&p.observation||""]);
+      return '<tr><td class="n">'+r.n+'</td><td>'+esc(a.matricule_rh)+'</td><td><b>'+esc(hrName(a))+'</b></td><td>'+esc(hrPo(a.poste_id))+'</td><td>'+(p?hrHM(p.arrivee):"—")+'</td><td>'+(p&&p.depart?hrHM(p.depart):"—")+'</td><td><span class="tag '+(r.st==="À l\'heure"?'good':(r.st==="En congé"||r.st==="Week-end"||r.st==="—"?'':'rej'))+'">'+esc(r.st)+'</span></td><td>'+(p&&p.suspect?'🚩 ':'')+esc(p&&p.observation||"")+'</td></tr>' }).join("")||'<tr><td colspan="8" class="sub">Aucun agent en service.</td></tr>';
+  HRM.exP = ex; HRM.exPd = day;
+  h += '</tbody></table><div style="display:flex;gap:8px;margin-top:10px"><button class="hrb" data-hract="xlsx-pres">Excel</button><button class="hrb" data-hract="pdf-pres">PDF</button></div></div>';
+  setTimeout(hrPics, 0);
+  return h;
+}
+async function hrPics(){ var els = document.querySelectorAll("#hr .hrph[data-pic]"); for(var i=0;i<els.length;i++){ var el = els[i], p = el.dataset.pic; if(!p || el.dataset.done) continue; el.dataset.done = 1; try{ var u = HRM.photos[p] || (HRM.photos[p] = await hrFileUrl(p)); if(u) el.innerHTML = '<img alt="photo du pointage refusé" src="'+esc(u)+'" style="height:70px;border-radius:8px;margin-top:6px">' }catch(e){} } }
+async function hrAlerte(id, confirmer){
+  var x = HRM.d.hr_presence_alertes[id], a1 = HRM.d.hr_agents[x.agent1_id], a2 = HRM.d.hr_agents[x.agent2_id], note = null;
+  if(confirmer){ note = "Abus confirmé par la DRH"; await hrPut("hr_presence_alertes", Object.assign({}, x, {statut:"confirme", decide_par:hrActor(), decide_le:new Date().toISOString(), note:note}));
+    var p = HRM.d.hr_presences[x.presence_id]; if(p) await hrPut("hr_presences", Object.assign({}, p, {observation:(p.observation||"")+" · ABUS CONFIRMÉ", suspect:true})); toast("Abus confirmé et conservé dans le dossier") }
+  else { var pr = hrPresOf(x.agent2_id, hrDayOf(x.tente_le));
+    if(!pr && a2){ var row = {id:hrId(), entite_id:x.entite_id, agent_id:x.agent2_id, jour:hrDayOf(x.tente_le), arrivee:x.tente_le, photo_arrivee:x.mode==="arrivee"?x.photo:null, observation:"Pointage enregistré après vérification de la DRH (faux positif)", suspect:false}; if(x.mode==="depart") toast("Départ : à saisir manuellement si besoin"); else await hrPut("hr_presences", row) }
+    await hrPut("hr_presence_alertes", Object.assign({}, x, {statut:"faux_positif", decide_par:hrActor(), decide_le:new Date().toISOString(), note:"Faux positif"})); toast("Faux positif : pointage enregistré") }
+  hrRender();
+}
+
+/* --- écran de pointage (borne de réception) --- */
+var FACE = {ready:false, tried:false, err:"", sess:{arrivee:{}, depart:{}}};
+var HRK = {mode:"arrivee", stream:null, timer:null, busy:false, cam:false};
+async function faceInit(){
+  if(FACE.tried) return; FACE.tried = true;
+  try{
+    if(window.HR_FACE_TEST){ FACE.ready = true; return }
+    var B = "https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.12/";
+    if(!window.faceapi) await loadScript(B+"dist/face-api.js");
+    await faceapi.nets.tinyFaceDetector.loadFromUri(B+"model/"); await faceapi.nets.faceLandmark68Net.loadFromUri(B+"model/"); await faceapi.nets.faceRecognitionNet.loadFromUri(B+"model/");
+    FACE.ready = true;
+  }catch(e){ FACE.err = (e && e.message) || String(e) }
+  hrKStatus();
+}
+async function faceDesc(src){
+  if(window.HR_FACE_TEST) return window.HR_FACE_TEST(src);
+  if(!FACE.ready) return null;
+  try{ var r = await faceapi.detectSingleFace(src, new faceapi.TinyFaceDetectorOptions({inputSize:320, scoreThreshold:.5})).withFaceLandmarks().withFaceDescriptor(); return r ? Array.prototype.slice.call(r.descriptor) : null }catch(e){ return null }
+}
+function faceDist(a, b){ var s = 0; for(var i=0;i<a.length;i++){ var d = a[i]-b[i]; s += d*d } return Math.sqrt(s) }
+function hrKEl(){ var k = $("hrk"); if(!k){ k = document.createElement("div"); k.id = "hrk"; document.body.appendChild(k) } return k }
+function hrKStatus(){ var s = $("hrkst"); if(!s) return; s.textContent = !HRK.cam ? "Caméra : non disponible (pointage sans photo)" : (FACE.ready ? "Caméra et détection du visage actives" : (FACE.err ? "Caméra active — détection indisponible : photo seulement" : "Caméra active — chargement de la détection…")) }
+async function hrKiosk(){
+  var k = hrKEl(); HRK.mode = "arrivee"; FACE.sess = {arrivee:{}, depart:{}};
+  k.className = "hrkio";
+  k.innerHTML = '<div class="hrkh"><div><b>Pointage — '+esc(hrEntNom(hrEnt()))+'</b><small id="hrkclk"></small></div><button class="hrb" data-kact="quit">Quitter</button></div>'
+    + '<div class="hrkm"><button data-kmode="arrivee" class="on">ARRIVÉE</button><button data-kmode="depart">DÉPART</button></div>'
+    + '<div class="hrkc"><label for="hrkin">Tapez votre matricule puis Entrée</label><input id="hrkin" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="RH-00001"><p id="hrkmsg" class="hrkmsg"></p></div>'
+    + '<div id="hrklist" class="hrkl hide"></div><video id="hrkv" muted playsinline></video><small id="hrkst" class="hrkst"></small>';
+  var tick = function(){ var c = $("hrkclk"); if(c) c.textContent = new Date().toLocaleString("fr-FR",{timeZone:HR_TZ, weekday:"long", day:"2-digit", month:"long", hour:"2-digit", minute:"2-digit"}) }; tick(); HRK.clk = setInterval(function(){ if(!$("hrk")){ clearInterval(HRK.clk); return } tick() }, 20000);
+  try{ if(navigator.mediaDevices && navigator.mediaDevices.getUserMedia){ HRK.stream = await navigator.mediaDevices.getUserMedia({video:{facingMode:"user", width:{ideal:480}}, audio:false}); var v = $("hrkv"); v.srcObject = HRK.stream; await v.play().catch(function(){}); HRK.cam = true; faceInit() } }catch(e){ HRK.cam = false }
+  hrKStatus(); var inp = $("hrkin"); if(inp) inp.focus();
+}
+function hrKClose(){ if(HRK.stream){ HRK.stream.getTracks().forEach(function(t){ t.stop() }); HRK.stream = null } HRK.cam = false; clearTimeout(HRK.timer); clearInterval(HRK.clk); var k = $("hrk"); if(k) k.remove() }
+function hrKMsg(t, ok){ var m = $("hrkmsg"); if(m){ m.textContent = t; m.className = "hrkmsg "+(ok===true?"ok":(ok===false?"ko":"")) } }
+function hrKList(ringId, mode){
+  var day = hrToday(), rows = hrRoster().map(function(a){ return {a:a, p:hrPresOf(a.id, day)} }).filter(function(x){ return x.p }).sort(function(x,y){ return String(x.p.arrivee).localeCompare(String(y.p.arrivee)) });
+  var box = $("hrklist"); if(!box) return;
+  box.innerHTML = '<table><thead><tr><th>N°</th><th>Nom</th><th>Fonction</th><th>Arrivée</th><th>Départ</th></tr></thead><tbody>'+rows.map(function(x, i){ var ring = x.a.id===ringId; return '<tr'+(ring?' id="hrkring"':'')+'><td>'+(i+1)+'</td><td><span class="'+(ring?'hrkr':'')+'">'+esc(hrName(x.a))+'</span></td><td>'+esc(hrPo(x.a.poste_id))+'</td><td>'+hrHM(x.p.arrivee)+'</td><td>'+(x.p.depart?hrHM(x.p.depart):"")+'</td></tr>' }).join("")+'</tbody></table>';
+  box.classList.remove("hide"); var r = $("hrkring"); if(r && r.scrollIntoView) r.scrollIntoView({block:"center"});
+  clearTimeout(HRK.timer); HRK.timer = setTimeout(function(){ var b = $("hrklist"); if(b) b.classList.add("hide"); hrKMsg(""); var i = $("hrkin"); if(i) i.focus() }, 4000);
+}
+function hrKNorm(raw){ var s = String(raw||"").trim().toUpperCase().replace(/\s+/g,""); if(/^\d{1,5}$/.test(s)) s = "RH-"+("00000"+s).slice(-5); return s }
+async function hrKSnap(){
+  var v = $("hrkv"); if(!HRK.cam || !v || !v.videoWidth) return null;
+  var c = document.createElement("canvas"), k = Math.min(1, 240/v.videoWidth); c.width = Math.round(v.videoWidth*k); c.height = Math.round(v.videoHeight*k); c.getContext("2d").drawImage(v, 0, 0, c.width, c.height);
+  return await new Promise(function(ok){ c.toBlob(function(b){ ok(b) }, "image/jpeg", .7) });
+}
+async function hrKPoint(raw){
+  if(HRK.busy) return; var mat = hrKNorm(raw), inp = $("hrkin"); if(!mat) return; HRK.busy = true;
+  try{
+    var mode = HRK.mode, day = hrToday(), ag = hrList("hr_agents").filter(function(a){ return a.matricule_rh===mat && a.entite_id===hrEnt() })[0];
+    if(!ag || !hrOn(ag)){ hrKMsg("Matricule inconnu : "+mat, false); $("hrklist").classList.add("hide"); return }
+    var pres = hrPresOf(ag.id, day);
+    if(mode==="arrivee" && pres){ hrKMsg("Déjà enregistré : "+hrName(ag)+" à "+hrHM(pres.arrivee), false); hrKList(ag.id); return }
+    if(mode==="depart" && !pres){ hrKMsg("Aucune arrivée enregistrée aujourd'hui pour "+hrName(ag), false); $("hrklist").classList.add("hide"); return }
+    if(mode==="depart" && pres.depart){ hrKMsg("Départ déjà enregistré : "+hrName(ag)+" à "+hrHM(pres.depart), false); hrKList(ag.id); return }
+    hrKMsg("Vérification…");
+    var blob = await hrKSnap(), desc = blob ? await faceDesc($("hrkv")) : null;
+    /* même visage, autre matricule ? */
+    if(desc){
+      var best = null; Object.keys(FACE.sess[mode]).forEach(function(aid){ if(aid===ag.id) return; var s = FACE.sess[mode][aid], d = faceDist(desc, s.desc); if(d < HR_FACE_D && (!best || d < best.d)) best = {aid:aid, d:d, s:s} });
+      if(best){
+        var al = hrId(), path = blob ? "presences/"+ag.id+"/alerte-"+al+".jpg" : null; if(blob) await hrUpload(path, blob);
+        var first = HRM.d.hr_agents[best.aid], pp = HRM.d.hr_presences[best.s.presId];
+        await hrPut("hr_presence_alertes", {id:al, entite_id:hrEnt(), presence_id:best.s.presId, agent1_id:best.aid, agent2_id:ag.id, mode:mode, tente_le:new Date().toISOString(), photo:path, distance:Math.round(best.d*1000)/1000, statut:"a_confirmer"});
+        if(pp) await hrPut("hr_presences", Object.assign({}, pp, {suspect:true, observation:((pp.observation?pp.observation+" · ":"")+"Abus probable : le même visage a aussi saisi le matricule "+ag.matricule_rh+" à "+hrHM(new Date().toISOString()))}));
+        hrKMsg("Pointage refusé : ce visage vient d'enregistrer un autre matricule. Signalé à la DRH.", false); hrKList(best.aid, mode); return;
+      }
+    }
+    var obs = null; if(blob && FACE.ready && !desc) obs = "Visage non détecté sur la photo";
+    var lv = hrLeaveOf(ag.id, day); if(lv) obs = (obs ? obs+" · " : "")+"Pointage pendant un congé approuvé";
+    var pid, path2;
+    if(mode==="arrivee"){
+      pid = hrId(); path2 = blob ? "presences/"+ag.id+"/"+pid+"-a.jpg" : null; if(blob) await hrUpload(path2, blob);
+      var saved = await hrPut("hr_presences", {id:pid, entite_id:hrEnt(), agent_id:ag.id, jour:day, arrivee:new Date().toISOString(), photo_arrivee:path2, observation:obs, suspect:false});
+      pres = saved;
+    } else {
+      path2 = blob ? "presences/"+ag.id+"/"+pres.id+"-d.jpg" : null; if(blob) await hrUpload(path2, blob);
+      pres = await hrPut("hr_presences", Object.assign({}, pres, {depart:new Date().toISOString(), photo_depart:path2, observation:obs ? ((pres.observation?pres.observation+" · ":"")+obs) : pres.observation}));
+    }
+    if(desc) FACE.sess[mode][ag.id] = {desc:desc, presId:pres.id};
+    hrKMsg((mode==="arrivee" ? "Arrivée enregistrée : " : "Départ enregistré : ")+hrName(ag)+" à "+hrHM(mode==="arrivee" ? pres.arrivee : pres.depart)+(lv?" (en congé approuvé)":""), true); hrKList(ag.id, mode);
+  }catch(e){
+    var m = (e && e.message) || String(e);
+    if(/duplicate|23505|unique/i.test(m)){ await hrReload(["hr_presences"]).catch(function(){}); var ag2 = hrList("hr_agents").filter(function(a){ return a.matricule_rh===hrKNorm(raw) })[0]; hrKMsg("Déjà enregistré", false); if(ag2) hrKList(ag2.id) }
+    else hrKMsg("Erreur : "+m, false);
+  }finally{ HRK.busy = false; if(inp){ inp.value = ""; inp.focus() } }
+}
+
+/* --- onglet Congés --- */
+function hrCgRow(c, btns){
+  var a = HRM.d.hr_agents[c.agent_id], s = c.type==="annuel" ? hrSolde(c.agent_id, String(c.date_debut).slice(0,4)) : null;
+  return '<div class="nrow" style="cursor:default"><div><b>'+esc(a?hrName(a):c.agent_id)+'</b> <small>'+esc(HR_CT[c.type])+' · du '+hrFD(c.date_debut)+' au '+hrFD(c.date_fin)+' · '+c.jours+' jour(s) ouvré(s)</small><small style="display:block">'+(c.motif?'Motif : '+esc(c.motif)+' · ':'')+(s?'Solde annuel : '+s.reste+' / '+s.droit+' j · ':'')+(c.decision_motif?'Décision : '+esc(c.decision_motif):'')+'</small></div><span style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end">'+(btns||'<span class="tag '+(c.statut==="approuve"?'good':'rej')+'">'+HR_CS[c.statut]+'</span>')+'</span></div>';
+}
+function hrConges(){
+  var w = hrCanW(), drh = hrLvl()==="drh", today = hrToday(), all = hrList("hr_conges").sort(function(a,b){ return String(b.date_debut).localeCompare(String(a.date_debut)) });
+  var att = all.filter(function(c){ return c.statut==="demande" }), en = all.filter(function(c){ return c.statut==="approuve" && c.date_fin>=today }), his = all.filter(function(c){ return !(c.statut==="demande" || (c.statut==="approuve" && c.date_fin>=today)) });
+  var h = '<div class="card"><h3>Congés</h3><p class="sub">Le gestionnaire enregistre la demande, la DRH de l\'entité approuve ou refuse. Droit annuel de l\'entité : <b>'+(+hrEntRow().conge_annuel||0)+' jours ouvrés</b>. Les jours sont comptés du lundi au vendredi.</p><div style="display:flex;gap:8px;flex-wrap:wrap">'+(w?'<button class="hrb pri" data-hract="cg-new">+ Nouvelle demande de congé</button>':'')+'<button class="hrb" data-hract="xlsx-cg">Excel</button></div></div>';
+  h += '<div class="card"><h3>'+(drh?'À approuver':'Demandes en attente')+(att.length?' · '+att.length:'')+'</h3>'+(att.map(function(c){ return hrCgRow(c, drh ? '<button class="hrb pri" data-hract="cg-ok" data-id="'+c.id+'">Approuver</button><button class="hrb dan" data-hract="cg-no" data-id="'+c.id+'">Refuser</button>' : (w?'<button class="hrb dan" data-hract="cg-cancel" data-id="'+c.id+'">Annuler</button>':null)) }).join("") || '<p class="sub">Aucune demande en attente.</p>')+'</div>';
+  h += '<div class="card"><h3>En cours et à venir</h3>'+(en.map(function(c){ return hrCgRow(c, drh ? '<button class="hrb dan" data-hract="cg-cancel" data-id="'+c.id+'">Annuler</button>' : null) }).join("") || '<p class="sub">Aucun congé approuvé à venir.</p>')+'</div>';
+  h += hrCalendar();
+  h += '<div class="card"><h3>Historique</h3>'+(his.slice(0,60).map(function(c){ return hrCgRow(c) }).join("") || '<p class="sub">Aucun historique.</p>')+'</div>';
+  return h;
+}
+function hrCalendar(){
+  var ym = HRM.cm || hrToday().slice(0,7), y = +ym.slice(0,4), m = +ym.slice(5,7), nd = new Date(Date.UTC(y, m, 0)).getUTCDate(), first = ym+"-01", last = ym+"-"+String(nd).padStart(2,"0");
+  var cg = hrList("hr_conges").filter(function(c){ return c.statut==="approuve" && c.date_debut<=last && c.date_fin>=first }), ids = {}; cg.forEach(function(c){ ids[c.agent_id] = 1 });
+  var ags = Object.keys(ids).map(function(i){ return HRM.d.hr_agents[i] }).filter(Boolean).sort(function(a,b){ return hrName(a).localeCompare(hrName(b),"fr") });
+  var head = ""; for(var d=1; d<=nd; d++){ var wd = new Date(Date.UTC(y, m-1, d)).getUTCDay(); head += '<th style="padding:3px;text-align:center;'+(wd===0||wd===6?'color:var(--muted)':'')+'">'+d+'</th>' }
+  var body = ags.map(function(a){ var tds = ""; for(var d=1; d<=nd; d++){ var day = ym+"-"+String(d).padStart(2,"0"), c = cg.filter(function(x){ return x.agent_id===a.id && x.date_debut<=day && x.date_fin>=day })[0]; tds += '<td style="padding:0;text-align:center;'+(c?'background:#237a35;color:#fff;font-size:.65rem" title="'+esc(HR_CT[c.type])+'">'+esc(HR_CT[c.type].slice(0,1)):'">')+'</td>' } return '<tr><td style="white-space:nowrap">'+esc(hrName(a))+'</td>'+tds+'</tr>' }).join("");
+  return '<div class="card"><h3>Calendrier des absences</h3><input type="month" id="hrcm" value="'+ym+'" style="width:auto"><div class="tw" style="margin-top:8px"><table><thead><tr><th>Agent</th>'+head+'</tr></thead><tbody>'+(body||'<tr><td colspan="'+(nd+1)+'" class="sub">Aucun congé approuvé ce mois-ci.</td></tr>')+'</tbody></table></div></div>';
+}
+function hrCgForm(){
+  var ags = hrRoster(); if(!ags.length){ toast("Aucun agent en service"); return }
+  hrForm("Nouvelle demande de congé", [["agent_id","Agent","select",ags.map(function(a){ var s = hrSolde(a.id, hrToday().slice(0,4)); return [a.id, hrName(a)+" ("+a.matricule_rh+") — solde annuel "+s.reste+" j"] }),1],["type","Type de congé","select",Object.keys(HR_CT).map(function(k){ return [k, HR_CT[k]] })],["date_debut","Du","date",null,1],["date_fin","Au (inclus)","date",null,1],["motif","Motif / précision","area"]], {type:"annuel"}, async function(v){
+    if(v.date_fin < v.date_debut) throw new Error("La date de fin précède la date de début");
+    var j = hrJours(v.date_debut, v.date_fin); if(j<1) throw new Error("La période ne contient aucun jour ouvré (lundi au vendredi)");
+    await hrPut("hr_conges", {id:hrId(), entite_id:hrEnt(), agent_id:v.agent_id, type:v.type, date_debut:v.date_debut, date_fin:v.date_fin, jours:j, motif:v.motif||null, statut:"demande", demande_par:hrActor(), demande_le:new Date().toISOString()});
+    toast("Demande enregistrée : "+j+" jour(s) ouvré(s)");
+  });
+}
+async function hrCgDecide(id, ok){
+  var c = HRM.d.hr_conges[id];
+  if(ok){ await hrPut("hr_conges", Object.assign({}, c, {statut:"approuve"})); toast("Congé approuvé"); hrRender(); return }
+  hrForm("Refuser le congé", [["motif","Motif du refus","area",null,1]], {}, async function(v){ await hrPut("hr_conges", Object.assign({}, c, {statut:"refuse", decision_motif:v.motif})); toast("Congé refusé") });
+}
+
 /* ---------- événements ---------- */
 (function(){
   var el = $("hr"); if(!el) return;
   function setF(p){ HRM.f = Object.assign({q:"", unite:"", statut:"", sexe:"", band:"", inc:false}, p); HRM.tab = "agents"; HRM.sel = null; hrRender(); hrAgentsList() }
   el.addEventListener("input", function(e){ if(e.target.id==="hrq"){ HRM.f.q = e.target.value; hrAgentsList() } });
-  el.addEventListener("change", function(e){ var k = e.target.dataset && e.target.dataset.hrf; if(k){ HRM.f[k] = e.target.value; hrAgentsList() } });
+  el.addEventListener("change", function(e){
+    var k = e.target.dataset && e.target.dataset.hrf; if(k){ HRM.f[k] = e.target.value; hrAgentsList() }
+    if(e.target.id==="hrpd"){ HRM.pd = e.target.value || hrToday(); hrRender() }
+    if(e.target.id==="hrcm"){ HRM.cm = e.target.value; hrRender() }
+    if(e.target.id==="hrpe"){ HRM.pe = e.target.value; hrRender() }
+    if(e.target.id==="hras"){ HRM.as = e.target.value; HRM.sel = null; HRM.tab = "dash"; HRM.st = null; HRM.jrLoaded = false; HRM.f = {q:"", unite:"", statut:"", sexe:"", band:"", inc:false}; hrLoad() }
+  });
   el.addEventListener("click", async function(e){
     var t = e.target, b;
     if((b = t.closest("[data-hrtab]"))){ HRM.tab = b.dataset.hrtab; HRM.sel = null; if(HRM.tab==="journal") HRM.jrLoaded = false; hrRender(); if(HRM.tab==="agents") hrAgentsList(); el.scrollTop = 0; return }
@@ -3172,6 +3631,7 @@ function hrPrint(id){
     if((b = t.closest("[data-hrunit]"))){ setF({unite:b.dataset.hrunit, statut:"__on"}); return }
     if((b = t.closest("[data-hf]"))){
       var p = b.dataset.hf.split(":"), f = {statut:"__on"};
+      if(p[0]==="t"){ HRM.tab = p[1]; HRM.sel = null; hrRender(); return }
       if(p[0]==="sexe") f.sexe = p[1]; else if(p[0]==="band") f.band = p[1]; else if(p[0]==="inc") f.inc = true; else if(p[0]==="s"){ f.statut = p[1] }
       else if(p[0]==="u"){ f.unite = p[1]==="none" ? "none" : p[1]; if(p[2]) f.sexe = p[2]; if(p[1]!=="none") f.unite = p[1] }
       else if(p[0]==="b"){ f.band = p[1]; if(p[2]) f.sexe = p[2] }
@@ -3180,8 +3640,19 @@ function hrPrint(id){
     if(!(b = t.closest("[data-hract]"))) return;
     var a = b.dataset.hract, id = b.dataset.id;
     try{
+      if(a==="pres-today"){ HRM.pd = hrToday(); hrRender(); return }
+      if(a==="kiosk-open") return hrKiosk();
+      if(a==="al-ok"){ await hrAlerte(id, true); return }
+      if(a==="al-fp"){ if(confirm("Enregistrer le pointage refusé comme valide (faux positif) ?")) await hrAlerte(id, false); return }
+      if(a==="xlsx-pres"){ await exportXlsx("MESP_RH_presences_"+HRM.exPd, "Présences", ["N°","Matricule","Nom","Fonction","Arrivée","Départ","État","Observation"], HRM.exP||[]); return }
+      if(a==="pdf-pres"){ await exportPdfTable("MESP_RH_presences_"+HRM.exPd, "MESP RH — Présences du "+hrFD(HRM.exPd), hrEntNom(hrEnt())+" · arrivée attendue "+hrDebut(), ["N°","Matricule","Nom","Fonction","Arrivée","Départ","État","Observation"], HRM.exP||[]); return }
+      if(a==="cg-new") return hrCgForm();
+      if(a==="cg-ok"){ await hrCgDecide(id, true); return }
+      if(a==="cg-no"){ await hrCgDecide(id, false); return }
+      if(a==="cg-cancel"){ if(confirm("Annuler ce congé ?")){ var cc = HRM.d.hr_conges[id]; await hrPut("hr_conges", Object.assign({}, cc, {statut:"annule"})); hrRender(); toast("Congé annulé") } return }
+      if(a==="xlsx-cg"){ await exportXlsx("MESP_RH_conges", "Congés", ["Agent","Type","Du","Au","Jours","Statut","Motif"], hrList("hr_conges").map(function(c){ var g = HRM.d.hr_agents[c.agent_id]; return [g?hrName(g):c.agent_id, HR_CT[c.type], hrFD(c.date_debut), hrFD(c.date_fin), c.jours, HR_CS[c.statut], c.motif||""] })); return }
       if(a==="portals"){ hrClose(); hubShow(); return }
-      if(a==="refresh"){ HRM.loaded = false; HRM.jrLoaded = false; hrLoad(); return }
+      if(a==="refresh"){ HRM.loaded = false; HRM.jrLoaded = false; HRM.st = null; hrLoad(); return }
       if(a==="reset-f"){ setF({}); return }
       if(a==="vac"){ HRM.vo = !HRM.vo; hrRender(); return }
       if(a==="new-agent") return hrAgentForm();
@@ -3196,11 +3667,25 @@ function hrPrint(id){
       if(a==="new-ct") return hrCtForm(id);
       if(a==="edit-ct") return hrCtForm(HRM.d.hr_contacts[id].agent_id, HRM.d.hr_contacts[id]);
       if(a==="new-pc") return hrPcForm(id);
+      if(a==="assign") return hrAssignForm(id);
+      if(a==="mut-new") return hrMutForm(id);
+      if(a==="mut-ok") return hrMutOk(id);
+      if(a==="mut-no") return hrMutNo(id);
+      if(a==="mut-cancel"){ if(confirm("Annuler cette proposition de mutation ?")){ await hrRpc("hr_mutation_annuler", {p_id:id}); hrRender(); toast("Mutation annulée") } return }
+      if(a==="act-new") return hrActeForm(id, b.dataset.t);
+      if(a==="act-no") return hrActeNo(id);
+      if(a==="act-ok"){ var x = HRM.d.hr_actes[id]; if(confirm("Valider : "+HR_AT[x.type]+" — "+((x.snapshot||{}).nom||"")+" ?")){ await hrRpc("hr_acte_decider", {p_id:id, p_valider:true, p_motif:null}); hrRender(); toast("Acte validé et appliqué") } return }
+      if(a==="act-cancel"){ if(confirm("Annuler cette demande ?")){ await hrRpc("hr_acte_annuler", {p_id:id}); hrRender(); toast("Demande annulée") } return }
+      if(a==="new-ent") return hrEntForm();
+      if(a==="edit-ent") return hrEntForm(HRM.d.hr_entites[id]);
+      if(a==="imp-ent") return hrImportEnt();
+      if(a==="xlsx-ent"){ await exportXlsx("MESP_RH_entites", "Entités", ["Entité","Effectif","Hommes","Femmes","Prévu","Vacants","Sans poste","Incomplets"], HRM.exE||[]); return }
+      if(a==="pdf-ent"){ await exportPdfTable("MESP_RH_entites", "MESP RH — Entités provinciales (consolidé)", "Édité le "+new Date().toLocaleDateString("fr-FR"), ["Entité","Effectif","Hommes","Femmes","Prévu","Vacants","Sans poste","Incomplets"], HRM.exE||[]); return }
       if(a==="new-acc") return hrAccForm();
       if(a==="print") return hrPrint(id);
       if(a==="del-fam"){ if(confirm("Supprimer cet ayant droit ?")){ await hrDel("hr_famille", id); hrRender() } return }
       if(a==="del-ct"){ if(confirm("Supprimer cette personne ?")){ await hrDel("hr_contacts", id); hrRender() } return }
-      if(a==="del-acc"){ if(confirm("Retirer cet accès ?")){ await hrDel("hr_acces", id); hrRender() } return }
+      if(a==="del-acc"){ var ar = HRM.d.hr_acces[id]; if(!hrNat() && ar && ar.niveau==="drh"){ toast("Le niveau DRH est retiré par le niveau national"); return } if(confirm("Retirer cet accès ?")){ await hrDel("hr_acces", id); hrRender() } return }
       if(a==="del-pc"){ var pc = HRM.d.hr_pieces[id]; if(confirm("Supprimer cette pièce ?")){ await hrDel("hr_pieces", id); await hrRemoveFile(pc.fichier_path); hrRender() } return }
       if(a==="del-agent"){ var ag = HRM.d.hr_agents[id]; if(confirm("Supprimer définitivement le dossier de "+hrName(ag)+" (famille, contacts et pièces compris) ?")){ var ps = hrList("hr_pieces").filter(function(x){ return x.agent_id===id }); await hrDel("hr_agents", id); for(var i=0;i<ps.length;i++) await hrRemoveFile(ps[i].fichier_path); await hrRemoveFile(ag.photo_path); HRM.sel = null; hrRender(); toast("Dossier supprimé") } return }
       if(a==="open-pc"){ var u = await hrFileUrl(HRM.d.hr_pieces[id].fichier_path); if(!u){ toast("Fichier introuvable"); return } var an = document.createElement("a"); an.href = u; an.target = "_blank"; an.rel = "noopener"; document.body.appendChild(an); an.click(); an.remove(); return }
@@ -3215,11 +3700,17 @@ function hrPrint(id){
       if(a==="pdf-un"){ await exportPdfTable("MESP_RH_effectif_unites", "MESP RH — Effectif par unité", "Agents en service au "+new Date().toLocaleDateString("fr-FR"), ["Unité","Type","Hommes","Femmes","Total","Prévu","Vacants"], HRM.exU||[]); return }
       if(a==="xlsx-age"){ await exportXlsx("MESP_RH_tranches_age", "Tranches d'âge", ["Tranche","Hommes","Femmes","Total"], HRM.exA||[]); return }
       if(a==="pdf-age"){ await exportPdfTable("MESP_RH_tranches_age", "MESP RH — Effectif par tranche d'âge", "Agents en service au "+new Date().toLocaleDateString("fr-FR"), ["Tranche","Hommes","Femmes","Total"], HRM.exA||[]); return }
-      if(a==="xlsx-po"){ await exportXlsx("MESP_RH_postes", "Postes", ["Intitulé","Unité","Grade","Prévu","Occupé","Vacant"], hrList("hr_postes").map(function(p){ var o = hrOcc(p.id); return [p.intitule, hrUn(p.unite_id), p.grade||"", +p.effectif_prevu||0, o, Math.max(0,(+p.effectif_prevu||0)-o)] })); return }
+      if(a==="xlsx-po"){ await exportXlsx("MESP_RH_postes", "Postes", ["Intitulé","Entité","Unité","Grade","Prévu","Occupé","Vacant"], hrList("hr_postes").filter(function(p){ return hrNat() || p.entite_id===hrEnt() }).map(function(p){ var o = p.entite_id===hrEnt() ? hrOcc(p.id) : ""; return [p.intitule, hrEntNom(p.entite_id), hrUn(p.unite_id), p.grade||"", +p.effectif_prevu||0, o, o==="" ? "" : Math.max(0,(+p.effectif_prevu||0)-o)] })); return }
     }catch(ex){ toast("Erreur : "+((ex&&ex.message)||ex)) }
   });
   var obs = new MutationObserver(function(){ if($("hrlist") && !$("hrlist").dataset.f){ $("hrlist").dataset.f = 1; hrAgentsList() } }); obs.observe(el, {childList:true, subtree:true});
 })();
+
+/* écran de pointage : événements */
+document.addEventListener("click", function(e){ var t = e.target, k = $("hrk"); if(!k || !k.contains(t)) return; var b;
+  if((b = t.closest("[data-kmode]"))){ HRK.mode = b.dataset.kmode; k.querySelectorAll("[data-kmode]").forEach(function(x){ x.classList.toggle("on", x===b) }); hrKMsg(""); var i = $("hrkin"); if(i) i.focus(); return }
+  if(t.closest("[data-kact=quit]")){ hrKClose(); hrRender() } });
+document.addEventListener("keydown", function(e){ if(e.target && e.target.id==="hrkin" && e.key==="Enter"){ e.preventDefault(); hrKPoint(e.target.value) } });
 
 function bootAuth(){ go("v0") }
 function startSession(a){
@@ -3659,7 +4150,7 @@ function logout(force){
   presOff(); offClearUser(); OFFK = null; OFFRES = false;
   try{ localStorage.removeItem("mesp_sess") }catch(e){}
   try{ SB.auth.signOut() }catch(e){} clearShared();
-  HRM.loaded = false; HRM.d = {}; HRM.sel = null; HRM.jrLoaded = false; PORTAL = "";
+  HRM.loaded = false; HRM.d = {}; HRM.sel = null; HRM.jrLoaded = false; HRM.st = null; PORTAL = "";
   AG = null; ROLE = null; SCOPE = []; FOSA = null; CUR = null; VIEW = null; ME = {id:null,isOwner:false,canEdit:false}; LABEL = "la hiérarchie";
   $("who").classList.add("hide"); $("top").classList.remove("in"); $("tabs").classList.add("hide"); $("tabs").innerHTML = ""; $("spnav").classList.add("hide"); document.body.classList.remove("nat"); $("out").classList.add("hide");
   $("q").value = ""; $("lc").value = ""; $("lp").value = ""; go("v0"); hubShow();
@@ -5884,7 +6375,7 @@ function demoClient(S){
   }
   var off = async function(){ return {data:null, error:{message:"Indisponible en mode démonstration"}} };
   return { from:function(t){ return t==="audit_log" ? AQ() : (/^hr_/.test(t) ? demoHq(S,t) : Q()) },
-    rpc:async function(n,a){ var c = S[a.p_coll] || (S[a.p_coll] = {}); c[a.p_id] = Object.assign({}, c[a.p_id], JSON.parse(JSON.stringify(a.p_patch))); return {data:null, error:null} },
+    rpc:async function(n,a){ if(n==="hr_stats_entites") return {data:demoHrStats(S), error:null}; if(/^hr_/.test(n)) return demoHrRpc(S,n,a); var c = S[a.p_coll] || (S[a.p_coll] = {}); c[a.p_id] = Object.assign({}, c[a.p_id], JSON.parse(JSON.stringify(a.p_patch))); return {data:null, error:null} },
     channel:function(){ var ch = {on:function(){ return ch }, subscribe:function(){ return ch }}; return ch }, removeChannel:function(){},
     auth:{ signOut:async function(){ return {error:null} }, getSession:async function(){ return {data:{session:null}} }, updateUser:off },
     functions:{ invoke:async function(){ var e = new Error("Indisponible en mode démonstration"); return {data:null, error:e} } },
