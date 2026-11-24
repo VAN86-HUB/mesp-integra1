@@ -3204,7 +3204,7 @@ function hrOrga(){
     var ids = hrDesc(u.id), mine = u.entite_id===hrEnt(), ag = mine ? hrCount(hrList("hr_agents"), function(a){ return hrOn(a) && a.unite_id===u.id }) : null, agT = mine ? hrCount(hrList("hr_agents"), function(a){ return hrOn(a) && ids.indexOf(a.unite_id)>=0 }) : null;
     var ch = hrList("hr_unites").filter(function(x){ return x.parent_id===u.id }).sort(function(a,b){ return (a.ordre-b.ordre) || a.nom.localeCompare(b.nom,"fr") });
     var chefA = u.chef_id && HRM.d.hr_agents[u.chef_id];
-    return '<li><div class="un"><span><b'+(mine?' data-hrunit="'+u.id+'"':'')+'>'+esc(u.nom)+'</b> <small>'+HR_UT[u.type]+(u.actif===false?' · inactive':'')+(mine?' · resp. : '+esc(chefA?hrName(chefA):'—'):'')+(mine?' · '+ag+' agent'+(ag>1?'s':'')+(ch.length?' (total '+agT+')':''):'')+' · prévu '+hrPrevu([u.id])+'</small></span>'+((mine && hrLvl()==='drh' && !nat)?'<span><button class="hrb" data-hract="unit-chef" data-id="'+u.id+'">Responsable</button></span>':'')+(nat?'<span>'+(mine?'<button class="hrb" data-hract="unit-chef" data-id="'+u.id+'">Responsable</button> ':'')+'<button class="hrb" data-hract="sub-unit" data-id="'+u.id+'">+ Sous-unité</button> <button class="hrb" data-hract="edit-unit" data-id="'+u.id+'">✎</button></span>':'')+'</div>'+(ch.length?'<ul>'+ch.map(node).join("")+'</ul>':'')+'</li>';
+    return '<li><div class="un"><span><b'+(mine?' data-hrunit="'+u.id+'"':'')+'>'+esc(u.nom)+'</b> <small>'+HR_UT[u.type]+(u.actif===false?' · inactive':'')+(mine?' · resp. : '+esc(chefA?hrName(chefA):'—'):'')+(mine?' · '+ag+' agent'+(ag>1?'s':'')+(ch.length?' (total '+agT+')':''):'')+' · prévu '+hrPrevu([u.id])+'</small></span>'+((mine && hrLvl()==='drh' && !nat)?'<span><button class="hrb" data-hract="unit-chef" data-id="'+u.id+'">Responsable</button></span>':'')+(nat?'<span>'+(mine?'<button class="hrb" data-hract="unit-chef" data-id="'+u.id+'">Responsable</button> ':'')+'<button class="hrb" data-hract="sub-unit" data-id="'+u.id+'">+ Sous-unité</button> <button class="hrb" data-hract="edit-unit" data-id="'+u.id+'">✎</button> <button class="hrb dan" data-hract="del-unit" data-id="'+u.id+'" title="Supprimer l\'unité">🗑</button></span>':'')+'</div>'+(ch.length?'<ul>'+ch.map(node).join("")+'</ul>':'')+'</li>';
   }
   ents.forEach(function(e){
     var roots = hrRoots(e.id).sort(function(a,b){ return (a.ordre-b.ordre) || a.nom.localeCompare(b.nom,"fr") });
@@ -3396,6 +3396,17 @@ function hrUnitForm(u, parent){
     if(row.parent_id){ var p = HRM.d.hr_unites[row.parent_id]; if(p && p.entite_id!==row.entite_id) throw new Error("L'unité parente doit appartenir à la même entité") }
     await hrPut("hr_unites", row); toast("Unité enregistrée");
   });
+}
+async function hrUnitDel(id){
+  var u = HRM.d.hr_unites[id]; if(!u) return;
+  var ag = hrList("hr_agents").filter(function(a){ return a.unite_id===id }), ch = hrList("hr_unites").filter(function(x){ return x.parent_id===id }), po = hrList("hr_postes").filter(function(p){ return p.unite_id===id }), par = u.parent_id && HRM.d.hr_unites[u.parent_id];
+  var msg = "Supprimer l'unité « "+u.nom+" » ?\n\n"
+    + "• "+ag.length+" agent(s) de cette unité n'auront plus d'unité (leur dossier est conservé)\n"
+    + "• "+ch.length+" sous-unité(s) seront rattachées à "+(par ? "« "+par.nom+" »" : "la racine (premier niveau)")+"\n"
+    + "• "+po.length+" poste(s) n'auront plus d'unité\n\nCette action est définitive.";
+  if(!confirm(msg)) return;
+  for(var i=0;i<ch.length;i++) await hrPut("hr_unites", Object.assign({}, ch[i], {parent_id:u.parent_id||null}));
+  await hrDel("hr_unites", id); toast("Unité supprimée"); hrRender();
 }
 function hrPosteForm(p){
   var isNew = !p; p = p || {effectif_prevu:1, actif:true, entite_id:hrEnt()};
@@ -3828,6 +3839,7 @@ async function hrCgDecide(id, ok){
       if(a==="new-unit") return hrUnitForm();
       if(a==="sub-unit") return hrUnitForm(null, id);
       if(a==="edit-unit") return hrUnitForm(HRM.d.hr_unites[id]);
+      if(a==="del-unit"){ await hrUnitDel(id); return }
       if(a==="new-poste") return hrPosteForm();
       if(a==="edit-poste") return hrPosteForm(HRM.d.hr_postes[id]);
       if(a==="new-fam") return hrFamForm(id);
