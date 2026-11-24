@@ -199,7 +199,7 @@ input[type=password],input[type=date],input#lc{width:100%;font:inherit;font-size
 :root[data-theme="dark"] #hub .p1{background:#16324a;color:#8cc4f5}:root[data-theme="dark"] #hub .p2{background:#173a21;color:#8fd49a}:root[data-theme="dark"] #hub .p3{background:#2a2147;color:#bba6f0}:root[data-theme="dark"] #hub .p4{background:#42291a;color:#f0b886}
 @media (max-width:360px){#hub .hg{grid-template-columns:1fr}}
 .toast{z-index:10001}
-#hr{position:fixed;inset:0;z-index:9000;background:var(--bg);overflow:auto;-webkit-overflow-scrolling:touch}
+#hr,#fin{position:fixed;inset:0;z-index:9000;background:var(--bg);overflow:auto;-webkit-overflow-scrolling:touch}
 .hrw{max-width:none;width:100%;margin:0;padding:12px clamp(14px,2.5vw,40px) 60px}
 .hrh{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:6px}
 .hrh h1{margin:0;font-size:1.35rem;color:#237a35}
@@ -238,7 +238,7 @@ input[type=password],input[type=date],input#lc{width:100%;font:inherit;font-size
 .hrmb .hrx{background:var(--bg);color:var(--text);border:1px solid var(--line)}
 .hrerr{color:var(--ko);font-size:.9rem;margin:8px 0 0}
 .hrmsg{padding:30px 10px;text-align:center;color:var(--muted)}
-@media print{#hr{position:static}}
+@media print{#hr,#fin{position:static}}
 .hrkio{position:fixed;inset:0;z-index:9300;background:#0b2a17;color:#fff;display:flex;flex-direction:column;align-items:center;gap:14px;padding:18px 16px;overflow:auto}
 .hrkio .hrkh{width:100%;max-width:900px;display:flex;justify-content:space-between;align-items:center;gap:10px}
 .hrkio .hrkh small{display:block;opacity:.75;text-transform:capitalize}
@@ -346,6 +346,7 @@ input[type=password],input[type=date],input#lc{width:100%;font:inherit;font-size
   <div class="enc"><button id="aboutx" type="button">Fermer</button></div>
 </div></div>
 <div id="hr" class="hide"></div>
+<div id="fin" class="hide"></div>
 <div id="hub" role="dialog" aria-label="Portails MESP"><div class="hubw">
   <h1>MESP INTEGRA</h1>
   <p class="hsub">Plateforme numérique intégrée de gestion de la MESP</p>
@@ -353,7 +354,7 @@ input[type=password],input[type=date],input#lc{width:100%;font:inherit;font-size
     <button class="hp p0" data-hub="ident"><i>Bientôt</i><svg viewBox="0 0 24 24"><path d="M7 4H5a2 2 0 0 0-2 2v2M17 4h2a2 2 0 0 1 2 2v2M7 20H5a2 2 0 0 1-2-2v-2M17 20h2a2 2 0 0 0 2-2v-2"/><circle cx="12" cy="10" r="3"/><path d="M6.5 17c.8-2.2 2.8-3.5 5.5-3.5s4.7 1.3 5.5 3.5"/></svg><small>PORTAIL 01</small><b>MESP IDENTIFICATION</b><span>Identification des assurés, vérification des matricules, base biométrique et cartes.</span></button>
     <button class="hp p1" data-hub="sante"><svg viewBox="0 0 24 24"><path d="M12 21s-7-4.6-9.3-9.2C1.2 8.6 3 5 6.4 5c2 0 3.4 1.1 4.2 2.4h.8C12.2 6.1 13.6 5 15.6 5 19 5 20.8 8.6 21.3 11.8 19 16.4 12 21 12 21z"/><path d="M3 12h4l1.5-2.5L11 15l2-3h8"/></svg><small>PORTAIL 02</small><b>MESP SANTÉ</b><span>Gestion des assurés, soins, prestations, risques et dépenses.</span></button>
     <button class="hp p2" data-hub="rh"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><circle cx="17" cy="9" r="2.6"/><path d="M17.5 14.2c2.4.3 4.5 2.4 4.5 5.8"/></svg><small>PORTAIL 03</small><b>MESP-Ressources humaines</b><span>Gestion du personnel, carrières, congés, présences et rémunérations.</span></button>
-    <button class="hp p3" data-hub="finance"><i>Bientôt</i><svg viewBox="0 0 24 24"><path d="M4 7.5A2.5 2.5 0 0 1 6.5 5H18v3"/><rect x="3" y="7.5" width="18" height="12.5" rx="2.5"/><path d="M21 12.5h-4a2 2 0 0 0 0 4h4"/></svg><small>PORTAIL 04</small><b>MESP FINANCE</b><span>Budgets, trésorerie, recettes, dépenses et comptabilité.</span></button>
+    <button class="hp p3" data-hub="finance"><svg viewBox="0 0 24 24"><path d="M4 7.5A2.5 2.5 0 0 1 6.5 5H18v3"/><rect x="3" y="7.5" width="18" height="12.5" rx="2.5"/><path d="M21 12.5h-4a2 2 0 0 0 0 4h4"/></svg><small>PORTAIL 04</small><b>MESP FINANCE</b><span>Budgets, trésorerie, recettes, dépenses et comptabilité.</span></button>
     <button class="hp p4" data-hub="admin"><i>Bientôt</i><svg viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2.5h8a2 2 0 0 1 2 2V18a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 13v3M12 11.5V16M15 14v2"/></svg><small>PORTAIL 05</small><b>MESP ADMIN</b><span>Courrier, archives, administration, patrimoine et logistique.</span></button>
     
     <button class="hp p6" data-hub="archiv"><i>Bientôt</i><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="5" rx="1.5"/><path d="M5 9v9a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V9M10 13h4"/></svg><small>PORTAIL 06</small><b>MESP ARCHIVAGE</b><span>Archivage électronique des documents, secrétariat et courrier scannés.</span></button>
@@ -2808,12 +2809,13 @@ async function hashPw(pw, saltHex){
 }
 function saveSess(){ if(DEMO || OFFRES) return; try{ localStorage.setItem("mesp_sess", JSON.stringify({c:AG.c, t:Date.now()})) }catch(e){} }
 /* menu d'accueil : portails MESP (MESP Santé = l'application actuelle) */
-function hubShow(){ if(typeof hrClose==="function") hrClose(); var h = $("hub"); if(h){ h.classList.remove("hide"); h.scrollTop = 0 } }
+function hubShow(){ if(typeof hrClose==="function") hrClose(); if(typeof finClose==="function") finClose(); var h = $("hub"); if(h){ h.classList.remove("hide"); h.scrollTop = 0 } }
 function hubHide(){ var h = $("hub"); if(h) h.classList.add("hide"); window.scrollTo(0,0) }
 document.addEventListener("click", function(e){
   var b = e.target.closest && e.target.closest("[data-hub]"); if(b){ var k = b.dataset.hub;
-    if(k==="sante"){ PORTAL = "sante"; hrClose(); hubHide() }
-          else if(k==="rh"){ PORTAL = "rh"; hubHide(); if(AG) hrOpen() }
+    if(k==="sante"){ PORTAL = "sante"; hrClose(); finClose(); hubHide() }
+          else if(k==="rh"){ PORTAL = "rh"; finClose(); hubHide(); if(AG) hrOpen() }
+          else if(k==="finance"){ PORTAL = "finance"; hrClose(); hubHide(); if(AG) finOpen() }
     else toast({rh:"MESP-Ressources humaines", finance:"MESP FINANCE", admin:"MESP ADMIN", central:"Administration centrale", ident:"MESP IDENTIFICATION", archiv:"MESP ARCHIVAGE"}[k]+" : bientôt disponible.");
     return }
   if(e.target.id==="hubbtn") hubShow();
@@ -3927,6 +3929,303 @@ document.addEventListener("click", function(e){ var t = e.target, k = $("hrk"); 
   if(t.closest("[data-kact=quit]")){ hrKClose(); hrRender() } });
 document.addEventListener("keydown", function(e){ if(e.target && e.target.id==="hrkin" && e.key==="Enter"){ e.preventDefault(); hrKPoint(e.target.value) } });
 
+/* ===== MESP FINANCE — étape 1 : comptes, taux, caisses USD/CDF, journal de caisse, dépenses (DF puis SE) ===== */
+var FINT = {fin_acces:"code", fin_exercices:"id", fin_comptes:"id", fin_taux:"id", fin_param:"cle", fin_caisses:"id", fin_mouvements:"id", fin_depenses:"id", fin_journal:"id"};
+var FIN = {d:{}, loaded:false, busy:false, err:"", tab:"dash", as:"df", cj:null, sf:"", ds:"", nj:[]};
+var FIN_NIV = {df:"Directeur financier", se:"Secrétaire exécutif", comptable:"Comptable", caissier:"Caissier", lecture:"Lecture seule"};
+var FIN_DS = {demande:"En attente du directeur financier", valide_df:"Validée par le DF · attente du secrétaire exécutif", approuve:"Approuvée · à payer", paye:"Payée", refuse:"Refusée", annule:"Annulée"};
+var FIN_TYPE = {actif:"Actif", passif:"Passif", charge:"Charge", produit:"Produit", autre:"Autre"};
+var FIN_DEMO_U = {df:{code:"DF", nom:"Directeur financier (démo)", niveau:"df", entite_id:"national"}, se:{code:"SE", nom:"Secrétaire exécutif (démo)", niveau:"se", entite_id:"national"}, caissier:{code:"CA", nom:"Caissier siège (démo)", niveau:"caissier", entite_id:"national"}, lecture:{code:"LE", nom:"Lecture seule (démo)", niveau:"lecture", entite_id:"national"}, kin:{code:"KC", nom:"Caissier Kinshasa (démo)", niveau:"caissier", entite_id:"kinshasa"}};
+function finId(p){ return (p||"f")+Date.now().toString(36)+Math.random().toString(36).slice(2,6) }
+function finList(t){ var d = FIN.d[t] || {}; return Object.keys(d).map(function(k){ return d[k] }) }
+function finMe(){ if(DEMO) return FIN_DEMO_U[FIN.as] || FIN_DEMO_U.df; return AG && FIN.d.fin_acces ? FIN.d.fin_acces[AG.c] || null : null }
+function finLvl(){ var m = finMe(); return m ? m.niveau : null }
+function finEnt(){ var m = finMe(); return m ? m.entite_id : null }
+function finNat(){ return finEnt()==="national" }
+function finCode(){ var m = finMe(); return m ? m.code : null }
+function finOk(e){ return !!finLvl() && (finNat() || e===finEnt()) }
+function finMine(t){ return finList(t).filter(function(x){ return finOk(x.entite_id) }) }
+function finEntNom(id){ var e = id && HRM.d && HRM.d.hr_entites && HRM.d.hr_entites[id]; return e ? e.nom : (id==="national" ? "Siège national" : id==="kinshasa" ? "Kinshasa" : (id||"—")) }
+function finM(n, dev){ var v = Number(n)||0; return v.toLocaleString("fr-FR", {minimumFractionDigits:2, maximumFractionDigits:2})+" "+(dev||"") }
+function finFD(d){ return typeof hrFD==="function" ? hrFD(d) : (d||"—") }
+function finCompte(id){ var c = id && FIN.d.fin_comptes && FIN.d.fin_comptes[id]; return c ? c.id+" — "+c.intitule : "—" }
+function finCanW(){ return ["df","comptable","caissier"].indexOf(finLvl())>=0 }
+function finAgNom(code){ if(!code) return "—"; var a = FIN.d.fin_acces && FIN.d.fin_acces[code]; return a ? a.nom : code }
+function finSolde(c){ var s = +c.solde_initial||0; finList("fin_mouvements").forEach(function(m){ if(m.caisse_id===c.id) s += m.sens==="entree" ? +m.montant : -m.montant }); return s }
+function finTaux(){ var l = finList("fin_taux").sort(function(a,b){ return b.jour.localeCompare(a.jour) }); return l[0] || null }
+function finUsd(m, dev){ if(dev==="USD") return m; var t = finTaux(); return t ? m/ +t.usd_cdf : null }
+function finExo(jour){ return finList("fin_exercices").filter(function(e){ return jour>=e.debut && jour<=e.fin })[0] }
+function finParam(k){ var p = FIN.d.fin_param && FIN.d.fin_param[k]; return p ? +p.valeur : 0 }
+
+/* ---------- données ---------- */
+async function finFetch(t){
+  var k = FINT[t], out = {}, from = 0;
+  for(;;){ var r = await SB.from(t).select("*").order(k).range(from, from+999); if(r.error) throw r.error; r.data.forEach(function(x){ out[x[k]] = x }); if(r.data.length<1000) break; from += 1000 }
+  return out;
+}
+function finDemoSeed(){
+  var D = {}; Object.keys(FINT).forEach(function(t){ D[t] = {} });
+  [["10","Capital et réserves",1,"passif"],["57","Caisse",5,"actif"],["52","Banques",5,"actif"],["604","Achats de fournitures de bureau",6,"charge"],["605","Autres achats (eau, énergie, carburant)",6,"charge"],["61","Transports",6,"charge"],["66","Charges de personnel",6,"charge"],["706","Cotisations des adhérents",7,"produit"]].forEach(function(c){ D.fin_comptes[c[0]] = {id:c[0], intitule:c[1], classe:c[2], type:c[3], actif:true} });
+  D.fin_exercices.ex2026 = {id:"ex2026", libelle:"Exercice 2026", debut:"2026-01-01", fin:"2026-12-31", cloture:false};
+  D.fin_param.seuil_se_usd = {cle:"seuil_se_usd", valeur:0, note:"0 = le secrétaire exécutif valide toujours"};
+  D.fin_taux.t1 = {id:"t1", jour:"2026-11-20", usd_cdf:2800, saisi_par:"DF"};
+  D.fin_caisses.c1 = {id:"c1", entite_id:"national", nom:"Caisse siège USD", type:"caisse", devise:"USD", solde_initial:1000, actif:true};
+  D.fin_caisses.c2 = {id:"c2", entite_id:"national", nom:"Caisse siège CDF", type:"caisse", devise:"CDF", solde_initial:2000000, actif:true};
+  D.fin_caisses.ck = {id:"ck", entite_id:"kinshasa", nom:"Caisse Kinshasa USD", type:"caisse", devise:"USD", solde_initial:500, actif:true};
+  D.fin_mouvements.m1 = {id:"m1", entite_id:"national", caisse_id:"c1", jour:"2026-11-10", sens:"entree", montant:600, devise:"USD", compte_id:"706", libelle:"Cotisations école pilote", created_by:"DF"};
+  D.fin_depenses.d1 = {id:"d1", entite_id:"national", objet:"Fournitures de bureau", beneficiaire:"Papeterie Centrale", montant:300, devise:"USD", compte_id:"604", statut:"demande", demande_par:"CA", demande_le:"2026-11-22T09:00:00Z"};
+  D.fin_depenses.d2 = {id:"d2", entite_id:"national", objet:"Carburant groupe électrogène", beneficiaire:"Station Total", montant:420000, devise:"CDF", compte_id:"605", statut:"valide_df", demande_par:"CA", demande_le:"2026-11-21T09:00:00Z", df_par:"DF", df_le:"2026-11-22T10:00:00Z"};
+  D.fin_depenses.d3 = {id:"d3", entite_id:"national", objet:"Transport mission Kananga", beneficiaire:"Agence Voyages", montant:80, devise:"USD", compte_id:"61", statut:"approuve", demande_par:"CA", demande_le:"2026-11-20T09:00:00Z", df_par:"DF", df_le:"2026-11-20T10:00:00Z", se_par:"SE", se_le:"2026-11-21T10:00:00Z"};
+  ["DF","SE","CA","LE","KC"].forEach(function(c){ var u = Object.keys(FIN_DEMO_U).map(function(k){ return FIN_DEMO_U[k] }).filter(function(x){ return x.code===c })[0]; D.fin_acces[c] = {code:c, nom:u.nom, niveau:u.niveau, entite_id:u.entite_id} });
+  return D;
+}
+async function finLoad(){
+  FIN.busy = true; FIN.err = ""; finRender();
+  try{
+    if(DEMO){ if(!FIN.demoD) FIN.demoD = finDemoSeed(); FIN.d = FIN.demoD }
+    else {
+      var d = {}; await Promise.all(Object.keys(FINT).filter(function(t){ return t!=="fin_journal" }).map(async function(t){ d[t] = await finFetch(t) }));
+      FIN.d = d; if(finLvl() && ["df","se","comptable"].indexOf(finLvl())>=0){ try{ var r = await SB.from("fin_journal").select("*").order("id",{ascending:false}).limit(300); FIN.nj = r.data || [] }catch(e){ FIN.nj = [] } }
+    }
+    FIN.loaded = true;
+  }catch(e){ FIN.err = (e && (e.message || e.details)) || String(e) }
+  FIN.busy = false; finRender();
+}
+function finDemoCheck(t, row, old){
+  var m = finMe(), niv = m.niveau, me = m.code;
+  if(t==="fin_mouvements"){
+    var c = FIN.d.fin_caisses[row.caisse_id]; if(!c) return "Caisse introuvable"; if(!c.actif) return "Cette caisse est fermée";
+    if(["df","comptable","caissier"].indexOf(niv)<0 || !finOk(c.entite_id)) return "new row violates row-level security policy for table \"fin_mouvements\"";
+    var ex = finExo(row.jour); if(!ex) return "Aucun exercice comptable ne couvre la date "+row.jour; if(ex.cloture) return "L'exercice est clôturé : écriture impossible";
+    if(row.sens==="sortie" && finSolde(c) < row.montant) return "Solde insuffisant : "+finSolde(c)+" "+c.devise+" disponibles";
+    row.entite_id = c.entite_id; row.devise = c.devise; row.created_by = me; return null;
+  }
+  if(t==="fin_depenses"){
+    if(!old){
+      if(niv==="lecture") return "Vous n'avez pas le droit de demander une dépense"; if(!finOk(row.entite_id)) return "Entité non autorisée";
+      row.statut = "demande"; row.demande_par = me; row.demande_le = new Date().toISOString(); return null;
+    }
+    if(row.statut===old.statut) return null;
+    if(old.statut==="demande" && row.statut==="valide_df"){ if(niv!=="df" || !finOk(old.entite_id)) return "Seul le directeur financier valide cette étape"; row.df_par = me; row.df_le = new Date().toISOString(); var seuil = finParam("seuil_se_usd"), u = finUsd(old.montant, old.devise); if(seuil>0 && u!=null && u<seuil) row.statut = "approuve"; return null }
+    if(old.statut==="valide_df" && row.statut==="approuve"){ if(niv!=="se") return "Seul le secrétaire exécutif approuve cette étape"; row.se_par = me; row.se_le = new Date().toISOString(); return null }
+    if((old.statut==="demande"||old.statut==="valide_df") && row.statut==="refuse"){ if(!((old.statut==="demande" && niv==="df") || (old.statut==="valide_df" && (niv==="se"||niv==="df")))) return "Vous ne pouvez pas refuser à cette étape"; if(!String(row.decision_motif||"").trim()) return "Le motif du refus est obligatoire"; return null }
+    if(["demande","valide_df","approuve"].indexOf(old.statut)>=0 && row.statut==="annule"){ if(!(old.demande_par===me || niv==="df")) return "Seul le demandeur ou le directeur financier annule"; return null }
+    return "Changement de statut non autorisé ("+old.statut+" vers "+row.statut+")";
+  }
+  if(t==="fin_caisses" || t==="fin_exercices" || t==="fin_acces"){ if(niv!=="df") return "new row violates row-level security policy for table \""+t+"\"" }
+  if(t==="fin_comptes" || t==="fin_taux"){ if(["df","comptable"].indexOf(niv)<0) return "new row violates row-level security policy for table \""+t+"\"" }
+  if(t==="fin_param"){ if(["df","se"].indexOf(niv)<0) return "new row violates row-level security policy for table \""+t+"\"" }
+  return null;
+}
+async function finPut(t, row){
+  var k = FINT[t], old = FIN.d[t] && FIN.d[t][row[k]];
+  if(DEMO){ var er = finDemoCheck(t, row, old); if(er) throw new Error(er); FIN.d[t][row[k]] = Object.assign({}, old||{}, row); FIN.nj.unshift({id:FIN.nj.length+1, at:new Date().toISOString(), acteur:finCode(), action:old?"update":"insert", table_name:t, ligne_id:row[k]}); return FIN.d[t][row[k]] }
+  var r = old ? await SB.from(t).update(row).eq(k, row[k]).select() : await SB.from(t).insert(row).select();
+  if(r.error) throw new Error(r.error.message || "Erreur d'enregistrement");
+  var x = (r.data && r.data[0]) || row; (FIN.d[t] = FIN.d[t] || {})[x[k]] = x; return x;
+}
+async function finDel(t, id){
+  if(DEMO){ delete FIN.d[t][id]; return }
+  var r = await SB.from(t).delete().eq(FINT[t], id); if(r.error) throw new Error(r.error.message || "Suppression impossible"); delete FIN.d[t][id];
+}
+async function finPay(id, caisse){
+  if(DEMO){
+    var d = FIN.d.fin_depenses[id], c = FIN.d.fin_caisses[caisse], m = finMe();
+    if(["df","comptable","caissier"].indexOf(m.niveau)<0) throw new Error("Seuls le directeur financier, le comptable ou le caissier paient");
+    if(!d || d.statut!=="approuve") throw new Error("La dépense n'est pas approuvée"); if(!c || c.entite_id!==d.entite_id) throw new Error("Caisse invalide pour cette entité");
+    if(c.devise!==d.devise) throw new Error("La caisse est en "+c.devise+", la dépense en "+d.devise);
+    if(finSolde(c) < d.montant) throw new Error("Solde insuffisant : "+finSolde(c)+" "+c.devise+" disponibles");
+    var mid = finId("m"); FIN.d.fin_mouvements[mid] = {id:mid, entite_id:d.entite_id, caisse_id:c.id, jour:hrToday(), sens:"sortie", montant:d.montant, devise:d.devise, compte_id:d.compte_id, libelle:"Dépense : "+d.objet, reference:d.id, depense_id:d.id, created_by:m.code};
+    Object.assign(d, {statut:"paye", caisse_id:c.id, mouvement_id:mid, paye_par:m.code, paye_le:new Date().toISOString()}); return;
+  }
+  var r = await SB.rpc("fin_payer", {p_id:id, p_caisse:caisse}); if(r.error) throw new Error(r.error.message || "Paiement impossible");
+  await finLoad();
+}
+
+/* ---------- ouverture / fermeture ---------- */
+function finOpen(){
+  var el = $("fin"); if(!el) return; PORTAL = "finance"; el.classList.remove("hide"); el.scrollTop = 0;
+  if(!FIN.loaded && !FIN.busy) finLoad(); else finRender();
+}
+function finClose(){ var el = $("fin"); if(el) el.classList.add("hide"); var m = $("hrm"); if(m) m.remove() }
+function finReset(){ FIN.d = {}; FIN.demoD = null; FIN.loaded = false; FIN.nj = []; FIN.cj = null; FIN.tab = "dash" }
+
+/* ---------- affichage ---------- */
+function finRender(){
+  var el = $("fin"); if(!el || el.classList.contains("hide")) return;
+  var h = '<div class="hrw"><div class="hrh"><h1>MESP FINANCE</h1><div class="hrsm"><button class="hrb" data-fact="fs" title="Plein écran">⛶ Plein écran</button>'+(DEMO?'<select id="finas" title="Démonstration : voir comme">'+Object.keys(FIN_DEMO_U).map(function(k){ return '<option value="'+k+'"'+(FIN.as===k?' selected':'')+'>Voir comme : '+esc(FIN_DEMO_U[k].nom)+'</option>' }).join("")+'</select>':'')+'<button class="hrb" data-fact="refresh">↻ Actualiser</button><button class="hrb" data-fact="portals">☰ Portails</button></div></div>';
+  if(FIN.busy && !FIN.loaded){ el.innerHTML = h+'<div class="card"><p class="sub">Chargement…</p></div></div>'; return }
+  if(FIN.err){ el.innerHTML = h+'<div class="card"><b style="color:var(--ko)">Impossible de charger les données Finance</b><p class="sub">'+esc(FIN.err)+'</p><p class="sub">Vérifiez que le script <b>fin_etape1.sql</b> a été exécuté dans Supabase (après les scripts RH).</p></div></div>'; return }
+  var lv = finLvl();
+  if(!lv){ el.innerHTML = h+'<div class="card"><b>Aucun accès Finance</b><p class="sub">Votre compte ('+esc(AG ? AG.c : "")+') n\'a pas d\'accès au portail Finance. Le directeur financier peut vous l\'accorder (onglet « Accès »).</p></div></div>'; return }
+  var tabs = [["dash","Tableau de bord"],["dep","Dépenses"+(finPendN()?" ("+finPendN()+")":"")],["caisses","Caisses & journal"],["taux","Taux de change"],["cpt","Plan comptable"],["exo","Exercices"]];
+  if(lv==="df") tabs.push(["acces","Accès"]); if(["df","se","comptable"].indexOf(lv)>=0) tabs.push(["audit","Journal d'audit"]);
+  h += '<p class="sub">'+esc(finMe().nom)+' · '+FIN_NIV[lv]+' · '+esc(finEntNom(finEnt()))+'</p><div class="hrt">'+tabs.map(function(t){ return '<button data-ftab="'+t[0]+'"'+(FIN.tab===t[0]?' class="on"':'')+'>'+t[1]+'</button>' }).join("")+'</div>';
+  var fn = {dash:finDash, dep:finDeps, caisses:finCaisses, taux:finTauxV, cpt:finCpt, exo:finExoV, acces:finAcces, audit:finAudit}[FIN.tab] || finDash;
+  el.innerHTML = h + fn() + '</div>';
+}
+function finPendN(){
+  var lv = finLvl(), n = 0; finMine("fin_depenses").forEach(function(d){ if((lv==="df" && d.statut==="demande") || (lv==="se" && d.statut==="valide_df") || (["df","comptable","caissier"].indexOf(lv)>=0 && d.statut==="approuve")) n++ }); return n;
+}
+function finK(l, v, c){ return '<div class="kpi"><small>'+l+'</small><b'+(c?' style="color:var(--'+c+')"':'')+'>'+v+'</b></div>' }
+function finDash(){
+  var cs = finMine("fin_caisses").filter(function(c){ return c.actif }), tot = {USD:0, CDF:0}; cs.forEach(function(c){ tot[c.devise] += finSolde(c) });
+  var mois = hrToday().slice(0,7), rec = {USD:0, CDF:0}, dep = {USD:0, CDF:0};
+  finMine("fin_mouvements").forEach(function(m){ if(String(m.jour).slice(0,7)===mois){ (m.sens==="entree" ? rec : dep)[m.devise] += +m.montant } });
+  var tx = finTaux(), p = finPendN();
+  var h = '<div class="hrk">'+finK("Trésorerie USD", finM(tot.USD,"USD"))+finK("Trésorerie CDF", finM(tot.CDF,"CDF"))+finK("Recettes du mois", finM(rec.USD,"USD")+"<br><small>"+finM(rec.CDF,"CDF")+"</small>","ok")+finK("Dépenses payées du mois", finM(dep.USD,"USD")+"<br><small>"+finM(dep.CDF,"CDF")+"</small>","ko")+finK("À traiter par vous", p, p?"ko":"ok")+finK("Taux du jour", tx ? "1 USD = "+Number(tx.usd_cdf).toLocaleString("fr-FR")+" CDF" : "À saisir", tx?"":"ko")+'</div>';
+  h += '<div class="card"><h3>Caisses et banques</h3>'+(cs.length ? '<div class="tw"><table><thead><tr><th>Caisse</th><th>Entité</th><th>Type</th><th class="n">Solde</th></tr></thead><tbody>'+cs.map(function(c){ return '<tr><td data-fcj="'+c.id+'" style="cursor:pointer;color:var(--accent);font-weight:700">'+esc(c.nom)+'</td><td>'+esc(finEntNom(c.entite_id))+'</td><td>'+(c.type==="banque"?"Banque":"Caisse")+'</td><td class="n">'+finM(finSolde(c), c.devise)+'</td></tr>' }).join("")+'</tbody></table></div>' : '<p class="sub">Aucune caisse. '+(finLvl()==="df" ? 'Créez-en une dans « Caisses & journal ».' : 'Le directeur financier doit en créer une.')+'</p>')+'</div>';
+  var att = finMine("fin_depenses").filter(function(d){ return ["demande","valide_df","approuve"].indexOf(d.statut)>=0 }).sort(function(a,b){ return String(a.demande_le).localeCompare(String(b.demande_le)) }).slice(0,8);
+  h += '<div class="card"><h3>Dépenses en cours</h3>'+(att.length ? att.map(function(d){ return finDepRow(d, true) }).join("") : '<p class="sub">Aucune dépense en cours.</p>')+'</div>';
+  return h;
+}
+function finDepBtns(d){
+  var lv = finLvl(), me = finCode(), id = ' data-id="'+d.id+'"', b = "";
+  if(d.statut==="demande" && lv==="df") b += '<button class="hrb pri" data-fact="dep-ok"'+id+'>Valider (DF)</button><button class="hrb dan" data-fact="dep-no"'+id+'>Refuser</button>';
+  if(d.statut==="valide_df" && lv==="se") b += '<button class="hrb pri" data-fact="dep-se"'+id+'>Approuver (SE)</button><button class="hrb dan" data-fact="dep-no"'+id+'>Refuser</button>';
+  if(d.statut==="approuve" && ["df","comptable","caissier"].indexOf(lv)>=0) b += '<button class="hrb pri" data-fact="dep-pay"'+id+'>Payer</button>';
+  if(["demande","valide_df","approuve"].indexOf(d.statut)>=0 && (d.demande_par===me || lv==="df")) b += '<button class="hrb dan" data-fact="dep-cancel"'+id+'>Annuler</button>';
+  return b;
+}
+function finDepRow(d, short){
+  var ok = d.statut==="paye" || d.statut==="approuve", ko = d.statut==="refuse" || d.statut==="annule";
+  return '<div class="nrow" style="cursor:default"><div><b>'+esc(d.objet)+'</b> <small>'+finM(d.montant, d.devise)+(d.beneficiaire?' · '+esc(d.beneficiaire):'')+' · '+esc(finEntNom(d.entite_id))+'</small><small style="display:block">'+(d.compte_id?'Compte '+esc(finCompte(d.compte_id))+' · ':'')+'Demandé par '+esc(finAgNom(d.demande_par))+' le '+finFD(String(d.demande_le||"").slice(0,10))+(d.df_par?' · DF : '+esc(finAgNom(d.df_par)):'')+(d.se_par?' · SE : '+esc(finAgNom(d.se_par)):'')+(d.paye_le?' · payée le '+finFD(String(d.paye_le).slice(0,10)):'')+(d.decision_motif?' · Motif : '+esc(d.decision_motif):'')+'</small></div><span style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;align-items:center"><span class="tag '+(ok?'good':ko?'rej':'')+'">'+FIN_DS[d.statut]+'</span>'+finDepBtns(d)+'</span></div>';
+}
+function finDeps(){
+  var l = finMine("fin_depenses").filter(function(d){ return !FIN.ds || d.statut===FIN.ds }).sort(function(a,b){ return String(b.demande_le).localeCompare(String(a.demande_le)) });
+  var h = '<div class="card"><div class="hrf" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">'+(finLvl()!=="lecture" ? '<button class="hrb pri" data-fact="dep-new">+ Nouvelle demande de dépense</button>' : '')+'<select id="finds"><option value="">Tous les statuts</option>'+Object.keys(FIN_DS).map(function(k){ return '<option value="'+k+'"'+(FIN.ds===k?' selected':'')+'>'+FIN_DS[k]+'</option>' }).join("")+'</select><button class="hrb" data-fact="xlsx-dep">Excel</button><button class="hrb" data-fact="pdf-dep">PDF</button></div><p class="sub">Circuit : demande → directeur financier → secrétaire exécutif'+(finParam("seuil_se_usd")>0 ? ' (la validation du DF suffit sous '+finParam("seuil_se_usd")+' USD)' : '')+' → paiement par la caisse.</p></div>';
+  h += '<div class="card"><h3>Dépenses ('+l.length+')</h3>'+(l.length ? l.map(function(d){ return finDepRow(d) }).join("") : '<p class="sub">Aucune dépense.</p>')+'</div>';
+  return h;
+}
+function finDepForm(){
+  var cs = finList("fin_comptes").filter(function(c){ return c.actif && c.classe===6 }).sort(function(a,b){ return a.id.localeCompare(b.id) });
+  var ents = finList("fin_caisses").length || true ? (finNat() ? (typeof hrEntOpts==="function" && HRM.d.hr_entites && Object.keys(HRM.d.hr_entites).length ? hrEntOpts() : [["national","Siège national"],["kinshasa","Kinshasa"]]) : [[finEnt(), finEntNom(finEnt())]]) : [];
+  hrForm("Nouvelle demande de dépense", [["entite_id","Entité","select",ents,1],["objet","Objet de la dépense","text",null,1],["beneficiaire","Bénéficiaire / fournisseur","text"],["montant","Montant","number",null,1],["devise","Devise","select",[["USD","USD (dollar)"],["CDF","CDF (franc congolais)"]]],["compte_id","Compte de charge","select",[["","— À préciser —"]].concat(cs.map(function(c){ return [c.id, c.id+" — "+c.intitule] }))]], {entite_id:finEnt(), devise:"USD"}, async function(v){
+    if(!(v.montant>0)) throw new Error("Le montant doit être supérieur à 0");
+    await finPut("fin_depenses", {id:finId("d"), entite_id:v.entite_id, objet:v.objet, beneficiaire:v.beneficiaire||null, montant:v.montant, devise:v.devise, compte_id:v.compte_id||null, statut:"demande"});
+    toast("Demande enregistrée : en attente du directeur financier"); finRender();
+  });
+  var n = $("hrm").querySelector('[name="montant"]'); if(n) n.step = "0.01";
+}
+function finCaisses(){
+  var cs = finMine("fin_caisses").sort(function(a,b){ return a.nom.localeCompare(b.nom,"fr") });
+  if(FIN.cj && !FIN.d.fin_caisses[FIN.cj]) FIN.cj = null;
+  var h = '<div class="card"><div class="hrf" style="display:flex;gap:8px;flex-wrap:wrap">'+(finLvl()==="df" ? '<button class="hrb pri" data-fact="caisse-new">+ Nouvelle caisse / banque</button>' : '')+'</div>'+(cs.length ? '<div class="tw"><table><thead><tr><th>Caisse</th><th>Entité</th><th>Devise</th><th class="n">Solde</th></tr></thead><tbody>'+cs.map(function(c){ return '<tr><td data-fcj="'+c.id+'" style="cursor:pointer;color:var(--accent);font-weight:700">'+esc(c.nom)+(c.actif?'':' <small>(fermée)</small>')+'</td><td>'+esc(finEntNom(c.entite_id))+'</td><td>'+c.devise+'</td><td class="n">'+finM(finSolde(c), c.devise)+'</td></tr>' }).join("")+'</tbody></table></div>' : '<p class="sub">Aucune caisse.</p>')+'</div>';
+  if(FIN.cj){
+    var c = FIN.d.fin_caisses[FIN.cj], mv = finList("fin_mouvements").filter(function(m){ return m.caisse_id===c.id }).sort(function(a,b){ return String(a.jour).localeCompare(String(b.jour)) || String(a.created_at).localeCompare(String(b.created_at)) }), run = +c.solde_initial||0;
+    h += '<div class="card"><h3>Journal : '+esc(c.nom)+' <small>('+c.devise+')</small></h3><div class="hrf" style="display:flex;gap:8px;flex-wrap:wrap">'+(finCanW() && c.actif ? '<button class="hrb pri" data-fact="mv-new" data-id="'+c.id+'">+ Écriture</button>' : '')+'<button class="hrb" data-fact="xlsx-cj">Excel</button><button class="hrb" data-fact="pdf-cj">PDF</button></div><p class="sub">Les écritures sont définitives : pour corriger, passez une écriture inverse.</p><div class="tw"><table><thead><tr><th>Date</th><th>Libellé</th><th>Compte</th><th class="n">Entrée</th><th class="n">Sortie</th><th class="n">Solde</th></tr></thead><tbody><tr><td></td><td><i>Solde initial</i></td><td></td><td class="n"></td><td class="n"></td><td class="n">'+finM(run)+'</td></tr>'+mv.map(function(m){ run += m.sens==="entree" ? +m.montant : -m.montant; return '<tr><td>'+finFD(m.jour)+'</td><td>'+esc(m.libelle)+(m.reference?' <small>'+esc(m.reference)+'</small>':'')+'</td><td>'+esc(m.compte_id||"")+'</td><td class="n">'+(m.sens==="entree"?finM(m.montant):"")+'</td><td class="n">'+(m.sens==="sortie"?finM(m.montant):"")+'</td><td class="n">'+finM(run)+'</td></tr>' }).join("")+'</tbody></table></div></div>';
+    FIN.cjRows = [["", "Solde initial", "", "", "", +c.solde_initial||0]]; var r2 = +c.solde_initial||0; mv.forEach(function(m){ r2 += m.sens==="entree" ? +m.montant : -m.montant; FIN.cjRows.push([finFD(m.jour), m.libelle, m.compte_id||"", m.sens==="entree"?+m.montant:"", m.sens==="sortie"?+m.montant:"", r2]) });
+  }
+  return h;
+}
+function finCaisseForm(){
+  var ents = finNat() ? (HRM.d.hr_entites && Object.keys(HRM.d.hr_entites).length ? hrEntOpts() : [["national","Siège national"],["kinshasa","Kinshasa"]]) : [[finEnt(), finEntNom(finEnt())]];
+  hrForm("Nouvelle caisse / banque", [["nom","Nom","text",null,1],["entite_id","Entité","select",ents,1],["type","Type","select",[["caisse","Caisse"],["banque","Compte bancaire"]]],["devise","Devise","select",[["USD","USD (dollar)"],["CDF","CDF (franc congolais)"]]],["solde_initial","Solde d'ouverture","number"]], {entite_id:finEnt(), type:"caisse", devise:"USD", solde_initial:0}, async function(v){
+    await finPut("fin_caisses", {id:finId("c"), nom:v.nom, entite_id:v.entite_id, type:v.type, devise:v.devise, solde_initial:v.solde_initial||0, actif:true}); toast("Caisse créée"); finRender();
+  });
+}
+function finMvForm(cid){
+  var c = FIN.d.fin_caisses[cid], cs = finList("fin_comptes").filter(function(x){ return x.actif }).sort(function(a,b){ return a.id.localeCompare(b.id) });
+  hrForm("Écriture de caisse — "+c.nom+" ("+c.devise+")", [["sens","Sens","select",[["entree","Entrée (recette)"],["sortie","Sortie (dépense)"]]],["jour","Date","date",null,1],["montant","Montant ("+c.devise+")","number",null,1],["libelle","Libellé","text",null,1],["compte_id","Compte","select",[["","— À préciser —"]].concat(cs.map(function(x){ return [x.id, x.id+" — "+x.intitule] }))],["reference","Référence / pièce","text"]], {sens:"entree", jour:hrToday()}, async function(v){
+    if(!(v.montant>0)) throw new Error("Le montant doit être supérieur à 0");
+    await finPut("fin_mouvements", {id:finId("m"), caisse_id:cid, entite_id:c.entite_id, devise:c.devise, jour:v.jour, sens:v.sens, montant:v.montant, libelle:v.libelle, compte_id:v.compte_id||null, reference:v.reference||null}); toast("Écriture enregistrée"); finRender();
+  });
+  var n = $("hrm").querySelector('[name="montant"]'); if(n) n.step = "0.01";
+}
+function finTauxV(){
+  var l = finList("fin_taux").sort(function(a,b){ return b.jour.localeCompare(a.jour) });
+  return '<div class="card">'+(["df","comptable"].indexOf(finLvl())>=0 ? '<button class="hrb pri" data-fact="taux-new">+ Saisir le taux du jour</button>' : '')+'<p class="sub">Taux appliqué : le plus récent. Il sert à convertir les montants en CDF en équivalent USD.</p>'+(l.length ? '<div class="tw"><table><thead><tr><th>Date</th><th class="n">1 USD =</th><th>Saisi par</th></tr></thead><tbody>'+l.map(function(t){ return '<tr><td>'+finFD(t.jour)+'</td><td class="n">'+Number(t.usd_cdf).toLocaleString("fr-FR")+' CDF</td><td>'+esc(finAgNom(t.saisi_par))+'</td></tr>' }).join("")+'</tbody></table></div>' : '<p class="sub">Aucun taux saisi.</p>')+'</div>';
+}
+function finTauxForm(){
+  hrForm("Taux de change du jour", [["jour","Date","date",null,1],["usd_cdf","1 USD = … CDF","number",null,1]], {jour:hrToday()}, async function(v){
+    if(!(v.usd_cdf>0)) throw new Error("Le taux doit être supérieur à 0");
+    var ex = finList("fin_taux").filter(function(t){ return t.jour===v.jour })[0];
+    await finPut("fin_taux", {id:ex ? ex.id : finId("t"), jour:v.jour, usd_cdf:v.usd_cdf, saisi_par:finCode()}); toast("Taux enregistré"); finRender();
+  });
+}
+function finCpt(){
+  var l = finList("fin_comptes").sort(function(a,b){ return a.id.localeCompare(b.id, "fr", {numeric:true}) }), cl = {1:"Classe 1 — Capitaux",2:"Classe 2 — Immobilisations",3:"Classe 3 — Stocks",4:"Classe 4 — Tiers",5:"Classe 5 — Trésorerie",6:"Classe 6 — Charges",7:"Classe 7 — Produits",8:"Classe 8 — Autres",9:"Classe 9"}, h = '<div class="card">'+(["df","comptable"].indexOf(finLvl())>=0 ? '<button class="hrb pri" data-fact="cpt-new">+ Nouveau compte</button>' : '')+'<p class="sub">Plan comptable de départ (SYSCOHADA révisé, comptes principaux). Adaptez-le à la MESP.</p></div>';
+  [1,2,3,4,5,6,7,8,9].forEach(function(k){ var g = l.filter(function(c){ return c.classe===k }); if(!g.length) return; h += '<div class="card"><h3>'+cl[k]+'</h3><div class="tw"><table><tbody>'+g.map(function(c){ return '<tr><td style="width:90px"><b>'+esc(c.id)+'</b></td><td>'+esc(c.intitule)+(c.actif?'':' <small>(désactivé)</small>')+'</td><td>'+FIN_TYPE[c.type]+'</td>'+(["df","comptable"].indexOf(finLvl())>=0 ? '<td class="n"><button class="hrb" data-fact="cpt-tog" data-id="'+esc(c.id)+'">'+(c.actif?'Désactiver':'Réactiver')+'</button></td>' : '')+'</tr>' }).join("")+'</tbody></table></div></div>' });
+  return h;
+}
+function finCptForm(){
+  hrForm("Nouveau compte", [["id","Numéro de compte","text",null,1],["intitule","Intitulé","text",null,1],["type","Type","select",Object.keys(FIN_TYPE).map(function(k){ return [k, FIN_TYPE[k]] })]], {type:"charge"}, async function(v){
+    var n = String(v.id).replace(/\s+/g,""); if(!/^[1-9][0-9]*$/.test(n)) throw new Error("Le numéro de compte ne contient que des chiffres (le premier indique la classe)");
+    if(FIN.d.fin_comptes[n]) throw new Error("Ce numéro existe déjà");
+    await finPut("fin_comptes", {id:n, intitule:v.intitule, classe:+n[0], type:v.type, actif:true}); toast("Compte ajouté"); finRender();
+  });
+}
+function finExoV(){
+  var l = finList("fin_exercices").sort(function(a,b){ return b.debut.localeCompare(a.debut) });
+  return '<div class="card">'+(finLvl()==="df" ? '<button class="hrb pri" data-fact="exo-new">+ Nouvel exercice</button>' : '')+'<p class="sub">Un exercice clôturé verrouille toutes les écritures de caisse de sa période.</p>'+l.map(function(e){ return '<div class="nrow" style="cursor:default"><div><b>'+esc(e.libelle)+'</b> <small>du '+finFD(e.debut)+' au '+finFD(e.fin)+'</small></div><span style="display:flex;gap:6px;align-items:center"><span class="tag '+(e.cloture?'rej':'good')+'">'+(e.cloture?'Clôturé':'Ouvert')+'</span>'+(finLvl()==="df" ? '<button class="hrb" data-fact="exo-tog" data-id="'+e.id+'">'+(e.cloture?'Rouvrir':'Clôturer')+'</button>' : '')+'</span></div>' }).join("")+'</div>';
+}
+function finExoForm(){
+  hrForm("Nouvel exercice", [["libelle","Libellé (ex. Exercice 2028)","text",null,1],["debut","Début","date",null,1],["fin","Fin","date",null,1]], {}, async function(v){
+    if(v.fin<=v.debut) throw new Error("La fin doit être après le début");
+    await finPut("fin_exercices", {id:finId("ex"), libelle:v.libelle, debut:v.debut, fin:v.fin, cloture:false}); toast("Exercice créé"); finRender();
+  });
+}
+function finAcces(){
+  var l = finList("fin_acces").sort(function(a,b){ return a.nom.localeCompare(b.nom,"fr") });
+  return '<div class="card"><button class="hrb pri" data-fact="acc-new">+ Donner un accès</button><p class="sub">Entrez le code MESP Integra de la personne (ex. 10-056). Le niveau « Directeur financier » et « Secrétaire exécutif » sont les deux validateurs des dépenses.</p>'+l.map(function(a){ return '<div class="nrow" style="cursor:default"><div><b>'+esc(a.nom)+'</b> <small>'+esc(a.code)+' · '+esc(finEntNom(a.entite_id))+'</small></div><span style="display:flex;gap:6px;align-items:center"><span class="tag">'+FIN_NIV[a.niveau]+'</span><button class="hrb dan" data-fact="acc-del" data-id="'+esc(a.code)+'">Retirer</button></span></div>' }).join("")+'</div>';
+}
+function finAccForm(){
+  var ents = HRM.d.hr_entites && Object.keys(HRM.d.hr_entites).length ? hrEntOpts() : [["national","Siège national"],["kinshasa","Kinshasa"]];
+  hrForm("Accès Finance", [["code","Code MESP Integra","text",null,1],["nom","Nom","text",null,1],["niveau","Niveau","select",Object.keys(FIN_NIV).map(function(k){ return [k, FIN_NIV[k]] })],["entite_id","Entité","select",ents,1]], {niveau:"caissier", entite_id:"national"}, async function(v){
+    await finPut("fin_acces", {code:v.code.trim(), nom:v.nom, niveau:v.niveau, entite_id:v.entite_id}); toast("Accès enregistré"); finRender();
+  });
+}
+function finAudit(){
+  var l = FIN.nj || [];
+  return '<div class="card"><h3>Journal d\'audit</h3>'+(l.length ? '<div class="tw"><table><thead><tr><th>Date</th><th>Qui</th><th>Action</th><th>Table</th><th>Ligne</th></tr></thead><tbody>'+l.slice(0,200).map(function(j){ return '<tr><td>'+esc(String(j.at).slice(0,16).replace("T"," "))+'</td><td>'+esc(j.acteur||"")+'</td><td>'+esc(j.action)+'</td><td>'+esc(j.table_name)+'</td><td>'+esc(j.ligne_id||"")+'</td></tr>' }).join("")+'</tbody></table></div>' : '<p class="sub">Journal vide.</p>')+'</div>';
+}
+function finDepRowsX(){ return finMine("fin_depenses").map(function(d){ return [d.objet, d.beneficiaire||"", finEntNom(d.entite_id), +d.montant, d.devise, FIN_DS[d.statut], finAgNom(d.demande_par), finFD(String(d.demande_le||"").slice(0,10))] }) }
+var FIN_DH = ["Objet","Bénéficiaire","Entité","Montant","Devise","Statut","Demandé par","Date"];
+
+/* ---------- événements ---------- */
+(function(){
+  var el = $("fin"); if(!el) return;
+  el.addEventListener("change", function(e){
+    if(e.target.id==="finas"){ FIN.as = e.target.value; FIN.cj = null; FIN.tab = "dash"; finRender() }
+    if(e.target.id==="finds"){ FIN.ds = e.target.value; finRender() }
+  });
+  el.addEventListener("click", async function(e){
+    var t = e.target, b, cj = t.closest("[data-fcj]");
+    if(cj){ FIN.cj = cj.dataset.fcj; FIN.tab = "caisses"; finRender(); return }
+    if((b = t.closest("[data-ftab]"))){ FIN.tab = b.dataset.ftab; finRender(); el.scrollTop = 0; return }
+    if(!(b = t.closest("[data-fact]"))) return;
+    var a = b.dataset.fact, id = b.dataset.id;
+    try{
+      if(a==="portals"){ finClose(); hubShow(); return }
+      if(a==="refresh"){ FIN.loaded = false; if(DEMO) FIN.demoD = FIN.demoD; finLoad(); return }
+      if(a==="fs"){ var de = document.documentElement; try{ if(document.fullscreenElement) await document.exitFullscreen(); else await (de.requestFullscreen||de.webkitRequestFullscreen).call(de) }catch(x){ toast("Plein écran non disponible sur cet appareil") } return }
+      if(a==="dep-new") return finDepForm();
+      if(a==="caisse-new") return finCaisseForm();
+      if(a==="mv-new") return finMvForm(id);
+      if(a==="taux-new") return finTauxForm();
+      if(a==="cpt-new") return finCptForm();
+      if(a==="exo-new") return finExoForm();
+      if(a==="acc-new") return finAccForm();
+      if(a==="dep-ok"){ await finPut("fin_depenses", Object.assign({}, FIN.d.fin_depenses[id], {statut:"valide_df"})); var nd = FIN.d.fin_depenses[id]; toast(nd.statut==="approuve" ? "Validée : sous le seuil, aucune approbation du secrétaire exécutif n'est requise" : "Validée : en attente du secrétaire exécutif"); finRender(); return }
+      if(a==="dep-se"){ await finPut("fin_depenses", Object.assign({}, FIN.d.fin_depenses[id], {statut:"approuve"})); toast("Dépense approuvée : prête à être payée"); finRender(); return }
+      if(a==="dep-no"){ var dd = FIN.d.fin_depenses[id]; hrForm("Refuser la dépense", [["motif","Motif du refus","area",null,1]], {}, async function(v){ await finPut("fin_depenses", Object.assign({}, dd, {statut:"refuse", decision_motif:v.motif})); toast("Dépense refusée"); finRender() }); return }
+      if(a==="dep-cancel"){ if(!confirm("Annuler cette dépense ?")) return; await finPut("fin_depenses", Object.assign({}, FIN.d.fin_depenses[id], {statut:"annule"})); toast("Dépense annulée"); finRender(); return }
+      if(a==="dep-pay"){
+        var d = FIN.d.fin_depenses[id], cs = finList("fin_caisses").filter(function(c){ return c.actif && c.entite_id===d.entite_id && c.devise===d.devise });
+        if(!cs.length){ toast("Aucune caisse "+d.devise+" ouverte pour cette entité"); return }
+        hrForm("Payer : "+d.objet+" ("+finM(d.montant, d.devise)+")", [["caisse","Payer depuis","select",cs.map(function(c){ return [c.id, c.nom+" — solde "+finM(finSolde(c), c.devise)] }),1]], {}, async function(v){ await finPay(id, v.caisse); toast("Dépense payée : écriture passée en caisse"); finRender() }); return;
+      }
+      if(a==="cpt-tog"){ var c = FIN.d.fin_comptes[id]; await finPut("fin_comptes", Object.assign({}, c, {actif:!c.actif})); finRender(); return }
+      if(a==="exo-tog"){ var x = FIN.d.fin_exercices[id]; if(!x.cloture && !confirm("Clôturer "+x.libelle+" ? Plus aucune écriture ne sera possible sur cette période.")) return; await finPut("fin_exercices", Object.assign({}, x, {cloture:!x.cloture})); finRender(); return }
+      if(a==="acc-del"){ if(!confirm("Retirer cet accès ?")) return; await finDel("fin_acces", id); finRender(); return }
+      if(a==="xlsx-dep") return exportXlsx("MESP_FINANCE_depenses", "Dépenses", FIN_DH, finDepRowsX());
+      if(a==="pdf-dep") return exportPdfTable("MESP_FINANCE_depenses", "MESP FINANCE — Dépenses", "Édité le "+new Date().toLocaleDateString("fr-FR"), FIN_DH, finDepRowsX().map(function(r){ r[3] = finM(r[3]); return r }));
+      if(a==="xlsx-cj"){ var cc = FIN.d.fin_caisses[FIN.cj]; return exportXlsx("MESP_FINANCE_journal_"+cc.nom.replace(/\W+/g,"_"), "Journal", ["Date","Libellé","Compte","Entrée","Sortie","Solde"], FIN.cjRows) }
+      if(a==="pdf-cj"){ var c3 = FIN.d.fin_caisses[FIN.cj]; return exportPdfTable("MESP_FINANCE_journal", "MESP FINANCE — Journal : "+c3.nom+" ("+c3.devise+")", "Édité le "+new Date().toLocaleDateString("fr-FR"), ["Date","Libellé","Compte","Entrée","Sortie","Solde"], FIN.cjRows.map(function(r){ return [r[0], r[1], r[2], r[3]===""?"":finM(r[3]), r[4]===""?"":finM(r[4]), finM(r[5])] })) }
+    }catch(ex){ toast((ex && ex.message) || String(ex)) }
+  });
+})();
+
 function bootAuth(){ go("v0") }
 function startSession(a){
   NEWDEL = null; AG = a; ROLE = a.v==="National" ? "national" : (a.r==="autre" ? "autre" : (a.r==="medecin" ? "medecin" : (a.r==="chef" ? "chef" : (isDel(a) ? "delegue" : "assistant")))); saveSess(); ME = {id:a.c, isOwner:false, canEdit:false}; LABEL = labelFor();
@@ -3938,7 +4237,7 @@ function startSession(a){
   $("who").innerHTML = '<span style="min-width:0"><b style="font-size:.95rem;color:var(--text)">'+esc(a.n)+'</b><small style="display:block">'+esc(a.f)+' · <b>'+esc(a.v==='National' ? 'Niveau national' : (a.r==='autre' ? 'Vérification de matricule' : 'Ville : '+(a.w||a.v)))+'</b></small><small id="whof" style="display:block"></small></span><button class="back" id="hubbtn" style="padding:0 12px 0 0">☰ Portails</button><button class="back" id="snd" style="padding:0 12px 0 0">🔔 Son</button><button class="back" id="chpw" style="padding:0 12px 0 0">Mot de passe</button><button class="back" id="lo" style="padding:0">Se déconnecter</button>'; $("who").classList.remove("hide"); $("top").classList.add("in"); sndBtn();
   $("fbox").classList.toggle("hide", ROLE!=="delegue"); $("s1").classList.toggle("hide", ROLE!=="national"); $("s3").classList.toggle("hide", ROLE!=="national"); $("s4").classList.toggle("hide", ROLE!=="national"); ["s5","s6","s7","s8","s9","s10","s11"].forEach(function(i){ $(i).classList.toggle("hide", ROLE!=="national") });
   $("out").classList.add("hide"); $("q").value = ""; CUR = null; VIEW = null;
-  applyScope(); sub(ROLE==="national" ? 1 : 2); refreshAll(); if(ROLE==="national") navTo("v19"); else openView(t[0][0]); presStart(); if(PORTAL==="rh") setTimeout(hrOpen,0); if(isSuper()){ if(PRESALL) clearInterval(PRESALL); PRESALL = setInterval(presAllRefresh, 15000) }
+  applyScope(); sub(ROLE==="national" ? 1 : 2); refreshAll(); if(ROLE==="national") navTo("v19"); else openView(t[0][0]); presStart(); if(PORTAL==="rh") setTimeout(hrOpen,0); if(PORTAL==="finance") setTimeout(finOpen,0); if(isSuper()){ if(PRESALL) clearInterval(PRESALL); PRESALL = setInterval(presAllRefresh, 15000) }
 }
 /* --- administration nationale --- */
 var DPROV = {}, DFOSA = {}, ADMDIRTY = false, ADM = {f:"", a:""}, NEWAS = null, SUPERS = ["10-056"];
@@ -4365,7 +4664,7 @@ function logout(force){
   presOff(); offClearUser(); OFFK = null; OFFRES = false;
   try{ localStorage.removeItem("mesp_sess") }catch(e){}
   try{ SB.auth.signOut() }catch(e){} clearShared();
-  HRM.loaded = false; HRM.d = {}; HRM.sel = null; HRM.jrLoaded = false; HRM.st = null; PORTAL = "";
+  finReset(); finClose(); HRM.loaded = false; HRM.d = {}; HRM.sel = null; HRM.jrLoaded = false; HRM.st = null; PORTAL = "";
   AG = null; ROLE = null; SCOPE = []; FOSA = null; CUR = null; VIEW = null; ME = {id:null,isOwner:false,canEdit:false}; LABEL = "la hiérarchie";
   $("who").classList.add("hide"); $("top").classList.remove("in"); $("tabs").classList.add("hide"); $("tabs").innerHTML = ""; $("spnav").classList.add("hide"); document.body.classList.remove("nat"); $("out").classList.add("hide");
   $("q").value = ""; $("lc").value = ""; $("lp").value = ""; go("v0"); hubShow();
