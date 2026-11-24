@@ -347,7 +347,7 @@ input[type=password],input[type=date],input#lc{width:100%;font:inherit;font-size
 </div></div>
 <div id="hr" class="hide"></div>
 <div id="fin" class="hide"></div>
-<div id="hub" role="dialog" aria-label="Portails MESP"><div class="hubw">
+<div id="hub" class="hide" role="dialog" aria-label="Portails MESP"><div class="hubw">
   <h1>MESP INTEGRA</h1>
   <p class="hsub">Plateforme numérique intégrée de gestion de la MESP</p>
   <div class="hg">
@@ -2809,13 +2809,11 @@ async function hashPw(pw, saltHex){
 }
 function saveSess(){ if(DEMO || OFFRES) return; try{ localStorage.setItem("mesp_sess", JSON.stringify({c:AG.c, t:Date.now()})) }catch(e){} }
 /* menu d'accueil : portails MESP (MESP Santé = l'application actuelle) */
-function hubShow(){ if(typeof hrClose==="function") hrClose(); if(typeof finClose==="function") finClose(); var h = $("hub"); if(h){ h.classList.remove("hide"); h.scrollTop = 0 } }
+function hubShow(){ if(typeof hrClose==="function") hrClose(); if(typeof finClose==="function") finClose(); if(typeof hubFilter==="function") hubFilter(false); var h = $("hub"); if(h){ h.classList.remove("hide"); h.scrollTop = 0 } }
 function hubHide(){ var h = $("hub"); if(h) h.classList.add("hide"); window.scrollTo(0,0) }
 document.addEventListener("click", function(e){
   var b = e.target.closest && e.target.closest("[data-hub]"); if(b){ var k = b.dataset.hub;
-    if(k==="sante"){ PORTAL = "sante"; hrClose(); finClose(); hubHide() }
-          else if(k==="rh"){ PORTAL = "rh"; finClose(); hubHide(); if(AG) hrOpen() }
-          else if(k==="finance"){ PORTAL = "finance"; hrClose(); hubHide(); if(AG) finOpen() }
+    if(k==="sante"||k==="rh"||k==="finance"){ if(ptAdmin() || PORTALS.indexOf(k)>=0) openPortal(k) }
     else toast({rh:"MESP-Ressources humaines", finance:"MESP FINANCE", admin:"MESP ADMIN", central:"Administration centrale", ident:"MESP IDENTIFICATION", archiv:"MESP ARCHIVAGE"}[k]+" : bientôt disponible.");
     return }
   if(e.target.id==="hubbtn") hubShow();
@@ -3096,7 +3094,7 @@ function hrClose(){ if(typeof hrKClose==="function") hrKClose(); var el = $("hr"
 /* ---------- affichage ---------- */
 function hrRender(){
   var el = $("hr"); if(!el || el.classList.contains("hide")) return;
-  var h = '<div class="hrw"><div class="hrh"><h1>MESP-Ressources humaines</h1><div class="hrsm"><button class="hrb" data-hract="fs" title="Plein écran">⛶ Plein écran</button>'+(DEMO?'<select id="hras" title="Démonstration : voir comme"><option value="national"'+(HRM.as==="national"?' selected':'')+'>Voir comme : Siège national</option><option value="kinshasa"'+(HRM.as==="kinshasa"&&!HRM.me?' selected':'')+'>Voir comme : Kinshasa</option><option value="kasai-oriental"'+(HRM.as==="kasai-oriental"&&!HRM.me?' selected':'')+'>Voir comme : Kasaï-Oriental</option><option value="kinshasa#dag8"'+(HRM.me==="dag8"?' selected':'')+'>Voir comme : un agent (Kazadi, Kinshasa)</option><option value="kinshasa#dag9"'+(HRM.me==="dag9"?' selected':'')+'>Voir comme : un chef d\'unité (Ilunga, Kinshasa)</option></select>':'')+'<button class="hrb" data-hract="refresh">↻ Actualiser</button><button class="hrb" data-hract="portals">☰ Portails</button></div></div>';
+  var h = '<div class="hrw"><div class="hrh"><h1>MESP-Ressources humaines</h1><div class="hrsm"><button class="hrb" data-hract="fs" title="Plein écran">⛶ Plein écran</button>'+(DEMO?'<select id="hras" title="Démonstration : voir comme"><option value="national"'+(HRM.as==="national"?' selected':'')+'>Voir comme : Siège national</option><option value="kinshasa"'+(HRM.as==="kinshasa"&&!HRM.me?' selected':'')+'>Voir comme : Kinshasa</option><option value="kasai-oriental"'+(HRM.as==="kasai-oriental"&&!HRM.me?' selected':'')+'>Voir comme : Kasaï-Oriental</option><option value="kinshasa#dag8"'+(HRM.me==="dag8"?' selected':'')+'>Voir comme : un agent (Kazadi, Kinshasa)</option><option value="kinshasa#dag9"'+(HRM.me==="dag9"?' selected':'')+'>Voir comme : un chef d\'unité (Ilunga, Kinshasa)</option></select>':'')+'<button class="hrb" data-hract="refresh">↻ Actualiser</button>'+(typeof PORTALS!=="undefined" && PORTALS.length>1 ? '<button class="hrb" data-hract="portals">☰ Portails</button>' : '')+'</div></div>';
   if(HRM.busy){ el.innerHTML = h+'<p class="hrmsg">Chargement…</p></div>'; return }
   if(HRM.err){ el.innerHTML = h+'<div class="card"><b style="color:var(--ko)">Impossible de charger les données RH</b><p class="sub" style="margin-top:8px">'+esc(HRM.err)+'</p><button class="hrb pri" data-hract="refresh">Réessayer</button></div></div>'; return }
   var lv = hrLvl();
@@ -4053,7 +4051,7 @@ function finReset(){ FIN.d = {}; FIN.demoD = null; FIN.loaded = false; FIN.nj = 
 /* ---------- affichage ---------- */
 function finRender(){
   var el = $("fin"); if(!el || el.classList.contains("hide")) return;
-  var h = '<div class="hrw"><div class="hrh"><h1>MESP FINANCE</h1><div class="hrsm"><button class="hrb" data-fact="fs" title="Plein écran">⛶ Plein écran</button>'+(DEMO?'<select id="finas" title="Démonstration : voir comme">'+Object.keys(FIN_DEMO_U).map(function(k){ return '<option value="'+k+'"'+(FIN.as===k?' selected':'')+'>Voir comme : '+esc(FIN_DEMO_U[k].nom)+'</option>' }).join("")+'</select>':'')+'<button class="hrb" data-fact="refresh">↻ Actualiser</button><button class="hrb" data-fact="portals">☰ Portails</button></div></div>';
+  var h = '<div class="hrw"><div class="hrh"><h1>MESP FINANCE</h1><div class="hrsm"><button class="hrb" data-fact="fs" title="Plein écran">⛶ Plein écran</button>'+(DEMO?'<select id="finas" title="Démonstration : voir comme">'+Object.keys(FIN_DEMO_U).map(function(k){ return '<option value="'+k+'"'+(FIN.as===k?' selected':'')+'>Voir comme : '+esc(FIN_DEMO_U[k].nom)+'</option>' }).join("")+'</select>':'')+'<button class="hrb" data-fact="refresh">↻ Actualiser</button>'+(typeof PORTALS!=="undefined" && PORTALS.length>1 ? '<button class="hrb" data-fact="portals">☰ Portails</button>' : '')+'</div></div>';
   if(FIN.busy && !FIN.loaded){ el.innerHTML = h+'<div class="card"><p class="sub">Chargement…</p></div></div>'; return }
   if(FIN.err){ el.innerHTML = h+'<div class="card"><b style="color:var(--ko)">Impossible de charger les données Finance</b><p class="sub">'+esc(FIN.err)+'</p><p class="sub">Vérifiez que le script <b>fin_etape1.sql</b> a été exécuté dans Supabase (après les scripts RH).</p></div></div>'; return }
   var lv = finLvl();
@@ -4225,6 +4223,63 @@ var FIN_DH = ["Objet","Bénéficiaire","Entité","Montant","Devise","Statut","De
     }catch(ex){ toast((ex && ex.message) || String(ex)) }
   });
 })();
+/* ===== Connexion d'abord, puis portails selon les droits de chaque agent ===== */
+var PORTALS = [], PROW = null, PROWS = {};
+var PT_ALL = [["sante","MESP SANTÉ"],["rh","MESP-Ressources humaines"],["finance","MESP FINANCE"]];
+function ptAdmin(){ return !!AG && (DEMO || isSuper() || !!(PROW && PROW.admin)) }
+function ptKnown(l){ return PT_ALL.map(function(x){ return x[0] }).filter(function(k){ return (l||[]).indexOf(k)>=0 }) }
+function ptCache(code, v){ try{ if(v===undefined){ return JSON.parse(localStorage.getItem("mesp_pt_"+code)||"null") } localStorage.setItem("mesp_pt_"+code, JSON.stringify(v)) }catch(e){ return null } }
+async function ptDerive(){
+  var code = AG.c, P = ["sante"], nat = AG.v==="National" && ["autre","medecin","chef"].indexOf(AG.r)<0, rh = nat, fin = false;
+  async function has(t, col){ try{ var x = await SB.from(t).select(col).eq(col, code).limit(1); return !x.error && x.data && x.data.length>0 }catch(e){ return false } }
+  if(!rh) rh = await has("hr_agents", "code_app") || await has("hr_acces", "code");
+  fin = await has("fin_acces", "code");
+  if(rh) P.push("rh"); if(fin) P.push("finance"); return P;
+}
+async function portalsResolve(){
+  if(DEMO) return ptKnown(["sante","rh","finance"]);
+  var code = AG.c, row = null, ok = false;
+  try{ var r = await SB.from("portails_acces").select("*").eq("code", code).maybeSingle(); if(!r.error){ row = r.data; ok = true } }catch(e){}
+  PROW = row;
+  if(isSuper() || (row && row.admin)){ try{ var q = await SB.from("portails_acces").select("*"); PROWS = {}; (q.data||[]).forEach(function(x){ PROWS[x.code] = x }) }catch(e){} return ptKnown(["sante","rh","finance"]) }
+  if(row && row.portails && row.portails.length){ var L = ptKnown(row.portails); ptCache(code, L); return L.length ? L : ["sante"] }
+  try{ var D = await ptDerive(); ptCache(code, D); return D }catch(e){ return ptCache(code) || ["sante"] }
+}
+function hubFilter(wait){
+  var adm = ptAdmin(), h = $("hub"); if(!h) return;
+  var w = $("hubwait"); if(!w){ w = document.createElement("p"); w.id = "hubwait"; w.className = "hsub"; w.style.border = "0"; var s = h.querySelector(".hsub"); s.parentNode.insertBefore(w, s.nextSibling) }
+  w.textContent = "Ouverture de votre espace…"; w.style.display = wait ? "" : "none";
+  h.querySelectorAll("[data-hub]").forEach(function(b){ var k = b.dataset.hub; b.style.display = wait ? "none" : ((adm || PORTALS.indexOf(k)>=0) ? "" : "none") });
+}
+function openPortal(k){
+  PORTAL = k; hubHide(); if(k!=="rh") hrClose(); if(k!=="finance") finClose();
+  if(k==="rh") hrOpen(); else if(k==="finance") finOpen();
+}
+async function portalEntry(){
+  if(!AG) return;
+  hubFilter(true); var h = $("hub"); if(h){ h.classList.remove("hide"); h.scrollTop = 0 }
+  var P; try{ P = await portalsResolve() }catch(e){ P = ["sante"] }
+  PORTALS = P; var hb = $("hubbtn"); if(hb) hb.classList.toggle("hide", P.length<2);
+  if(P.length===1){ openPortal(P[0]); return }
+  hubFilter(false);
+  if(typeof hrRender==="function") hrRender(); if(typeof finRender==="function") finRender();
+}
+function ptCardHtml(a){
+  var row = PROWS[a.c], cur = row && row.portails && row.portails.length ? row.portails : (a.r==="national" && a.v==="National" ? ["sante","rh"] : ["sante"]);
+  return '<div class="card" style="margin-top:12px"><b>Portails accessibles à cet agent</b><p class="sub" style="margin:6px 0 8px">'+(row ? 'Droits définis par l\'administrateur.' : 'Aucun réglage enregistré : droits par défaut (Santé, plus RH pour le niveau national).')+' Un agent qui n\'a droit qu\'à un portail y entre directement après sa connexion ; avec deux portails ou plus, il choisit.</p>'
+    + PT_ALL.map(function(x){ return '<label style="display:flex;gap:8px;align-items:center;margin:6px 0"><input type="checkbox" class="ptc" value="'+x[0]+'"'+(cur.indexOf(x[0])>=0?' checked':'')+' style="width:auto"> '+x[1]+'</label>' }).join("")
+    + '<div class="enc"><button data-a="ptsave" data-c="'+esc(a.c)+'">Enregistrer les portails</button></div></div>';
+}
+document.addEventListener("click", async function(e){
+  var b = e.target.closest && e.target.closest('[data-a="ptsave"]'); if(!b) return;
+  var code = b.dataset.c, list = Array.prototype.map.call(document.querySelectorAll("#v12 .ptc:checked"), function(x){ return x.value });
+  if(!list.length){ toast("Cochez au moins un portail"); return }
+  try{
+    var row = {code:code, portails:list, admin:!!(PROWS[code] && PROWS[code].admin), updated_by:AG.c, updated_at:new Date().toISOString()};
+    if(DEMO){ PROWS[code] = row } else { var r = await SB.from("portails_acces").upsert(row).select(); if(r.error) throw new Error(/relation|does not exist|portails_acces/i.test(r.error.message||"") ? "Exécutez d'abord portails_acces.sql dans Supabase" : r.error.message); PROWS[code] = (r.data && r.data[0]) || row }
+    toast("Portails enregistrés : "+list.map(function(k){ return PT_ALL.filter(function(x){ return x[0]===k })[0][1] }).join(", ")); renderAdmin();
+  }catch(ex){ toast("Enregistrement impossible : "+(ex.message||ex)) }
+});
 
 function bootAuth(){ go("v0") }
 function startSession(a){
@@ -4237,7 +4292,7 @@ function startSession(a){
   $("who").innerHTML = '<span style="min-width:0"><b style="font-size:.95rem;color:var(--text)">'+esc(a.n)+'</b><small style="display:block">'+esc(a.f)+' · <b>'+esc(a.v==='National' ? 'Niveau national' : (a.r==='autre' ? 'Vérification de matricule' : 'Ville : '+(a.w||a.v)))+'</b></small><small id="whof" style="display:block"></small></span><button class="back" id="hubbtn" style="padding:0 12px 0 0">☰ Portails</button><button class="back" id="snd" style="padding:0 12px 0 0">🔔 Son</button><button class="back" id="chpw" style="padding:0 12px 0 0">Mot de passe</button><button class="back" id="lo" style="padding:0">Se déconnecter</button>'; $("who").classList.remove("hide"); $("top").classList.add("in"); sndBtn();
   $("fbox").classList.toggle("hide", ROLE!=="delegue"); $("s1").classList.toggle("hide", ROLE!=="national"); $("s3").classList.toggle("hide", ROLE!=="national"); $("s4").classList.toggle("hide", ROLE!=="national"); ["s5","s6","s7","s8","s9","s10","s11"].forEach(function(i){ $(i).classList.toggle("hide", ROLE!=="national") });
   $("out").classList.add("hide"); $("q").value = ""; CUR = null; VIEW = null;
-  applyScope(); sub(ROLE==="national" ? 1 : 2); refreshAll(); if(ROLE==="national") navTo("v19"); else openView(t[0][0]); presStart(); if(PORTAL==="rh") setTimeout(hrOpen,0); if(PORTAL==="finance") setTimeout(finOpen,0); if(isSuper()){ if(PRESALL) clearInterval(PRESALL); PRESALL = setInterval(presAllRefresh, 15000) }
+  applyScope(); sub(ROLE==="national" ? 1 : 2); refreshAll(); if(ROLE==="national") navTo("v19"); else openView(t[0][0]); presStart(); setTimeout(portalEntry,0); if(isSuper()){ if(PRESALL) clearInterval(PRESALL); PRESALL = setInterval(presAllRefresh, 15000) }
 }
 /* --- administration nationale --- */
 var DPROV = {}, DFOSA = {}, ADMDIRTY = false, ADM = {f:"", a:""}, NEWAS = null, SUPERS = ["10-056"];
@@ -4283,7 +4338,7 @@ function superAdminHtml(){
       + (!isNat && a.r!=="autre" && !isDel(a) ? '<label class="lbl" for="mg_r">Type d\'agent</label><select id="mg_r">'+[["assistant","Assistant provincial"],["medecin","Médecin conseil"],["chef","Chef de service / coordonnateur"]].map(function(o){ return '<option value="'+o[0]+'"'+(o[0]===a.r?' selected':'')+'>'+o[1]+'</option>' }).join("")+'</select>' : '')
       + (isNat || a.r==="chef" || a.r==="medecin" ? '<label class="lbl" for="mg_f">Fonction</label><input id="mg_f" type="text" value="'+esc(a.f)+'" autocomplete="off">' : '')
       + (!isNat ? '<label class="lbl" for="mg_p">Province</label><select id="mg_p">'+P.map(function(v){ return '<option'+(v===a.v?' selected':'')+'>'+esc(v)+'</option>' }).join("")+'</select>' : '')
-      + '<div class="enc"><button data-a="agsave">Enregistrer les informations</button></div>'
+      + '<div class="enc"><button data-a="agsave">Enregistrer les informations</button></div>' + ptCardHtml(a)
       + (self ? '' : '<label class="lbl" for="mg_c">Code (matricule) de l\'agent</label><input id="mg_c" type="text" value="'+esc(a.c)+'" maxlength="6" inputmode="numeric" autocomplete="off"><div class="enc"><button class="spec" data-a="agcode">Changer le code</button></div><p class="sub" style="margin:4px 0 0">Format 10-123. Tout l\'historique de l\'agent suit le nouveau code ; il se connecte ensuite avec ce nouveau code (même mot de passe).</p>')
       + '<label class="lbl" for="mg_w">Nouveau mot de passe (8 caractères minimum — laissez vide pour en générer un)</label><input id="mg_w" type="text" autocomplete="off">'
       + '<div class="enc"><button class="spec" data-a="agpw">Changer le mot de passe</button></div>'
@@ -4664,7 +4719,7 @@ function logout(force){
   presOff(); offClearUser(); OFFK = null; OFFRES = false;
   try{ localStorage.removeItem("mesp_sess") }catch(e){}
   try{ SB.auth.signOut() }catch(e){} clearShared();
-  finReset(); finClose(); HRM.loaded = false; HRM.d = {}; HRM.sel = null; HRM.jrLoaded = false; HRM.st = null; PORTAL = "";
+  finReset(); finClose(); hubHide(); PORTALS = []; PROW = null; PROWS = {}; HRM.loaded = false; HRM.d = {}; HRM.sel = null; HRM.jrLoaded = false; HRM.st = null; PORTAL = "";
   AG = null; ROLE = null; SCOPE = []; FOSA = null; CUR = null; VIEW = null; ME = {id:null,isOwner:false,canEdit:false}; LABEL = "la hiérarchie";
   $("who").classList.add("hide"); $("top").classList.remove("in"); $("tabs").classList.add("hide"); $("tabs").innerHTML = ""; $("spnav").classList.add("hide"); document.body.classList.remove("nat"); $("out").classList.add("hide");
   $("q").value = ""; $("lc").value = ""; $("lp").value = ""; go("v0"); hubShow();
