@@ -2926,7 +2926,8 @@ function demoHq(S, t){
   function run(){
     if(t==="hr_journal"){ var j = H.J.slice(); if(q.ord && !q.ord[1]) j.reverse(); if(q.lim) j = j.slice(0,q.lim); return {data:JSON.parse(JSON.stringify(j)), error:null} }
     var T = H[t] = H[t] || {};
-    if(q.op==="u"){ var r = JSON.parse(JSON.stringify(q.pl)), old = T[r[pk]]; if(t==="hr_agents" && !r.matricule_rh){ H.n++; r.matricule_rh = "RH-"+String(H.n+100).padStart(5,"0") } var ce = chk(r, old); if(ce) return {data:null, error:{message:ce}}; T[r[pk]] = Object.assign({}, old, r); J(old?"update":"insert", r[pk], r); return {data:[JSON.parse(JSON.stringify(T[r[pk]]))], error:null} }
+    if(q.op==="u"){ var r = JSON.parse(JSON.stringify(q.pl)), old = T[r[pk]]; if(t==="hr_agents" && !r.matricule_rh){ H.n++; r.matricule_rh = "RH-"+String(H.n+100).padStart(5,"0") } if(t==="hr_agents" && r.code_app && (!old || old.code_app!==r.code_app || /^RH-/.test(r.matricule_rh||old&&old.matricule_rh||"")) && !Object.keys(T).some(function(k){ return T[k].matricule_rh===r.code_app && T[k].id!==r[pk] })) r.matricule_rh = r.code_app;
+    var ce = chk(r, old); if(ce) return {data:null, error:{message:ce}}; T[r[pk]] = Object.assign({}, old, r); J(old?"update":"insert", r[pk], r); return {data:[JSON.parse(JSON.stringify(T[r[pk]]))], error:null} }
     if(q.op==="d"){ var k = q.f[0][1]; delete T[k]; J("delete", k, null); if(t==="hr_agents") ["hr_famille","hr_contacts","hr_pieces"].forEach(function(c){ Object.keys(H[c]).forEach(function(x){ if(H[c][x].agent_id===k) delete H[c][x] }) }); return {data:null, error:null} }
     var me = HRM.as || "national", nat = me==="national";
     var rows = Object.keys(T).map(function(k){ return T[k] }).filter(function(r){
@@ -3329,7 +3330,7 @@ function hrAgentForm(a){
     ["date_naissance","Date de naissance","date"],["lieu_naissance","Lieu de naissance","text"],["etat_civil","État civil","select",[["","—"],["Célibataire","Célibataire"],["Marié(e)","Marié(e)"],["Divorcé(e)","Divorcé(e)"],["Veuf/Veuve","Veuf/Veuve"]]],["nationalite","Nationalité","text"],
     ["adresse","Adresse","text"],["telephone","Téléphone","tel"],["email","E-mail","email"],
     ["unite_id","Unité","select",hrOptsU()],["poste_id","Poste","select",hrOptsP(null, a.poste_id)]
-  ].concat(isNew ? [["grade","Grade","text"],["echelon","Échelon","text"]] : []).concat([["date_embauche","Date d'embauche","date"],["code_app","Compte MESP Integra lié","select",acc]]), a, async function(v){
+  ].concat(isNew ? [["grade","Grade","text"],["echelon","Échelon","text"]] : []).concat([["date_embauche","Date d'embauche","date"],["code_app","Compte MESP Integra lié (le matricule de l'agent devient son code, ex. 10-056)","select",acc]]), a, async function(v){
     v.nom = UPN(v.nom); if(v.postnom) v.postnom = UPN(v.postnom);
     var row = Object.assign({}, a, hrClean(v)); if(isNew){ row.id = hrId(); row.created_by = AG.c; row.entite_id = hrEnt(); delete row.matricule_rh }
     hrCheckAffect(row); var x = await hrPut("hr_agents", row); HRM.sel = x.id; toast(isNew ? "Agent enregistré : "+x.matricule_rh : "Dossier mis à jour");
@@ -3510,7 +3511,7 @@ async function hrKiosk(){
   k.className = "hrkio";
   k.innerHTML = '<div class="hrkh"><div><b>Pointage — '+esc(hrEntNom(hrEnt()))+'</b><small id="hrkclk"></small></div><button class="hrb" data-kact="quit">Quitter</button></div>'
     + '<div class="hrkm"><button data-kmode="arrivee" class="on">ARRIVÉE</button><button data-kmode="depart">DÉPART</button></div>'
-    + '<div class="hrkc"><label for="hrkin">Tapez votre matricule puis Entrée</label><input id="hrkin" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="RH-00001"><p id="hrkmsg" class="hrkmsg"></p></div>'
+    + '<div class="hrkc"><label for="hrkin">Tapez votre matricule puis Entrée</label><input id="hrkin" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="Votre matricule"><p id="hrkmsg" class="hrkmsg"></p></div>'
     + '<div id="hrklist" class="hrkl hide"></div><video id="hrkv" muted playsinline></video><small id="hrkst" class="hrkst"></small>';
   var tick = function(){ var c = $("hrkclk"); if(c) c.textContent = new Date().toLocaleString("fr-FR",{timeZone:HR_TZ, weekday:"long", day:"2-digit", month:"long", hour:"2-digit", minute:"2-digit"}) }; tick(); HRK.clk = setInterval(function(){ if(!$("hrk")){ clearInterval(HRK.clk); return } tick() }, 20000);
   try{ if(navigator.mediaDevices && navigator.mediaDevices.getUserMedia){ HRK.stream = await navigator.mediaDevices.getUserMedia({video:{facingMode:"user", width:{ideal:480}}, audio:false}); var v = $("hrkv"); v.srcObject = HRK.stream; await v.play().catch(function(){}); HRK.cam = true; faceInit() } }catch(e){ HRK.cam = false }
@@ -3525,7 +3526,9 @@ function hrKList(ringId, mode){
   box.classList.remove("hide"); var r = $("hrkring"); if(r && r.scrollIntoView) r.scrollIntoView({block:"center"});
   clearTimeout(HRK.timer); HRK.timer = setTimeout(function(){ var b = $("hrklist"); if(b) b.classList.add("hide"); hrKMsg(""); var i = $("hrkin"); if(i) i.focus() }, 4000);
 }
-function hrKNorm(raw){ var s = String(raw||"").trim().toUpperCase().replace(/\s+/g,""); if(/^\d{1,5}$/.test(s)) s = "RH-"+("00000"+s).slice(-5); return s }
+function hrKNorm(raw){ return String(raw||"").trim().toUpperCase().replace(/\s+/g,"") }
+function hrKFind(mat){ var k = function(x){ return String(x||"").toUpperCase().replace(/[^A-Z0-9]/g,"") }, m = k(mat), rh = /^\d{1,5}$/.test(mat) ? "RH-"+("00000"+mat).slice(-5) : null;
+  return hrList("hr_agents").filter(function(a){ return a.entite_id===hrEnt() && (a.matricule_rh===mat || a.code_app===mat || (rh && a.matricule_rh===rh) || (m.length>=4 && (k(a.matricule_rh)===m || k(a.code_app)===m))) })[0] }
 async function hrKSnap(){
   var v = $("hrkv"); if(!HRK.cam || !v || !v.videoWidth) return null;
   var c = document.createElement("canvas"), k = Math.min(1, 240/v.videoWidth); c.width = Math.round(v.videoWidth*k); c.height = Math.round(v.videoHeight*k); c.getContext("2d").drawImage(v, 0, 0, c.width, c.height);
@@ -3534,7 +3537,7 @@ async function hrKSnap(){
 async function hrKPoint(raw){
   if(HRK.busy) return; var mat = hrKNorm(raw), inp = $("hrkin"); if(!mat) return; HRK.busy = true;
   try{
-    var mode = HRK.mode, day = hrToday(), ag = hrList("hr_agents").filter(function(a){ return a.matricule_rh===mat && a.entite_id===hrEnt() })[0];
+    var mode = HRK.mode, day = hrToday(), ag = hrKFind(mat);
     if(!ag || !hrOn(ag)){ hrKMsg("Matricule inconnu : "+mat, false); $("hrklist").classList.add("hide"); return }
     var pres = hrPresOf(ag.id, day);
     if(mode==="arrivee" && pres){ hrKMsg("Déjà enregistré : "+hrName(ag)+" à "+hrHM(pres.arrivee), false); hrKList(ag.id); return }
@@ -3568,7 +3571,7 @@ async function hrKPoint(raw){
     hrKMsg((mode==="arrivee" ? "Arrivée enregistrée : " : "Départ enregistré : ")+hrName(ag)+" à "+hrHM(mode==="arrivee" ? pres.arrivee : pres.depart)+(lv?" (en congé approuvé)":""), true); hrKList(ag.id, mode);
   }catch(e){
     var m = (e && e.message) || String(e);
-    if(/duplicate|23505|unique/i.test(m)){ await hrReload(["hr_presences"]).catch(function(){}); var ag2 = hrList("hr_agents").filter(function(a){ return a.matricule_rh===hrKNorm(raw) })[0]; hrKMsg("Déjà enregistré", false); if(ag2) hrKList(ag2.id) }
+    if(/duplicate|23505|unique/i.test(m)){ await hrReload(["hr_presences"]).catch(function(){}); var ag2 = hrKFind(hrKNorm(raw)); hrKMsg("Déjà enregistré", false); if(ag2) hrKList(ag2.id) }
     else hrKMsg("Erreur : "+m, false);
   }finally{ HRK.busy = false; if(inp){ inp.value = ""; inp.focus() } }
 }
