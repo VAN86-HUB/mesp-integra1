@@ -171,6 +171,74 @@ input[type=password],input[type=date],input#lc{width:100%;font:inherit;font-size
   .kpis{grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
   table{font-size:.95rem}
 }
+
+/* menu d'accueil : portails MESP */
+#hub{position:fixed;inset:0;z-index:9500;background:var(--bg);overflow:auto;display:flex;justify-content:center;padding:calc(18px + env(safe-area-inset-top,0px)) 16px calc(24px + env(safe-area-inset-bottom,0px))}
+#hub.hide{display:none}
+#hub .hubw{width:100%;max-width:720px;margin:auto 0}
+#hub h1{margin:0;text-align:center;font-size:clamp(1.9rem,8vw,2.8rem);letter-spacing:.01em;background:linear-gradient(90deg,#1f5fbf,#2a9d8f);-webkit-background-clip:text;background-clip:text;color:transparent}
+#hub .hsub{margin:8px 0 14px;text-align:center;color:var(--muted);font-size:.9rem;letter-spacing:.03em;text-transform:uppercase;font-weight:600;padding-bottom:14px;border-bottom:1px solid var(--line)}
+#hub .hg{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:16px}
+#hub .hp,#hub .hc{font:inherit;text-align:left;border:0;cursor:pointer;color:inherit}
+#hub .hp{border-radius:20px;padding:20px 18px;min-height:210px;display:flex;flex-direction:column;gap:6px;position:relative;transition:transform .12s}
+#hub .hp:active,#hub .hp:hover{transform:translateY(-2px)}
+#hub .hp svg,#hub .hc svg{width:34px;height:34px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+#hub .hp small{font-size:.95rem;font-weight:700;color:var(--text);margin-top:8px;letter-spacing:.01em}
+#hub .hp b{font-size:clamp(1.35rem,6vw,1.9rem);line-height:1.1;font-weight:800}
+#hub .hp span{font-size:.95rem;line-height:1.35;opacity:.9}
+#hub .hp i{position:absolute;top:12px;right:12px;font-style:normal;font-size:.72rem;font-weight:700;padding:3px 8px;border-radius:999px;background:rgba(0,0,0,.08)}
+#hub .hp.p0{grid-column:1/-1;background:#dff3f0;color:#0f766e}:root[data-theme="dark"] #hub .p0{background:#10332f;color:#5eead4}@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) #hub .p0{background:#10332f;color:#5eead4}}
+
+#hub .hp.p6{grid-column:1/-1;background:#fde8ef;color:#a3224a}:root[data-theme="dark"] #hub .p6{background:#3d1a26;color:#f5a3bd}@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) #hub .p6{background:#3d1a26;color:#f5a3bd}}
+#hub .p1{background:#e3f0fb;color:#1565a8}#hub .p2{background:#e5f2e6;color:#237a35}#hub .p3{background:#ece7fb;color:#5b3aa5}#hub .p4{background:#fdeede;color:#a65a1c}
+#hub .hc{display:block;width:100%;margin-top:14px;background:var(--card);border:1px solid var(--line);border-radius:18px;padding:16px 18px;color:var(--text)}
+#hub .hc b{display:flex;align-items:center;gap:10px;font-size:1.15rem}#hub .hc svg{width:26px;height:26px}
+#hub .hc span{display:block;margin-top:6px;color:var(--muted);font-size:.92rem}
+#hub .hf{margin:16px 0 0;text-align:center;color:var(--muted);font-size:.8rem}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) #hub .p1{background:#16324a;color:#8cc4f5}:root:not([data-theme="light"]) #hub .p2{background:#173a21;color:#8fd49a}:root:not([data-theme="light"]) #hub .p3{background:#2a2147;color:#bba6f0}:root:not([data-theme="light"]) #hub .p4{background:#42291a;color:#f0b886}:root:not([data-theme="light"]) #hub .hp i{background:rgba(255,255,255,.14)}}
+:root[data-theme="dark"] #hub .p1{background:#16324a;color:#8cc4f5}:root[data-theme="dark"] #hub .p2{background:#173a21;color:#8fd49a}:root[data-theme="dark"] #hub .p3{background:#2a2147;color:#bba6f0}:root[data-theme="dark"] #hub .p4{background:#42291a;color:#f0b886}
+@media (max-width:360px){#hub .hg{grid-template-columns:1fr}}
+.toast{z-index:10001}
+#hr{position:fixed;inset:0;z-index:9000;background:var(--bg);overflow:auto;-webkit-overflow-scrolling:touch}
+.hrw{max-width:1100px;margin:0 auto;padding:12px 14px 60px}
+.hrh{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:6px}
+.hrh h1{margin:0;font-size:1.35rem;color:#237a35}
+.hrh .hrsm{display:flex;gap:8px;flex-wrap:wrap}
+.hrb{background:var(--card);color:var(--accent);border:1px solid var(--line);padding:8px 12px;font-size:.9rem;border-radius:10px}
+.hrb.pri{background:#237a35;color:#fff;border-color:#237a35}
+.hrb.dan{color:var(--ko)}
+.hrt{display:flex;gap:6px;overflow-x:auto;margin:8px 0 14px;padding-bottom:4px}
+.hrt button{background:var(--card);color:var(--text);border:1px solid var(--line);padding:8px 14px;font-size:.92rem;white-space:nowrap;border-radius:999px;font-weight:600}
+.hrt button.on{background:#237a35;color:#fff;border-color:#237a35}
+.hrk{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:14px}
+.hrk .kpi{cursor:default}.hrk .kpi.cl{cursor:pointer}.hrk .kpi small{color:var(--muted)}
+.hrw .card h3{margin:0 0 8px;font-size:1.05rem}
+.hrw table{border-collapse:collapse;width:100%;font-size:.88rem}
+.hrw th,.hrw td{padding:6px 8px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+.hrw td.n,.hrw th.n{text-align:right}
+.hrw th{color:var(--muted);font-weight:700;font-size:.8rem}
+.hrw tr.tot td{font-weight:800;background:var(--bg)}
+.hrw td[data-hf]{cursor:pointer;color:var(--accent);font-weight:700}
+.hrf{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin-bottom:10px}
+.hrw input[type=text],.hrw input[type=search],.hrw input[type=date],.hrw input[type=number],.hrw input[type=email],.hrw input[type=tel],.hrw select,.hrw textarea,.hrmc input,.hrmc select,.hrmc textarea{width:100%;font:inherit;font-size:1rem;padding:10px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--text)}
+.hrp{display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+.hrp .ph{width:84px;height:84px;border-radius:50%;background:var(--line);object-fit:cover;display:flex;align-items:center;justify-content:center;font-size:2rem;color:var(--muted);overflow:hidden}
+.hrp .ph img{width:100%;height:100%;object-fit:cover}
+.hrg{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:6px 18px}
+.hrg div small{display:block;color:var(--muted);font-size:.78rem}
+.hrg div b{font-weight:600;word-break:break-word}
+.hrtree{list-style:none;margin:0;padding:0}.hrtree ul{list-style:none;margin:0;padding-left:18px;border-left:2px solid var(--line)}
+.hrtree .un{display:flex;gap:8px;align-items:center;justify-content:space-between;padding:8px 6px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.hrtree .un b{cursor:pointer}.hrtree .un small{color:var(--muted)}
+.hrmo{position:fixed;inset:0;z-index:9200;background:rgba(0,0,0,.5);display:flex;align-items:flex-start;justify-content:center;overflow:auto;padding:20px 12px}
+.hrmc{background:var(--card);color:var(--text);border-radius:14px;padding:16px;width:100%;max-width:560px}
+.hrmc h3{margin:0 0 10px}.hrmc label{display:block;font-size:.85rem;color:var(--muted);margin-bottom:10px}
+.hrmc label.ck{display:flex;gap:8px;align-items:center}.hrmc label.ck input{width:auto}
+.hrmb{display:flex;gap:10px;justify-content:flex-end;margin-top:8px}
+.hrmb .hrx{background:var(--bg);color:var(--text);border:1px solid var(--line)}
+.hrerr{color:var(--ko);font-size:.9rem;margin:8px 0 0}
+.hrmsg{padding:30px 10px;text-align:center;color:var(--muted)}
+@media print{#hr{position:static}}
 </style>
 <link rel="manifest" href="manifest.webmanifest"><link rel="icon" type="image/png" href="icon-192.png"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="theme-color" content="#0d6e5b">
 <script src="config.js"></script>
@@ -257,6 +325,22 @@ input[type=password],input[type=date],input#lc{width:100%;font:inherit;font-size
   <div class="by">Conçue et développée par<br><b>Bleuddy MUFWAR VAN</b><br><span class="sub" style="margin:0">© 2026 Bleuddy MUFWAR VAN</span></div>
   <p class="sub" style="margin:12px 0 0;font-size:.8rem">Les données de santé sont confidentielles : l'usage est réservé aux agents autorisés.</p>
   <div class="enc"><button id="aboutx" type="button">Fermer</button></div>
+</div></div>
+<div id="hr" class="hide"></div>
+<div id="hub" role="dialog" aria-label="Portails MESP"><div class="hubw">
+  <h1>MESP INTEGRA</h1>
+  <p class="hsub">Plateforme numérique intégrée de gestion de la MESP</p>
+  <div class="hg">
+    <button class="hp p0" data-hub="ident"><i>Bientôt</i><svg viewBox="0 0 24 24"><path d="M7 4H5a2 2 0 0 0-2 2v2M17 4h2a2 2 0 0 1 2 2v2M7 20H5a2 2 0 0 1-2-2v-2M17 20h2a2 2 0 0 0 2-2v-2"/><circle cx="12" cy="10" r="3"/><path d="M6.5 17c.8-2.2 2.8-3.5 5.5-3.5s4.7 1.3 5.5 3.5"/></svg><small>PORTAIL 01</small><b>MESP IDENTIFICATION</b><span>Identification des assurés, vérification des matricules, base biométrique et cartes.</span></button>
+    <button class="hp p1" data-hub="sante"><svg viewBox="0 0 24 24"><path d="M12 21s-7-4.6-9.3-9.2C1.2 8.6 3 5 6.4 5c2 0 3.4 1.1 4.2 2.4h.8C12.2 6.1 13.6 5 15.6 5 19 5 20.8 8.6 21.3 11.8 19 16.4 12 21 12 21z"/><path d="M3 12h4l1.5-2.5L11 15l2-3h8"/></svg><small>PORTAIL 02</small><b>MESP SANTÉ</b><span>Gestion des assurés, soins, prestations, risques et dépenses.</span></button>
+    <button class="hp p2" data-hub="rh"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><circle cx="17" cy="9" r="2.6"/><path d="M17.5 14.2c2.4.3 4.5 2.4 4.5 5.8"/></svg><small>PORTAIL 03</small><b>MESP RH</b><span>Gestion du personnel, carrières, congés, présences et rémunérations.</span></button>
+    <button class="hp p3" data-hub="finance"><i>Bientôt</i><svg viewBox="0 0 24 24"><path d="M4 7.5A2.5 2.5 0 0 1 6.5 5H18v3"/><rect x="3" y="7.5" width="18" height="12.5" rx="2.5"/><path d="M21 12.5h-4a2 2 0 0 0 0 4h4"/></svg><small>PORTAIL 04</small><b>MESP FINANCE</b><span>Budgets, trésorerie, recettes, dépenses et comptabilité.</span></button>
+    <button class="hp p4" data-hub="admin"><i>Bientôt</i><svg viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2.5h8a2 2 0 0 1 2 2V18a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 13v3M12 11.5V16M15 14v2"/></svg><small>PORTAIL 05</small><b>MESP ADMIN</b><span>Courrier, archives, administration, patrimoine et logistique.</span></button>
+    
+    <button class="hp p6" data-hub="archiv"><i>Bientôt</i><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="5" rx="1.5"/><path d="M5 9v9a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V9M10 13h4"/></svg><small>PORTAIL 06</small><b>MESP ARCHIVAGE</b><span>Archivage électronique des documents, secrétariat et courrier scannés.</span></button>
+  </div>
+  <button class="hc" data-hub="central"><b><svg viewBox="0 0 24 24"><path d="M12 3l7 3v5.5c0 4.4-3 7.7-7 9.5-4-1.8-7-5.1-7-9.5V6z"/><path d="M9 12l2.2 2.2L15 10.4"/></svg>Administration centrale</b><span>Gestion des utilisateurs, profils, autorisations, paramètres généraux, journal des opérations et supervision de tous les portails.</span></button>
+  <p class="hf">Un système central, plusieurs portails métiers.</p>
 </div></div>
 <div id="toast" class="toast hide"></div>
 
@@ -2701,6 +2785,442 @@ async function hashPw(pw, saltHex){
   return hexOf(await crypto.subtle.deriveBits({name:"PBKDF2", salt:unhex(saltHex), iterations:60000, hash:"SHA-256"}, key, 256));
 }
 function saveSess(){ if(DEMO || OFFRES) return; try{ localStorage.setItem("mesp_sess", JSON.stringify({c:AG.c, t:Date.now()})) }catch(e){} }
+/* menu d'accueil : portails MESP (MESP Santé = l'application actuelle) */
+function hubShow(){ if(typeof hrClose==="function") hrClose(); var h = $("hub"); if(h){ h.classList.remove("hide"); h.scrollTop = 0 } }
+function hubHide(){ var h = $("hub"); if(h) h.classList.add("hide"); window.scrollTo(0,0) }
+document.addEventListener("click", function(e){
+  var b = e.target.closest && e.target.closest("[data-hub]"); if(b){ var k = b.dataset.hub;
+    if(k==="sante"){ PORTAL = "sante"; hrClose(); hubHide() }
+          else if(k==="rh"){ PORTAL = "rh"; hubHide(); if(AG) hrOpen() }
+    else toast({rh:"MESP RH", finance:"MESP FINANCE", admin:"MESP ADMIN", central:"Administration centrale", ident:"MESP IDENTIFICATION", archiv:"MESP ARCHIVAGE"}[k]+" : bientôt disponible.");
+    return }
+  if(e.target.id==="hubbtn") hubShow();
+});
+function demoHr(S){
+  if(S.hr) return S.hr;
+  var H = S.hr = {hr_unites:{}, hr_postes:{}, hr_agents:{}, hr_famille:{}, hr_contacts:{}, hr_pieces:{}, hr_acces:{}, J:[], n:0};
+  var U = function(id,nom,type,parent,o){ H.hr_unites[id] = {id:id, nom:nom, type:type, parent_id:parent||null, ordre:o||0, actif:true} };
+  U("u_dg","Direction générale","direction",null,1); U("u_dt","Direction technique nationale","direction","u_dg",1); U("u_daf","Direction administrative et financière","direction","u_dg",2);
+  U("u_rh","Service des ressources humaines","service","u_daf",1); U("u_inf","Service informatique","service","u_dt",1);
+  U("u_kin","Kinshasa","ville","u_dg",3); U("u_kor","Kasaï-Oriental","ville","u_dg",4); U("u_lub","Lubumbashi","ville","u_dg",5);
+  var P = function(id,i,u,g,n){ H.hr_postes[id] = {id:id, intitule:i, unite_id:u, grade:g, effectif_prevu:n, actif:true} };
+  P("p_dg","Directeur général","u_dg","A1",1); P("p_dt","Directeur technique","u_dt","A1",1); P("p_ast","Assistant du Directeur technique","u_dt","A2",2); P("p_daf","Directeur administratif et financier","u_daf","A1",1);
+  P("p_rh","Chef de service RH","u_rh","A2",1); P("p_inf","Analyste programmeur","u_inf","B1",3); P("p_asv","Assistant de ville","u_kin","B1",2); P("p_del","Délégué mutualiste","u_kin","B2",4);
+  var rows = [
+   ["Kalala","Mbuyi","Jean","M","1966-03-12","u_dg","p_dg","actif","2005-01-10"],["Tshimanga","Ilunga","Marie","F","1972-07-30","u_dt","p_dt","actif","2008-04-01"],
+   ["Mufwar","","Van","M","1984-11-02","u_dt","p_ast","actif","2012-02-15"],["Ngoy","Kabeya","Christine","F","1990-05-21","u_dt","p_ast","actif","2016-09-01"],
+   ["Lukusa","Tshibola","Patrick","M","1961-01-18","u_daf","p_daf","actif","1998-06-01"],["Mwamba","Kasongo","Berthe","F","1979-09-09","u_rh","p_rh","actif","2010-03-01"],
+   ["Banza","Kitenge","Joël","M","1993-12-25","u_inf","p_inf","actif","2019-07-01"],["Mutombo","Nsimba","Aimée","F","1996-04-14","u_inf","p_inf","actif","2021-01-11"],
+   ["Kazadi","Mpoyi","David","M","2001-08-08","u_kin","p_asv","actif","2023-02-01"],["Ilunga","Mukendi","Sylvie","F","1969-02-27","u_kin","p_del","actif","2002-10-01"],
+   ["Tshisekedi","Kanku","Alain","M","1975-06-03","u_kin","p_del","suspendu","2009-05-01"],["Mbombo","Ntumba","Rachel","F","1987-10-19","u_kor","","actif","2015-01-01"],
+   ["Kabongo","Lubaki","Samuel","M","","","","actif",""],["Nzuzi","Makiese","Gisèle","F","1958-12-01","u_lub","","retraite","1992-01-01"],["Okito","Bolenge","Eric","M","1980-03-30","u_kin","p_del","sorti","2011-01-01"]
+  ];
+  rows.forEach(function(r,i){ var id = "dag"+i; H.n++; H.hr_agents[id] = {id:id, matricule_rh:"RH-"+String(i+1).padStart(5,"0"), nom:r[0].toUpperCase(), postnom:r[1]?r[1].toUpperCase():null, prenom:r[2], sexe:r[3], date_naissance:r[4]||null, lieu_naissance:r[4]?"Kinshasa":null, etat_civil:i%2?"Marié(e)":"Célibataire", nationalite:"Congolaise", adresse:null, telephone:i%4===0?null:"+24381000"+String(1000+i), email:null, poste_id:r[6]||null, unite_id:r[5]||null, grade:null, echelon:null, statut:r[7], date_embauche:r[8]||null, date_sortie:r[7]==="sorti"?"2024-06-30":null, motif_sortie:r[7]==="sorti"?"Démission":null, code_app:null, photo_path:null} });
+  H.hr_famille.f1 = {id:"f1", agent_id:"dag2", lien:"conjoint", nom:"MUFWAR", prenom:"Épouse", sexe:"F", date_naissance:"1987-01-01", matricule_mesp:null, a_charge:true};
+  H.hr_famille.f2 = {id:"f2", agent_id:"dag2", lien:"enfant", nom:"MUFWAR", prenom:"Curtis", sexe:"M", date_naissance:"2012-05-05", matricule_mesp:null, a_charge:true};
+  H.hr_contacts.c1 = {id:"c1", agent_id:"dag2", nom:"Famille Mufwar", lien:"frère", telephone:"+243810000000"};
+  return H;
+}
+function demoHq(S, t){
+  var H = demoHr(S), q = {op:"s", f:[], pl:null, ord:null, rng:null, lim:null}, pk = HRT[t];
+  var api = { select:function(){ return api }, eq:function(c,v){ q.f.push([c,v]); return api }, order:function(c,o){ q.ord = [c, !(o && o.ascending===false)]; return api }, range:function(a,b){ q.rng = [a,b]; return api }, limit:function(n){ q.lim = n; return api }, upsert:function(p){ q.op = "u"; q.pl = p; return api }, delete:function(){ q.op = "d"; return api },
+    then:function(a,b){ return Promise.resolve(run()).then(a,b) } };
+  function J(action, id, d){ H.J.push({id:H.J.length+1, at:new Date().toISOString(), acteur:"DEMO", action:action, table_name:t, ligne_id:id, details:d}) }
+  function run(){
+    if(t==="hr_journal"){ var j = H.J.slice(); if(q.ord && !q.ord[1]) j.reverse(); if(q.lim) j = j.slice(0,q.lim); return {data:JSON.parse(JSON.stringify(j)), error:null} }
+    var T = H[t] = H[t] || {};
+    if(q.op==="u"){ var r = JSON.parse(JSON.stringify(q.pl)), old = T[r[pk]]; if(t==="hr_agents" && !r.matricule_rh){ H.n++; r.matricule_rh = "RH-"+String(H.n+100).padStart(5,"0") } T[r[pk]] = Object.assign({}, old, r); J(old?"update":"insert", r[pk], r); return {data:[JSON.parse(JSON.stringify(T[r[pk]]))], error:null} }
+    if(q.op==="d"){ var k = q.f[0][1]; delete T[k]; J("delete", k, null); if(t==="hr_agents") ["hr_famille","hr_contacts","hr_pieces"].forEach(function(c){ Object.keys(H[c]).forEach(function(x){ if(H[c][x].agent_id===k) delete H[c][x] }) }); return {data:null, error:null} }
+    var rows = Object.keys(T).map(function(k){ return T[k] }).sort(function(a,b){ return String(a[pk]).localeCompare(String(b[pk])) });
+    if(q.rng) rows = rows.slice(q.rng[0], q.rng[1]+1);
+    return {data:JSON.parse(JSON.stringify(rows)), error:null};
+  }
+  return api;
+}
+
+/* ===== MESP RH — étape 1 : dossier du personnel, postes, organigramme, tableau de bord ===== */
+var PORTAL = "", HR_RET = 65;
+var HRT = {hr_unites:"id", hr_postes:"id", hr_agents:"id", hr_famille:"id", hr_contacts:"id", hr_pieces:"id", hr_acces:"code"};
+var HRM = {d:{}, loaded:false, busy:false, err:"", tab:"dash", sel:null, f:{q:"", unite:"", statut:"", sexe:"", band:"", inc:false}, jr:[], blob:{}, photos:{}};
+var HR_BANDS = [["Moins de 25 ans",0,24],["25 à 34 ans",25,34],["35 à 44 ans",35,44],["45 à 54 ans",45,54],["55 à 64 ans",55,64],["65 ans et plus",65,200],["Non renseigné",-1,-1]];
+var HR_LIEN = {conjoint:"Conjoint(e)", enfant:"Enfant", pere:"Père", mere:"Mère", autre:"Autre"};
+var HR_ST = {actif:"Actif", suspendu:"Suspendu", retraite:"Retraité", sorti:"Sorti"};
+var HR_UT = {direction:"Direction", service:"Service", ville:"Ville", antenne:"Antenne"};
+var HR_PT = ["Diplôme","Pièce d'identité","Acte de naissance","Acte de mariage","Contrat","Autre"];
+function hrId(){ return "h"+Date.now().toString(36)+Math.random().toString(36).slice(2,6) }
+function hrLvl(){
+  if(!AG) return null;
+  if(AG.v==="National" && ["autre","medecin","chef"].indexOf(AG.r)<0) return "drh";
+  var a = HRM.d.hr_acces && HRM.d.hr_acces[AG.c]; return a ? a.niveau : null;
+}
+function hrCanW(){ var l = hrLvl(); return l==="drh" || l==="gestionnaire" }
+function hrList(t){ var d = HRM.d[t] || {}; return Object.keys(d).map(function(k){ return d[k] }) }
+function hrName(a){ return [a.nom, a.postnom, a.prenom].filter(Boolean).join(" ") }
+function hrAge(a){ return a && a.date_naissance ? ageOf(String(a.date_naissance).slice(0,10), new Date()) : null }
+function hrFD(d){ if(!d) return "—"; var p = String(d).slice(0,10).split("-"); return p.length===3 ? p[2]+"/"+p[1]+"/"+p[0] : d }
+function hrUn(id){ var u = id && HRM.d.hr_unites && HRM.d.hr_unites[id]; return u ? u.nom : "—" }
+function hrPo(id){ var p = id && HRM.d.hr_postes && HRM.d.hr_postes[id]; return p ? p.intitule : "—" }
+function hrOn(a){ return a.statut==="actif" || a.statut==="suspendu" }
+function hrBand(a){ var g = hrAge(a); if(g==null) return 6; for(var i=0;i<6;i++) if(g>=HR_BANDS[i][1] && g<=HR_BANDS[i][2]) return i; return 6 }
+function hrDesc(id){ var out = [id], ch = hrList("hr_unites").filter(function(u){ return u.parent_id===id }); ch.forEach(function(u){ out = out.concat(hrDesc(u.id)) }); return out }
+function hrTree(parent, depth, out){
+  out = out || []; var l = hrList("hr_unites").filter(function(u){ return (u.parent_id||null)===(parent||null) }).sort(function(a,b){ return (a.ordre-b.ordre) || a.nom.localeCompare(b.nom,"fr") });
+  l.forEach(function(u){ out.push({u:u, d:depth}); hrTree(u.id, depth+1, out) }); return out;
+}
+function hrRoots(){ var all = hrList("hr_unites"), ids = {}; all.forEach(function(u){ ids[u.id] = 1 }); return all.filter(function(u){ return !u.parent_id || !ids[u.parent_id] }) }
+function hrIncomplete(a){ return !a.date_naissance || !a.sexe || !a.unite_id || !a.poste_id || !a.telephone }
+function hrClean(o){ var r = {}; Object.keys(o).forEach(function(k){ r[k] = (o[k]==="" ? null : o[k]) }); return r }
+
+/* ---------- accès aux données ---------- */
+async function hrFetch(t){
+  var k = HRT[t], out = {}, from = 0;
+  for(;;){ var r = await SB.from(t).select("*").order(k).range(from, from+999); if(r.error) throw r.error; r.data.forEach(function(x){ out[x[k]] = x }); if(r.data.length<1000) break; from += 1000 }
+  return out;
+}
+async function hrPut(t, row){
+  var r = await SB.from(t).upsert(row).select(); if(r.error) throw new Error(r.error.message || "Erreur d'enregistrement");
+  var x = (r.data && r.data[0]) || row; (HRM.d[t] = HRM.d[t] || {})[x[HRT[t]]] = x; return x;
+}
+async function hrDel(t, id){
+  var r = await SB.from(t).delete().eq(HRT[t], id); if(r.error) throw new Error(r.error.message || "Suppression impossible");
+  delete HRM.d[t][id];
+  if(t==="hr_agents") ["hr_famille","hr_contacts","hr_pieces"].forEach(function(c){ Object.keys(HRM.d[c]||{}).forEach(function(k){ if(HRM.d[c][k].agent_id===id) delete HRM.d[c][k] }) });
+  if(t==="hr_unites"){ hrList("hr_unites").forEach(function(u){ if(u.parent_id===id) u.parent_id = null }); hrList("hr_postes").forEach(function(p){ if(p.unite_id===id) p.unite_id = null }); hrList("hr_agents").forEach(function(a){ if(a.unite_id===id) a.unite_id = null }) }
+  if(t==="hr_postes") hrList("hr_agents").forEach(function(a){ if(a.poste_id===id) a.poste_id = null });
+}
+async function hrLoad(){
+  HRM.busy = true; HRM.err = ""; hrRender();
+  try{ for(var t in HRT) HRM.d[t] = await hrFetch(t); HRM.loaded = true }
+  catch(e){ var m = (e && e.message) || String(e); HRM.err = /hr_|relation|schema cache|does not exist/i.test(m) ? "La base RH n'est pas encore installée : exécutez le script rh_etape1.sql dans Supabase (SQL Editor). Détail : "+m : m }
+  HRM.busy = false; hrRender();
+}
+async function hrFileUrl(path){
+  if(!path) return "";
+  if(DEMO) return HRM.blob[path] || "";
+  var r = await SB.storage.from("hr-pieces").createSignedUrl(path, 3600); return r && r.data ? r.data.signedUrl : "";
+}
+async function hrUpload(path, blob){
+  if(DEMO){ HRM.blob[path] = await new Promise(function(ok){ var f = new FileReader(); f.onload = function(){ ok(f.result) }; f.readAsDataURL(blob) }); return }
+  var r = await SB.storage.from("hr-pieces").upload(path, blob, {upsert:true, contentType:blob.type || "application/octet-stream"});
+  if(r.error) throw new Error(r.error.message || "Envoi du fichier impossible");
+}
+async function hrRemoveFile(path){ if(!path) return; if(DEMO){ delete HRM.blob[path]; return } try{ await SB.storage.from("hr-pieces").remove([path]) }catch(e){} }
+function hrResize(file, max){
+  return new Promise(function(ok, ko){
+    var img = new Image(), u = URL.createObjectURL(file);
+    img.onload = function(){ var k = Math.min(1, max/Math.max(img.width, img.height)), c = document.createElement("canvas"); c.width = Math.round(img.width*k); c.height = Math.round(img.height*k); c.getContext("2d").drawImage(img, 0, 0, c.width, c.height); URL.revokeObjectURL(u); c.toBlob(function(b){ b ? ok(b) : ko(new Error("Image illisible")) }, "image/jpeg", .85) };
+    img.onerror = function(){ URL.revokeObjectURL(u); ko(new Error("Image illisible")) }; img.src = u;
+  });
+}
+
+/* ---------- ouverture / fermeture ---------- */
+function hrOpen(){
+  var el = $("hr"); if(!el) return; PORTAL = "rh"; el.classList.remove("hide"); el.scrollTop = 0;
+  if(!HRM.loaded && !HRM.busy) hrLoad(); else hrRender();
+}
+function hrClose(){ var el = $("hr"); if(el) el.classList.add("hide"); var m = $("hrm"); if(m) m.remove() }
+
+/* ---------- affichage ---------- */
+function hrRender(){
+  var el = $("hr"); if(!el || el.classList.contains("hide")) return;
+  var h = '<div class="hrw"><div class="hrh"><h1>MESP RH</h1><div class="hrsm"><button class="hrb" data-hract="refresh">↻ Actualiser</button><button class="hrb" data-hract="portals">☰ Portails</button></div></div>';
+  if(HRM.busy){ el.innerHTML = h+'<p class="hrmsg">Chargement…</p></div>'; return }
+  if(HRM.err){ el.innerHTML = h+'<div class="card"><b style="color:var(--ko)">Impossible de charger les données RH</b><p class="sub" style="margin-top:8px">'+esc(HRM.err)+'</p><button class="hrb pri" data-hract="refresh">Réessayer</button></div></div>'; return }
+  var lv = hrLvl();
+  if(!lv){ el.innerHTML = h+'<div class="card"><b>Accès non autorisé</b><p class="sub" style="margin-top:8px">Votre compte n\'a pas d\'accès au portail RH. Demandez à la DRH de vous l\'attribuer.</p></div></div>'; return }
+  var tabs = [["dash","Tableau de bord"],["agents","Agents"],["orga","Organigramme"],["postes","Postes"]]; if(lv==="drh") tabs.push(["acces","Accès"],["journal","Journal"]);
+  h += '<p class="sub" style="margin:0 0 4px">'+esc(AG.n)+' · accès <b>'+esc({drh:"DRH", gestionnaire:"Gestionnaire", lecture:"Lecture seule"}[lv])+'</b></p>';
+  h += '<div class="hrt">'+tabs.map(function(t){ return '<button data-hrtab="'+t[0]+'" class="'+(HRM.tab===t[0] && !HRM.sel ? "on" : "")+'">'+t[1]+'</button>' }).join("")+'</div>';
+  if(HRM.sel && HRM.d.hr_agents[HRM.sel]) h += hrFiche(HRM.sel);
+  else { HRM.sel = null; h += HRM.tab==="dash" ? hrDash() : HRM.tab==="agents" ? hrAgents() : HRM.tab==="orga" ? hrOrga() : HRM.tab==="postes" ? hrPostes() : HRM.tab==="acces" ? hrAcces() : hrJournal() }
+  el.innerHTML = h+'</div>';
+  if(HRM.sel) hrPhoto(HRM.sel);
+}
+function hrCount(rows, fn){ var n = 0; rows.forEach(function(r){ if(fn(r)) n++ }); return n }
+function hrOcc(pid){ return hrCount(hrList("hr_agents"), function(a){ return a.poste_id===pid && hrOn(a) }) }
+function hrPrevu(ids){ var s = 0; hrList("hr_postes").forEach(function(p){ if(p.actif!==false && ids.indexOf(p.unite_id)>=0) s += +p.effectif_prevu||0 }); return s }
+function hrVacTot(){ var s = 0; hrList("hr_postes").forEach(function(p){ if(p.actif!==false) s += Math.max(0, (+p.effectif_prevu||0) - hrOcc(p.id)) }); return s }
+function hrAnc(a){ if(!a.date_embauche) return null; var e = a.date_sortie && !hrOn(a) ? new Date(a.date_sortie) : new Date(), p = String(a.date_embauche).slice(0,10).split("-").map(Number); return Math.max(0, (e - new Date(p[0],p[1]-1,p[2]))/31557600000) }
+
+function hrDash(){
+  var all = hrList("hr_agents"), on = all.filter(hrOn), M = on.filter(function(a){ return a.sexe==="M" }).length, F = on.filter(function(a){ return a.sexe==="F" }).length;
+  var ages = on.map(hrAge).filter(function(x){ return x!=null }), moy = ages.length ? Math.round(ages.reduce(function(a,b){ return a+b },0)/ages.length*10)/10 : null;
+  var ret = on.filter(function(a){ var g = hrAge(a); return g!=null && g>=HR_RET-1 }).sort(function(a,b){ return hrAge(b)-hrAge(a) });
+  var sansP = hrCount(on, function(a){ return !a.poste_id }), inc = hrCount(on, hrIncomplete);
+  var k = function(l, v, c, f){ return '<div class="kpi'+(f?' cl" data-hf="'+f:'')+'"><small>'+l+'</small><b'+(c?' style="color:var(--'+c+')"':'')+'>'+v+'</b></div>' };
+  var h = '<div class="hrk">'+k("Effectif en service", on.length)+k("Hommes", M, "", "sexe:M")+k("Femmes", F, "", "sexe:F")+k("Âge moyen", moy==null?"—":moy+" ans")
+    + k("Postes vacants", hrVacTot(), hrVacTot()?"ko":"ok")+k("Retraite ≤ 12 mois", ret.length, ret.length?"ko":"ok", "band:5")+k("Sans poste", sansP, sansP?"ko":"ok")+k("Dossiers incomplets", inc, inc?"ko":"ok", "inc:1")+'</div>';
+  /* effectif par unité */
+  var rows = [], ex = [], tM = 0, tF = 0, tP = 0, tV = 0;
+  hrTree(null, 0).forEach(function(n){
+    var u = n.u, ag = on.filter(function(a){ return a.unite_id===u.id }), m = ag.filter(function(a){ return a.sexe==="M" }).length, f = ag.filter(function(a){ return a.sexe==="F" }).length;
+    var pv = hrPrevu([u.id]), vac = 0; hrList("hr_postes").forEach(function(p){ if(p.unite_id===u.id && p.actif!==false) vac += Math.max(0, (+p.effectif_prevu||0) - hrOcc(p.id)) });
+    tM += m; tF += f; tP += pv; tV += vac;
+    rows.push('<tr><td style="padding-left:'+(8+n.d*16)+'px">'+esc(u.nom)+' <small style="color:var(--muted)">'+HR_UT[u.type]+'</small></td><td class="n"'+(m?' data-hf="u:'+u.id+':M"':'')+'>'+m+'</td><td class="n"'+(f?' data-hf="u:'+u.id+':F"':'')+'>'+f+'</td><td class="n"'+(m+f?' data-hf="u:'+u.id+'"':'')+'><b>'+(m+f)+'</b></td><td class="n">'+pv+'</td><td class="n">'+vac+'</td></tr>');
+    ex.push([u.nom, HR_UT[u.type], m, f, m+f, pv, vac]);
+  });
+  var sans = on.filter(function(a){ return !a.unite_id }), sm = sans.filter(function(a){ return a.sexe==="M" }).length, sf = sans.filter(function(a){ return a.sexe==="F" }).length;
+  if(sans.length){ rows.push('<tr><td><i>Sans unité</i></td><td class="n">'+sm+'</td><td class="n">'+sf+'</td><td class="n" data-hf="u:none"><b>'+sans.length+'</b></td><td class="n">—</td><td class="n">—</td></tr>'); ex.push(["Sans unité","",sm,sf,sans.length,"",""]); tM += sm; tF += sf }
+  rows.push('<tr class="tot"><td>Total</td><td class="n">'+tM+'</td><td class="n">'+tF+'</td><td class="n">'+(tM+tF)+'</td><td class="n">'+tP+'</td><td class="n">'+tV+'</td></tr>'); ex.push(["Total","",tM,tF,tM+tF,tP,tV]);
+  HRM.exU = ex;
+  h += '<div class="card"><h3>Effectif par unité</h3><div class="tw"><table><thead><tr><th>Unité</th><th class="n">Hommes</th><th class="n">Femmes</th><th class="n">Total</th><th class="n">Prévu</th><th class="n">Vacants</th></tr></thead><tbody>'+(rows.join("")||'<tr><td colspan="6" class="sub">Aucune unité : créez l\'organigramme.</td></tr>')+'</tbody></table></div>'
+    + '<div class="hrsm" style="display:flex;gap:8px;margin-top:10px"><button class="hrb" data-hract="xlsx-un">Excel</button><button class="hrb" data-hract="pdf-un">PDF</button></div></div>';
+  /* tranches d'âge */
+  var ar = [], ae = [], cm = 0, cf = 0;
+  HR_BANDS.forEach(function(b, i){
+    var m = hrCount(on, function(a){ return a.sexe==="M" && hrBand(a)===i }), f = hrCount(on, function(a){ return a.sexe==="F" && hrBand(a)===i });
+    cm += m; cf += f; if(i===6 && !m && !f) return;
+    ar.push('<tr><td>'+b[0]+'</td><td class="n"'+(m?' data-hf="b:'+i+':M"':'')+'>'+m+'</td><td class="n"'+(f?' data-hf="b:'+i+':F"':'')+'>'+f+'</td><td class="n"><b>'+(m+f)+'</b></td></tr>'); ae.push([b[0], m, f, m+f]);
+  });
+  ar.push('<tr class="tot"><td>Total</td><td class="n">'+cm+'</td><td class="n">'+cf+'</td><td class="n">'+(cm+cf)+'</td></tr>'); ae.push(["Total", cm, cf, cm+cf]); HRM.exA = ae;
+  h += '<div class="card"><h3>Effectif par tranche d\'âge</h3><div class="tw"><table><thead><tr><th>Tranche</th><th class="n">Hommes</th><th class="n">Femmes</th><th class="n">Total</th></tr></thead><tbody>'+ar.join("")+'</tbody></table></div><p class="sub" style="margin:8px 0">Un clic sur un chiffre ouvre la liste des agents.</p><div style="display:flex;gap:8px"><button class="hrb" data-hract="xlsx-age">Excel</button><button class="hrb" data-hract="pdf-age">PDF</button></div></div>';
+  /* statuts et ancienneté */
+  var st = ["actif","suspendu","retraite","sorti"].map(function(s){ return '<span class="tag good" style="margin-right:6px;cursor:pointer" data-hf="s:'+s+'">'+HR_ST[s]+' : '+hrCount(all, function(a){ return a.statut===s })+'</span>' }).join("");
+  var AN = [["Moins de 2 ans",0,2],["2 à 5 ans",2,5],["5 à 10 ans",5,10],["10 à 20 ans",10,20],["20 ans et plus",20,200]], anh = AN.map(function(b){ var n = hrCount(on, function(a){ var x = hrAnc(a); return x!=null && x>=b[1] && x<b[2] }); return '<tr><td>'+b[0]+'</td><td class="n">'+n+'</td></tr>' }).join(""), na = hrCount(on, function(a){ return hrAnc(a)==null });
+  h += '<div class="card"><h3>Statuts</h3><p>'+st+'</p><h3 style="margin-top:14px">Ancienneté (agents en service)</h3><div class="tw"><table><tbody>'+anh+'<tr><td>Date d\'embauche non renseignée</td><td class="n">'+na+'</td></tr></tbody></table></div></div>';
+  if(ret.length) h += '<div class="card"><h3>Départs à la retraite à prévoir (âge ≥ '+(HR_RET-1)+' ans)</h3>'+ret.slice(0,15).map(function(a){ return '<div class="nrow" data-hrag="'+a.id+'"><div><b>'+esc(hrName(a))+'</b><small style="display:block">'+esc(hrPo(a.poste_id))+' · '+esc(hrUn(a.unite_id))+'</small></div><span class="tag rej">'+hrAge(a)+' ans</span></div>' }).join("")+'</div>';
+  return h;
+}
+
+function hrFiltered(){
+  var f = HRM.f, q = (f.q||"").toLowerCase().trim(), ids = f.unite==="none" ? null : (f.unite ? hrDesc(f.unite) : null);
+  return hrList("hr_agents").filter(function(a){
+    if(f.statut==="__on"){ if(!hrOn(a)) return false } else if(f.statut && a.statut!==f.statut) return false;
+    if(f.sexe && a.sexe!==f.sexe) return false;
+    if(f.unite==="none"){ if(a.unite_id) return false } else if(ids && ids.indexOf(a.unite_id)<0) return false;
+    if(f.band!=="" && hrBand(a)!==+f.band) return false;
+    if(f.inc && !hrIncomplete(a)) return false;
+    if(q && (hrName(a)+" "+a.matricule_rh+" "+(a.telephone||"")+" "+hrPo(a.poste_id)).toLowerCase().indexOf(q)<0) return false;
+    return true;
+  }).sort(function(a,b){ return hrName(a).localeCompare(hrName(b),"fr") });
+}
+function hrAgRows(list){
+  return list.map(function(a){ var g = hrAge(a); return '<div class="nrow" data-hrag="'+a.id+'"><div><b>'+esc(hrName(a))+'</b> <small>'+esc(a.matricule_rh)+(g!=null?' · '+g+' ans':'')+(a.sexe?' · '+a.sexe:'')+'</small><small style="display:block">'+esc(hrPo(a.poste_id))+' · '+esc(hrUn(a.unite_id))+'</small></div><span class="tag '+(hrOn(a)?'good':'rej')+'">'+HR_ST[a.statut]+'</span></div>' }).join("") || '<p class="sub">Aucun agent pour cette sélection.</p>';
+}
+function hrAgents(){
+  var f = HRM.f, ul = hrTree(null,0).map(function(n){ return '<option value="'+n.u.id+'"'+(f.unite===n.u.id?' selected':'')+'>'+'  '.repeat(n.d)+esc(n.u.nom)+'</option>' }).join("");
+  var h = '<div class="card"><div class="hrf"><input type="search" id="hrq" placeholder="Rechercher : nom, matricule RH, téléphone…" value="'+esc(f.q)+'"><select data-hrf="unite"><option value="">Toutes les unités</option>'+ul+'<option value="none"'+(f.unite==="none"?' selected':'')+'>Sans unité</option></select>'
+    + '<select data-hrf="statut"><option value="">Tous statuts</option><option value="__on"'+(f.statut==="__on"?' selected':'')+'>En service</option>'+Object.keys(HR_ST).map(function(s){ return '<option value="'+s+'"'+(f.statut===s?' selected':'')+'>'+HR_ST[s]+'</option>' }).join("")+'</select>'
+    + '<select data-hrf="sexe"><option value="">Hommes et femmes</option><option value="M"'+(f.sexe==="M"?' selected':'')+'>Hommes</option><option value="F"'+(f.sexe==="F"?' selected':'')+'>Femmes</option></select>'
+    + '<select data-hrf="band"><option value="">Tous âges</option>'+HR_BANDS.map(function(b,i){ return '<option value="'+i+'"'+(String(f.band)===String(i)?' selected':'')+'>'+b[0]+'</option>' }).join("")+'</select></div>'
+    + '<div style="display:flex;gap:8px;flex-wrap:wrap">'+(hrCanW()?'<button class="hrb pri" data-hract="new-agent">+ Nouvel agent</button>':'')+'<button class="hrb" data-hract="xlsx-ag">Excel</button><button class="hrb" data-hract="pdf-ag">PDF</button><button class="hrb" data-hract="reset-f">Réinitialiser</button>'+(f.inc?'<span class="tag rej">Dossiers incomplets</span>':'')+'</div></div>'
+    + '<div class="card"><p class="sub" id="hrcnt"></p><div id="hrlist"></div></div>';
+  return h;
+}
+function hrAgentsList(){ var l = hrFiltered(), b = $("hrlist"); if(!b) return; $("hrcnt").textContent = l.length+" agent"+(l.length>1?"s":""); b.innerHTML = hrAgRows(l.slice(0,300))+(l.length>300?'<p class="sub">Affinez la recherche : 300 premiers résultats affichés.</p>':'') }
+
+function hrOrga(){
+  var w = hrCanW(), h = '<div class="card"><h3>Organigramme</h3><p class="sub">Directions, services, villes et antennes. Cliquez sur un nom pour voir ses agents.</p>'+(w?'<button class="hrb pri" data-hract="new-unit">+ Nouvelle unité de premier niveau</button>':'')+'</div><div class="card">';
+  function node(u){
+    var ids = hrDesc(u.id), ag = hrCount(hrList("hr_agents"), function(a){ return hrOn(a) && a.unite_id===u.id }), agT = hrCount(hrList("hr_agents"), function(a){ return hrOn(a) && ids.indexOf(a.unite_id)>=0 });
+    var ch = hrList("hr_unites").filter(function(x){ return x.parent_id===u.id }).sort(function(a,b){ return (a.ordre-b.ordre) || a.nom.localeCompare(b.nom,"fr") });
+    return '<li><div class="un"><span><b data-hrunit="'+u.id+'">'+esc(u.nom)+'</b> <small>'+HR_UT[u.type]+(u.actif===false?' · inactive':'')+' · '+ag+' agent'+(ag>1?'s':'')+(ch.length?' (total '+agT+')':'')+' · prévu '+hrPrevu([u.id])+'</small></span>'+(w?'<span><button class="hrb" data-hract="sub-unit" data-id="'+u.id+'">+ Sous-unité</button> <button class="hrb" data-hract="edit-unit" data-id="'+u.id+'">✎</button></span>':'')+'</div>'+(ch.length?'<ul>'+ch.map(node).join("")+'</ul>':'')+'</li>';
+  }
+  var roots = hrRoots().sort(function(a,b){ return (a.ordre-b.ordre) || a.nom.localeCompare(b.nom,"fr") });
+  h += roots.length ? '<ul class="hrtree">'+roots.map(node).join("")+'</ul>' : '<p class="sub">Aucune unité pour le moment.</p>';
+  return h+'</div>';
+}
+function hrPostes(){
+  var w = hrCanW(), vo = HRM.vo, rows = hrList("hr_postes").filter(function(p){ return !vo || (p.actif!==false && (+p.effectif_prevu||0) > hrOcc(p.id)) }).sort(function(a,b){ return a.intitule.localeCompare(b.intitule,"fr") });
+  var h = '<div class="card"><h3>Postes</h3><div style="display:flex;gap:8px;flex-wrap:wrap">'+(w?'<button class="hrb pri" data-hract="new-poste">+ Nouveau poste</button>':'')+'<button class="hrb'+(vo?' pri':'')+'" data-hract="vac">Postes vacants seulement</button><button class="hrb" data-hract="xlsx-po">Excel</button></div></div><div class="card tw"><table><thead><tr><th>Intitulé</th><th>Unité</th><th>Grade</th><th class="n">Prévu</th><th class="n">Occupé</th><th class="n">Vacant</th>'+(w?'<th></th>':'')+'</tr></thead><tbody>';
+  h += rows.map(function(p){ var o = hrOcc(p.id), v = (+p.effectif_prevu||0)-o; return '<tr><td>'+esc(p.intitule)+(p.actif===false?' <small>(inactif)</small>':'')+'</td><td>'+esc(hrUn(p.unite_id))+'</td><td>'+esc(p.grade||"—")+'</td><td class="n">'+(+p.effectif_prevu||0)+'</td><td class="n">'+o+'</td><td class="n" style="color:var(--'+(v>0?'ko':v<0?'ko':'ok')+')">'+(v>0?v:v<0?'+'+(-v)+' (surnombre)':0)+'</td>'+(w?'<td><button class="hrb" data-hract="edit-poste" data-id="'+p.id+'">✎</button></td>':'')+'</tr>' }).join("")||'<tr><td colspan="7" class="sub">Aucun poste.</td></tr>';
+  return h+'</tbody></table></div>';
+}
+function hrAcces(){
+  var rows = hrList("hr_acces");
+  var h = '<div class="card"><h3>Accès au portail RH</h3><p class="sub">Les agents du niveau national ont automatiquement l\'accès DRH. Les autres agents n\'entrent que s\'ils figurent ici.</p><button class="hrb pri" data-hract="new-acc">+ Donner un accès</button></div><div class="card">';
+  h += rows.map(function(r){ return '<div class="nrow"><div><b>'+esc(r.nom||agName(r.code))+'</b> <small>'+esc(r.code)+'</small></div><span><span class="tag good">'+esc({drh:"DRH", gestionnaire:"Gestionnaire", lecture:"Lecture"}[r.niveau])+'</span> <button class="hrb dan" data-hract="del-acc" data-id="'+esc(r.code)+'">Retirer</button></span></div>' }).join("") || '<p class="sub">Aucun accès supplémentaire.</p>';
+  return h+'</div>';
+}
+function hrJournal(){
+  var h = '<div class="card"><h3>Journal des modifications RH</h3><p class="sub">200 dernières opérations.</p>';
+  if(!HRM.jrLoaded){ hrLoadJ(); return h+'<p class="hrmsg">Chargement…</p></div>' }
+  h += '<div class="tw"><table><thead><tr><th>Date</th><th>Agent</th><th>Action</th><th>Table</th><th>Ligne</th></tr></thead><tbody>'+HRM.jr.map(function(r){ return '<tr><td>'+esc(fmtDT(new Date(r.at).getTime()))+'</td><td>'+esc(agName(r.acteur, r.acteur))+'</td><td>'+esc({insert:"Création", update:"Modification", delete:"Suppression"}[r.action]||r.action)+'</td><td>'+esc(String(r.table_name).replace("hr_",""))+'</td><td>'+esc(r.ligne_id||"")+'</td></tr>' }).join("")+'</tbody></table></div></div>';
+  return h;
+}
+async function hrLoadJ(){
+  try{ var r = await SB.from("hr_journal").select("*").order("id",{ascending:false}).limit(200); if(r.error) throw r.error; HRM.jr = (r.data||[]).sort(function(a,b){ return b.id-a.id }); HRM.jrLoaded = true }
+  catch(e){ HRM.jr = []; HRM.jrLoaded = true; toast("Journal indisponible : "+((e&&e.message)||e)) }
+  hrRender();
+}
+
+function hrFiche(id){
+  var a = HRM.d.hr_agents[id], w = hrCanW(), g = hrAge(a), an = hrAnc(a), fam = hrList("hr_famille").filter(function(x){ return x.agent_id===id }), ct = hrList("hr_contacts").filter(function(x){ return x.agent_id===id }), pc = hrList("hr_pieces").filter(function(x){ return x.agent_id===id });
+  var cell = function(l, v){ return '<div><small>'+l+'</small><b>'+(v==null||v===""?"—":esc(v))+'</b></div>' };
+  var h = '<button class="back" data-hrback="1">‹ Retour à la liste</button><div class="card"><div class="hrp"><div class="ph" id="hrph">'+esc((a.nom||"?").slice(0,1))+'</div><div style="flex:1;min-width:200px"><h3 style="margin:0">'+esc(hrName(a))+'</h3><p class="sub" style="margin:2px 0">'+esc(a.matricule_rh)+' · <span class="tag '+(hrOn(a)?'good':'rej')+'">'+HR_ST[a.statut]+'</span></p><div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px">'
+    + (w?'<button class="hrb pri" data-hract="edit-agent" data-id="'+id+'">✎ Modifier</button><button class="hrb" data-hract="photo" data-id="'+id+'">📷 Photo</button>':'')+'<button class="hrb" data-hract="print" data-id="'+id+'">🖨 Imprimer la fiche</button>'+(hrLvl()==="drh"?'<button class="hrb dan" data-hract="del-agent" data-id="'+id+'">Supprimer</button>':'')+'</div></div></div></div>';
+  h += '<div class="card"><h3>Identité</h3><div class="hrg">'+cell("Sexe", a.sexe==="M"?"Masculin":a.sexe==="F"?"Féminin":"")+cell("Date de naissance", a.date_naissance?hrFD(a.date_naissance)+(g!=null?" ("+g+" ans)":""):"")+cell("Lieu de naissance", a.lieu_naissance)+cell("État civil", a.etat_civil)+cell("Nationalité", a.nationalite)+cell("Adresse", a.adresse)+cell("Téléphone", a.telephone)+cell("E-mail", a.email)+'</div></div>';
+  h += '<div class="card"><h3>Affectation</h3><div class="hrg">'+cell("Unité", hrUn(a.unite_id))+cell("Poste", hrPo(a.poste_id))+cell("Grade", a.grade)+cell("Échelon", a.echelon)+cell("Date d\'embauche", a.date_embauche?hrFD(a.date_embauche):"")+cell("Ancienneté", an==null?"":(Math.floor(an)+" an(s) "+Math.floor((an%1)*12)+" mois"))+cell("Compte MESP Integra", a.code_app?agName(a.code_app, a.code_app):"")+(hrOn(a)?"":cell("Date de sortie", a.date_sortie?hrFD(a.date_sortie):"")+cell("Motif de sortie", a.motif_sortie))+'</div></div>';
+  h += '<div class="card"><h3>Famille et ayants droit</h3>'+(w?'<button class="hrb" data-hract="new-fam" data-id="'+id+'">+ Ajouter</button>':'')+(fam.map(function(x){ var ga = x.date_naissance ? ageOf(String(x.date_naissance).slice(0,10), new Date()) : null; return '<div class="nrow"><div><b>'+esc([x.nom,x.prenom].filter(Boolean).join(" "))+'</b> <small>'+HR_LIEN[x.lien]+(x.sexe?' · '+x.sexe:'')+(ga!=null?' · '+ga+' ans':'')+(x.a_charge===false?' · pas à charge':'')+(x.matricule_mesp?' · matricule MESP '+esc(x.matricule_mesp):'')+'</small></div>'+(w?'<span><button class="hrb" data-hract="edit-fam" data-id="'+x.id+'">✎</button> <button class="hrb dan" data-hract="del-fam" data-id="'+x.id+'">✕</button></span>':'')+'</div>' }).join("") || '<p class="sub" style="margin-top:8px">Aucun ayant droit enregistré.</p>')+'</div>';
+  h += '<div class="card"><h3>Personnes à prévenir</h3>'+(w?'<button class="hrb" data-hract="new-ct" data-id="'+id+'">+ Ajouter</button>':'')+(ct.map(function(x){ return '<div class="nrow"><div><b>'+esc(x.nom)+'</b> <small>'+esc(x.lien||"")+(x.telephone?' · '+esc(x.telephone):'')+'</small></div>'+(w?'<span><button class="hrb" data-hract="edit-ct" data-id="'+x.id+'">✎</button> <button class="hrb dan" data-hract="del-ct" data-id="'+x.id+'">✕</button></span>':'')+'</div>' }).join("") || '<p class="sub" style="margin-top:8px">Aucune personne à prévenir.</p>')+'</div>';
+  h += '<div class="card"><h3>Pièces numérisées</h3>'+(w?'<button class="hrb" data-hract="new-pc" data-id="'+id+'">+ Ajouter une pièce</button>':'')+(pc.map(function(x){ return '<div class="nrow"><div><b>'+esc(x.type)+(x.titre?' — '+esc(x.titre):'')+'</b> <small>'+(x.date_piece?hrFD(x.date_piece)+' · ':'')+esc(x.fichier_nom||"")+'</small></div><span><button class="hrb" data-hract="open-pc" data-id="'+x.id+'">Ouvrir</button>'+(w?' <button class="hrb dan" data-hract="del-pc" data-id="'+x.id+'">✕</button>':'')+'</span></div>' }).join("") || '<p class="sub" style="margin-top:8px">Aucune pièce.</p>')+'</div>';
+  return h;
+}
+async function hrPhoto(id){
+  var a = HRM.d.hr_agents[id], el = $("hrph"); if(!a || !a.photo_path || !el) return;
+  try{ var u = HRM.photos[a.photo_path] || (HRM.photos[a.photo_path] = await hrFileUrl(a.photo_path)); if(u && $("hrph") && HRM.sel===id) $("hrph").innerHTML = '<img alt="" src="'+esc(u)+'">' }catch(e){}
+}
+
+/* ---------- formulaires ---------- */
+function hrForm(title, fields, vals, onSave){
+  var old = $("hrm"); if(old) old.remove();
+  var m = document.createElement("div"); m.id = "hrm"; m.className = "hrmo"; vals = vals || {};
+  var f = fields.map(function(x){
+    var k = x[0], l = x[1], t = x[2], req = x[4] ? " *" : "", v = vals[k]==null ? "" : vals[k];
+    if(t==="select") return '<label>'+l+req+'<select name="'+k+'">'+x[3].map(function(o){ return '<option value="'+esc(o[0])+'"'+(String(v)===String(o[0])?' selected':'')+'>'+esc(o[1])+'</option>' }).join("")+'</select></label>';
+    if(t==="check") return '<label class="ck"><input type="checkbox" name="'+k+'"'+(v===""||v===true?' checked':'')+'> '+l+'</label>';
+    if(t==="area") return '<label>'+l+req+'<textarea name="'+k+'" rows="3">'+esc(v)+'</textarea></label>';
+    if(t==="file") return '<label>'+l+req+'<input type="file" name="'+k+'" accept="'+(x[3]||"")+'"></label>';
+    return '<label>'+l+req+'<input name="'+k+'" type="'+t+'" value="'+esc(String(v).slice(0,10)===v && t==="date" ? v : v)+'"'+(t==="number"?' min="0"':'')+'></label>';
+  }).join("");
+  m.innerHTML = '<form class="hrmc" novalidate><h3>'+title+'</h3>'+f+'<p class="hrerr"></p><div class="hrmb"><button type="button" class="hrx" data-hrm="x">Annuler</button><button type="submit">Enregistrer</button></div></form>';
+  document.body.appendChild(m);
+  m.addEventListener("click", function(e){ if(e.target===m || (e.target.dataset && e.target.dataset.hrm==="x")) m.remove() });
+  m.querySelector("form").addEventListener("submit", async function(e){
+    e.preventDefault(); var fm = e.target, out = {}, err = fm.querySelector(".hrerr"), btn = fm.querySelector("[type=submit]");
+    fields.forEach(function(x){ var el = fm.elements[x[0]]; out[x[0]] = x[2]==="check" ? el.checked : x[2]==="file" ? (el.files && el.files[0]) : (x[2]==="number" ? (el.value===""?null:+el.value) : el.value.trim()) });
+    for(var i=0;i<fields.length;i++){ var x = fields[i]; if(x[4] && (out[x[0]]==null || out[x[0]]==="")){ err.textContent = "Champ obligatoire : "+x[1]; return } }
+    btn.disabled = true; err.textContent = "";
+    try{ await onSave(out); m.remove(); hrRender() }catch(ex){ err.textContent = (ex && ex.message) || String(ex); btn.disabled = false }
+  });
+  var first = m.querySelector("input,select,textarea"); if(first && !/^(file|date)$/.test(first.type)) first.focus();
+}
+function hrOptsU(){ return [["","— Aucune —"]].concat(hrTree(null,0).map(function(n){ return [n.u.id, '  '.repeat(n.d)+n.u.nom] })) }
+function hrOptsP(){ return [["","— Aucun —"]].concat(hrList("hr_postes").sort(function(a,b){ return a.intitule.localeCompare(b.intitule,"fr") }).map(function(p){ return [p.id, p.intitule+(p.unite_id?" ("+hrUn(p.unite_id)+")":"")] })) }
+function hrAgentForm(a){
+  var isNew = !a; a = a || {statut:"actif", nationalite:"Congolaise"};
+  var acc = [["","— Aucun —"]].concat(allAgents().map(function(x){ return [x.c, x.n+" ("+x.c+")"] }));
+  hrForm(isNew ? "Nouvel agent" : "Modifier le dossier", [
+    ["nom","Nom","text",null,1],["postnom","Postnom","text"],["prenom","Prénom","text"],["sexe","Sexe","select",[["","—"],["M","Masculin"],["F","Féminin"]],1],
+    ["date_naissance","Date de naissance","date"],["lieu_naissance","Lieu de naissance","text"],["etat_civil","État civil","select",[["","—"],["Célibataire","Célibataire"],["Marié(e)","Marié(e)"],["Divorcé(e)","Divorcé(e)"],["Veuf/Veuve","Veuf/Veuve"]]],["nationalite","Nationalité","text"],
+    ["adresse","Adresse","text"],["telephone","Téléphone","tel"],["email","E-mail","email"],
+    ["unite_id","Unité","select",hrOptsU()],["poste_id","Poste","select",hrOptsP()],["grade","Grade","text"],["echelon","Échelon","text"],
+    ["statut","Statut","select",Object.keys(HR_ST).map(function(s){ return [s, HR_ST[s]] })],["date_embauche","Date d'embauche","date"],["date_sortie","Date de sortie","date"],["motif_sortie","Motif de sortie","text"],
+    ["code_app","Compte MESP Integra lié","select",acc]
+  ], a, async function(v){
+    v.nom = UPN(v.nom); if(v.postnom) v.postnom = UPN(v.postnom);
+    var row = Object.assign({}, a, hrClean(v)); if(isNew){ row.id = hrId(); row.created_by = AG.c; delete row.matricule_rh }
+    var x = await hrPut("hr_agents", row); HRM.sel = x.id; toast(isNew ? "Agent enregistré : "+x.matricule_rh : "Dossier mis à jour");
+  });
+}
+function hrUnitForm(u, parent){
+  var isNew = !u; u = u || {type:"service", parent_id:parent||"", actif:true, ordre:0};
+  var excl = isNew ? [] : hrDesc(u.id);
+  hrForm(isNew ? "Nouvelle unité" : "Modifier l'unité", [["nom","Nom","text",null,1],["type","Type","select",Object.keys(HR_UT).map(function(k){ return [k, HR_UT[k]] })],["parent_id","Rattachée à","select",hrOptsU().filter(function(o){ return excl.indexOf(o[0])<0 })],["ordre","Ordre d'affichage","number"],["actif","Unité active","check"]], u, async function(v){
+    var row = Object.assign({}, u, hrClean(v)); if(isNew) row.id = hrId(); row.ordre = row.ordre||0; await hrPut("hr_unites", row); toast("Unité enregistrée");
+  });
+}
+function hrPosteForm(p){
+  var isNew = !p; p = p || {effectif_prevu:1, actif:true};
+  hrForm(isNew ? "Nouveau poste" : "Modifier le poste", [["intitule","Intitulé","text",null,1],["unite_id","Unité","select",hrOptsU()],["grade","Grade","text"],["effectif_prevu","Effectif prévu","number",null,1],["actif","Poste actif","check"]], p, async function(v){
+    var row = Object.assign({}, p, hrClean(v)); if(isNew) row.id = hrId(); await hrPut("hr_postes", row); toast("Poste enregistré");
+  });
+}
+function hrFamForm(id, x){
+  var isNew = !x; x = x || {lien:"enfant", a_charge:true};
+  hrForm(isNew ? "Ajouter un ayant droit" : "Modifier l'ayant droit", [["lien","Lien","select",Object.keys(HR_LIEN).map(function(k){ return [k, HR_LIEN[k]] })],["nom","Nom","text",null,1],["prenom","Prénom","text"],["sexe","Sexe","select",[["","—"],["M","Masculin"],["F","Féminin"]]],["date_naissance","Date de naissance","date"],["matricule_mesp","Matricule MESP (s'il existe)","text"],["a_charge","À charge","check"]], x, async function(v){
+    var row = Object.assign({}, x, hrClean(v)); if(isNew){ row.id = hrId(); row.agent_id = id } row.nom = UPN(row.nom); await hrPut("hr_famille", row); toast("Enregistré");
+  });
+}
+function hrCtForm(id, x){
+  var isNew = !x; x = x || {};
+  hrForm(isNew ? "Personne à prévenir" : "Modifier", [["nom","Nom","text",null,1],["lien","Lien (épouse, frère…)","text"],["telephone","Téléphone","tel"]], x, async function(v){
+    var row = Object.assign({}, x, hrClean(v)); if(isNew){ row.id = hrId(); row.agent_id = id } await hrPut("hr_contacts", row); toast("Enregistré");
+  });
+}
+function hrPcForm(id){
+  hrForm("Ajouter une pièce", [["type","Type","select",HR_PT.map(function(t){ return [t,t] })],["titre","Titre / précision","text"],["date_piece","Date de la pièce","date"],["fichier","Fichier (PDF ou image, 8 Mo max)","file","application/pdf,image/*",1]], {}, async function(v){
+    var f = v.fichier; if(f.size>8*1024*1024) throw new Error("Fichier trop lourd (8 Mo maximum)");
+    var pid = hrId(), safe = f.name.replace(/[^A-Za-z0-9._-]+/g,"_"), path = "pieces/"+id+"/"+pid+"-"+safe;
+    await hrUpload(path, f); var row = {id:pid, agent_id:id, type:v.type, titre:v.titre||null, date_piece:v.date_piece||null, fichier_path:path, fichier_nom:f.name, created_by:AG.c};
+    try{ await hrPut("hr_pieces", row) }catch(e){ await hrRemoveFile(path); throw e } toast("Pièce ajoutée");
+  });
+}
+function hrAccForm(){
+  var taken = HRM.d.hr_acces || {}, ag = allAgents().filter(function(x){ return !taken[x.c] });
+  hrForm("Donner un accès RH", [["code","Agent","select",ag.map(function(x){ return [x.c, x.n+" ("+x.c+")"] }),1],["niveau","Niveau","select",[["lecture","Lecture seule"],["gestionnaire","Gestionnaire (lit et modifie)"],["drh","DRH (tout, y compris les accès)"]]]], {niveau:"gestionnaire"}, async function(v){
+    var a = ag.filter(function(x){ return x.c===v.code })[0]; await hrPut("hr_acces", {code:v.code, nom:a?a.n:null, niveau:v.niveau}); toast("Accès enregistré");
+  });
+}
+
+/* ---------- exports / impression ---------- */
+function hrAgRowsX(list){ return list.map(function(a){ var g = hrAge(a); return [a.matricule_rh, hrName(a), a.sexe||"", g==null?"":g, a.date_naissance?hrFD(a.date_naissance):"", hrPo(a.poste_id), hrUn(a.unite_id), a.grade||"", HR_ST[a.statut], a.date_embauche?hrFD(a.date_embauche):"", a.telephone||""] }) }
+var HR_AH = ["Matricule RH","Nom complet","Sexe","Âge","Naissance","Poste","Unité","Grade","Statut","Embauche","Téléphone"];
+function hrPrint(id){
+  var a = HRM.d.hr_agents[id]; if(!a) return;
+  var L = [{t:"MESP — Fiche du personnel", s:17, b:true}, {t:hrName(a)+" · "+a.matricule_rh, s:11, b:true}, {t:"Éditée le "+new Date().toLocaleDateString("fr-FR"), s:9}, {t:"", s:6}], g = hrAge(a);
+  var add = function(t){ L.push({t:t, s:10}) }, sec = function(t){ L.push({t:"", s:5}); L.push({t:t, s:12, b:true}) };
+  sec("Identité"); add("Sexe : "+(a.sexe==="M"?"Masculin":a.sexe==="F"?"Féminin":"—")); add("Né(e) le : "+hrFD(a.date_naissance)+(g!=null?" ("+g+" ans)":"")+" à "+(a.lieu_naissance||"—")); add("État civil : "+(a.etat_civil||"—")+" · Nationalité : "+(a.nationalite||"—")); add("Adresse : "+(a.adresse||"—")); add("Téléphone : "+(a.telephone||"—")+" · E-mail : "+(a.email||"—"));
+  sec("Affectation"); add("Unité : "+hrUn(a.unite_id)); add("Poste : "+hrPo(a.poste_id)); add("Grade : "+(a.grade||"—")+" · Échelon : "+(a.echelon||"—")); add("Statut : "+HR_ST[a.statut]+" · Embauché(e) le : "+hrFD(a.date_embauche)); if(!hrOn(a)) add("Sorti(e) le : "+hrFD(a.date_sortie)+" · Motif : "+(a.motif_sortie||"—"));
+  var fam = hrList("hr_famille").filter(function(x){ return x.agent_id===id }); sec("Famille et ayants droit"); if(!fam.length) add("Aucun ayant droit enregistré."); fam.forEach(function(x){ add(HR_LIEN[x.lien]+" : "+[x.nom,x.prenom].filter(Boolean).join(" ")+(x.date_naissance?" · né(e) le "+hrFD(x.date_naissance):"")+(x.a_charge===false?" · pas à charge":"")) });
+  var ct = hrList("hr_contacts").filter(function(x){ return x.agent_id===id }); sec("Personnes à prévenir"); if(!ct.length) add("Aucune."); ct.forEach(function(x){ add(x.nom+(x.lien?" ("+x.lien+")":"")+(x.telephone?" · "+x.telephone:"")) });
+  var pc = hrList("hr_pieces").filter(function(x){ return x.agent_id===id }); sec("Pièces au dossier"); if(!pc.length) add("Aucune."); pc.forEach(function(x){ add(x.type+(x.titre?" — "+x.titre:"")+(x.date_piece?" · "+hrFD(x.date_piece):"")) });
+  savePdf("Fiche_RH_"+a.matricule_rh+".pdf", L, {land:false, sign:false, title:"Fiche du personnel"});
+}
+
+/* ---------- événements ---------- */
+(function(){
+  var el = $("hr"); if(!el) return;
+  function setF(p){ HRM.f = Object.assign({q:"", unite:"", statut:"", sexe:"", band:"", inc:false}, p); HRM.tab = "agents"; HRM.sel = null; hrRender(); hrAgentsList() }
+  el.addEventListener("input", function(e){ if(e.target.id==="hrq"){ HRM.f.q = e.target.value; hrAgentsList() } });
+  el.addEventListener("change", function(e){ var k = e.target.dataset && e.target.dataset.hrf; if(k){ HRM.f[k] = e.target.value; hrAgentsList() } });
+  el.addEventListener("click", async function(e){
+    var t = e.target, b;
+    if((b = t.closest("[data-hrtab]"))){ HRM.tab = b.dataset.hrtab; HRM.sel = null; if(HRM.tab==="journal") HRM.jrLoaded = false; hrRender(); if(HRM.tab==="agents") hrAgentsList(); el.scrollTop = 0; return }
+    if((b = t.closest("[data-hrag]"))){ HRM.sel = b.dataset.hrag; hrRender(); el.scrollTop = 0; return }
+    if(t.closest("[data-hrback]")){ HRM.sel = null; hrRender(); if(HRM.tab==="agents") hrAgentsList(); return }
+    if((b = t.closest("[data-hrunit]"))){ setF({unite:b.dataset.hrunit, statut:"__on"}); return }
+    if((b = t.closest("[data-hf]"))){
+      var p = b.dataset.hf.split(":"), f = {statut:"__on"};
+      if(p[0]==="sexe") f.sexe = p[1]; else if(p[0]==="band") f.band = p[1]; else if(p[0]==="inc") f.inc = true; else if(p[0]==="s"){ f.statut = p[1] }
+      else if(p[0]==="u"){ f.unite = p[1]==="none" ? "none" : p[1]; if(p[2]) f.sexe = p[2]; if(p[1]!=="none") f.unite = p[1] }
+      else if(p[0]==="b"){ f.band = p[1]; if(p[2]) f.sexe = p[2] }
+      setF(f); return;
+    }
+    if(!(b = t.closest("[data-hract]"))) return;
+    var a = b.dataset.hract, id = b.dataset.id;
+    try{
+      if(a==="portals"){ hrClose(); hubShow(); return }
+      if(a==="refresh"){ HRM.loaded = false; HRM.jrLoaded = false; hrLoad(); return }
+      if(a==="reset-f"){ setF({}); return }
+      if(a==="vac"){ HRM.vo = !HRM.vo; hrRender(); return }
+      if(a==="new-agent") return hrAgentForm();
+      if(a==="edit-agent") return hrAgentForm(HRM.d.hr_agents[id]);
+      if(a==="new-unit") return hrUnitForm();
+      if(a==="sub-unit") return hrUnitForm(null, id);
+      if(a==="edit-unit") return hrUnitForm(HRM.d.hr_unites[id]);
+      if(a==="new-poste") return hrPosteForm();
+      if(a==="edit-poste") return hrPosteForm(HRM.d.hr_postes[id]);
+      if(a==="new-fam") return hrFamForm(id);
+      if(a==="edit-fam") return hrFamForm(HRM.d.hr_famille[id].agent_id, HRM.d.hr_famille[id]);
+      if(a==="new-ct") return hrCtForm(id);
+      if(a==="edit-ct") return hrCtForm(HRM.d.hr_contacts[id].agent_id, HRM.d.hr_contacts[id]);
+      if(a==="new-pc") return hrPcForm(id);
+      if(a==="new-acc") return hrAccForm();
+      if(a==="print") return hrPrint(id);
+      if(a==="del-fam"){ if(confirm("Supprimer cet ayant droit ?")){ await hrDel("hr_famille", id); hrRender() } return }
+      if(a==="del-ct"){ if(confirm("Supprimer cette personne ?")){ await hrDel("hr_contacts", id); hrRender() } return }
+      if(a==="del-acc"){ if(confirm("Retirer cet accès ?")){ await hrDel("hr_acces", id); hrRender() } return }
+      if(a==="del-pc"){ var pc = HRM.d.hr_pieces[id]; if(confirm("Supprimer cette pièce ?")){ await hrDel("hr_pieces", id); await hrRemoveFile(pc.fichier_path); hrRender() } return }
+      if(a==="del-agent"){ var ag = HRM.d.hr_agents[id]; if(confirm("Supprimer définitivement le dossier de "+hrName(ag)+" (famille, contacts et pièces compris) ?")){ var ps = hrList("hr_pieces").filter(function(x){ return x.agent_id===id }); await hrDel("hr_agents", id); for(var i=0;i<ps.length;i++) await hrRemoveFile(ps[i].fichier_path); await hrRemoveFile(ag.photo_path); HRM.sel = null; hrRender(); toast("Dossier supprimé") } return }
+      if(a==="open-pc"){ var u = await hrFileUrl(HRM.d.hr_pieces[id].fichier_path); if(!u){ toast("Fichier introuvable"); return } var an = document.createElement("a"); an.href = u; an.target = "_blank"; an.rel = "noopener"; document.body.appendChild(an); an.click(); an.remove(); return }
+      if(a==="photo"){
+        var inp = document.createElement("input"); inp.type = "file"; inp.accept = "image/*";
+        inp.onchange = async function(){ var f = inp.files && inp.files[0]; if(!f) return; try{ var blob = await hrResize(f, 360), ag2 = HRM.d.hr_agents[id], path = "photos/"+id+"-"+Date.now()+".jpg"; await hrUpload(path, blob); var old = ag2.photo_path; await hrPut("hr_agents", Object.assign({}, ag2, {photo_path:path})); if(old) await hrRemoveFile(old); hrRender(); toast("Photo enregistrée") }catch(ex){ toast("Photo : "+((ex&&ex.message)||ex)) } };
+        inp.click(); return;
+      }
+      if(a==="xlsx-ag"){ await exportXlsx("MESP_RH_agents_"+new Date().toISOString().slice(0,10), "Agents", HR_AH, hrAgRowsX(hrFiltered())); return }
+      if(a==="pdf-ag"){ await exportPdfTable("MESP_RH_agents", "MESP RH — Liste des agents", "Édité le "+new Date().toLocaleDateString("fr-FR"), HR_AH, hrAgRowsX(hrFiltered())); return }
+      if(a==="xlsx-un"){ await exportXlsx("MESP_RH_effectif_unites", "Effectif", ["Unité","Type","Hommes","Femmes","Total","Prévu","Vacants"], HRM.exU||[]); return }
+      if(a==="pdf-un"){ await exportPdfTable("MESP_RH_effectif_unites", "MESP RH — Effectif par unité", "Agents en service au "+new Date().toLocaleDateString("fr-FR"), ["Unité","Type","Hommes","Femmes","Total","Prévu","Vacants"], HRM.exU||[]); return }
+      if(a==="xlsx-age"){ await exportXlsx("MESP_RH_tranches_age", "Tranches d'âge", ["Tranche","Hommes","Femmes","Total"], HRM.exA||[]); return }
+      if(a==="pdf-age"){ await exportPdfTable("MESP_RH_tranches_age", "MESP RH — Effectif par tranche d'âge", "Agents en service au "+new Date().toLocaleDateString("fr-FR"), ["Tranche","Hommes","Femmes","Total"], HRM.exA||[]); return }
+      if(a==="xlsx-po"){ await exportXlsx("MESP_RH_postes", "Postes", ["Intitulé","Unité","Grade","Prévu","Occupé","Vacant"], hrList("hr_postes").map(function(p){ var o = hrOcc(p.id); return [p.intitule, hrUn(p.unite_id), p.grade||"", +p.effectif_prevu||0, o, Math.max(0,(+p.effectif_prevu||0)-o)] })); return }
+    }catch(ex){ toast("Erreur : "+((ex&&ex.message)||ex)) }
+  });
+  var obs = new MutationObserver(function(){ if($("hrlist") && !$("hrlist").dataset.f){ $("hrlist").dataset.f = 1; hrAgentsList() } }); obs.observe(el, {childList:true, subtree:true});
+})();
+
 function bootAuth(){ go("v0") }
 function startSession(a){
   NEWDEL = null; AG = a; ROLE = a.v==="National" ? "national" : (a.r==="autre" ? "autre" : (a.r==="medecin" ? "medecin" : (a.r==="chef" ? "chef" : (isDel(a) ? "delegue" : "assistant")))); saveSess(); ME = {id:a.c, isOwner:false, canEdit:false}; LABEL = labelFor();
@@ -2709,10 +3229,10 @@ function startSession(a){
         : [["v11","Villes"],["v2","Indicateurs"],["v17","Cartes bloquées"],["v18","Historique"],["v12","Administration"],["v1","Vérification"]]);
   $("tabs").innerHTML = ROLE==="national" ? SPACES.map(function(x){ return '<button data-sp="'+x.k+'">'+x.n+'</button>' }).join("") : t.map(function(x){ return '<button data-v="'+x[0]+'">'+x[1]+'</button>' }).join(""); $("tabs").classList.toggle("hide", ROLE==="autre");
   document.body.classList.toggle("nat", ROLE==="national"); SPLAST = {};
-  $("who").innerHTML = '<span style="min-width:0"><b style="font-size:.95rem;color:var(--text)">'+esc(a.n)+'</b><small style="display:block">'+esc(a.f)+' · <b>'+esc(a.v==='National' ? 'Niveau national' : (a.r==='autre' ? 'Vérification de matricule' : 'Ville : '+(a.w||a.v)))+'</b></small><small id="whof" style="display:block"></small></span><button class="back" id="snd" style="padding:0 12px 0 0">🔔 Son</button><button class="back" id="chpw" style="padding:0 12px 0 0">Mot de passe</button><button class="back" id="lo" style="padding:0">Se déconnecter</button>'; $("who").classList.remove("hide"); $("top").classList.add("in"); sndBtn();
+  $("who").innerHTML = '<span style="min-width:0"><b style="font-size:.95rem;color:var(--text)">'+esc(a.n)+'</b><small style="display:block">'+esc(a.f)+' · <b>'+esc(a.v==='National' ? 'Niveau national' : (a.r==='autre' ? 'Vérification de matricule' : 'Ville : '+(a.w||a.v)))+'</b></small><small id="whof" style="display:block"></small></span><button class="back" id="hubbtn" style="padding:0 12px 0 0">☰ Portails</button><button class="back" id="snd" style="padding:0 12px 0 0">🔔 Son</button><button class="back" id="chpw" style="padding:0 12px 0 0">Mot de passe</button><button class="back" id="lo" style="padding:0">Se déconnecter</button>'; $("who").classList.remove("hide"); $("top").classList.add("in"); sndBtn();
   $("fbox").classList.toggle("hide", ROLE!=="delegue"); $("s1").classList.toggle("hide", ROLE!=="national"); $("s3").classList.toggle("hide", ROLE!=="national"); $("s4").classList.toggle("hide", ROLE!=="national"); ["s5","s6","s7","s8","s9","s10","s11"].forEach(function(i){ $(i).classList.toggle("hide", ROLE!=="national") });
   $("out").classList.add("hide"); $("q").value = ""; CUR = null; VIEW = null;
-  applyScope(); sub(ROLE==="national" ? 1 : 2); refreshAll(); if(ROLE==="national") navTo("v19"); else openView(t[0][0]); presStart(); if(isSuper()){ if(PRESALL) clearInterval(PRESALL); PRESALL = setInterval(presAllRefresh, 15000) }
+  applyScope(); sub(ROLE==="national" ? 1 : 2); refreshAll(); if(ROLE==="national") navTo("v19"); else openView(t[0][0]); presStart(); if(PORTAL==="rh") setTimeout(hrOpen,0); if(isSuper()){ if(PRESALL) clearInterval(PRESALL); PRESALL = setInterval(presAllRefresh, 15000) }
 }
 /* --- administration nationale --- */
 var DPROV = {}, DFOSA = {}, ADMDIRTY = false, ADM = {f:"", a:""}, NEWAS = null, SUPERS = ["10-056"];
@@ -3139,9 +3659,10 @@ function logout(force){
   presOff(); offClearUser(); OFFK = null; OFFRES = false;
   try{ localStorage.removeItem("mesp_sess") }catch(e){}
   try{ SB.auth.signOut() }catch(e){} clearShared();
+  HRM.loaded = false; HRM.d = {}; HRM.sel = null; HRM.jrLoaded = false; PORTAL = "";
   AG = null; ROLE = null; SCOPE = []; FOSA = null; CUR = null; VIEW = null; ME = {id:null,isOwner:false,canEdit:false}; LABEL = "la hiérarchie";
   $("who").classList.add("hide"); $("top").classList.remove("in"); $("tabs").classList.add("hide"); $("tabs").innerHTML = ""; $("spnav").classList.add("hide"); document.body.classList.remove("nat"); $("out").classList.add("hide");
-  $("q").value = ""; $("lc").value = ""; $("lp").value = ""; go("v0");
+  $("q").value = ""; $("lc").value = ""; $("lp").value = ""; go("v0"); hubShow();
 }
 function setTab(v, label){ var b = $("tabs").querySelector('[data-v="'+v+'"]'); if(b) b.textContent = label }
 function openView(v){
@@ -5362,7 +5883,7 @@ function demoClient(S){
     return api;
   }
   var off = async function(){ return {data:null, error:{message:"Indisponible en mode démonstration"}} };
-  return { from:function(t){ return t==="audit_log" ? AQ() : Q() },
+  return { from:function(t){ return t==="audit_log" ? AQ() : (/^hr_/.test(t) ? demoHq(S,t) : Q()) },
     rpc:async function(n,a){ var c = S[a.p_coll] || (S[a.p_coll] = {}); c[a.p_id] = Object.assign({}, c[a.p_id], JSON.parse(JSON.stringify(a.p_patch))); return {data:null, error:null} },
     channel:function(){ var ch = {on:function(){ return ch }, subscribe:function(){ return ch }}; return ch }, removeChannel:function(){},
     auth:{ signOut:async function(){ return {error:null} }, getSession:async function(){ return {data:{session:null}} }, updateUser:off },
