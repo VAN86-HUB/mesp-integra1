@@ -2952,7 +2952,7 @@ function demoHq(S, t){
   function run(){
     if(t==="hr_journal"){ var j = H.J.slice(); if(q.ord && !q.ord[1]) j.reverse(); if(q.lim) j = j.slice(0,q.lim); return {data:JSON.parse(JSON.stringify(j)), error:null} }
     var T = H[t] = H[t] || {};
-    if(q.op==="u"){ var r = JSON.parse(JSON.stringify(q.pl)), old = T[r[pk]]; if(t==="hr_agents" && !r.matricule_rh){ H.n++; r.matricule_rh = (r.categorie==="stagiaire"?"ST-":"RH-")+String(H.n+100).padStart(5,"0") } if(t==="hr_agents" && r.code_app && (!old || old.code_app!==r.code_app || /^RH-/.test(r.matricule_rh||old&&old.matricule_rh||"")) && !Object.keys(T).some(function(k){ return T[k].matricule_rh===r.code_app && T[k].id!==r[pk] })) r.matricule_rh = r.code_app;
+    if(q.op==="u"){ var r = JSON.parse(JSON.stringify(q.pl)), old = T[r[pk]]; if(t==="hr_agents" && !r.matricule_rh){ H.n++; r.matricule_rh = (r.categorie==="stagiaire"?"ST-":"RH-")+String(H.n+100).padStart(5,"0") } if(t==="hr_agents" && r.code_app && /^(RH|ST)-/.test(r.matricule_rh||(old&&old.matricule_rh)||"") && !Object.keys(T).some(function(k){ return T[k].matricule_rh===r.code_app && T[k].id!==r[pk] })) r.matricule_rh = r.code_app;
     var ce = chk(r, old); if(ce) return {data:null, error:{message:ce}}; T[r[pk]] = Object.assign({}, old, r); J(old?"update":"insert", r[pk], r); return {data:[JSON.parse(JSON.stringify(T[r[pk]]))], error:null} }
     if(q.op==="d"){ var k = q.f[0][1]; delete T[k]; J("delete", k, null); if(t==="hr_agents") ["hr_famille","hr_contacts","hr_pieces"].forEach(function(c){ Object.keys(H[c]).forEach(function(x){ if(H[c][x].agent_id===k) delete H[c][x] }) }); return {data:null, error:null} }
     var me = HRM.as || "national", nat = me==="national", mid = HRM.me || null;
@@ -3352,6 +3352,12 @@ function hrForm(title, fields, vals, onSave){
   });
   var first = m.querySelector("input,select,textarea"); if(first && !/^(file|date)$/.test(first.type)) first.focus();
 }
+function hrMatCheck(row, v){
+  var m = String(v==null?"":v).trim().toUpperCase().replace(/\s+/g,"");
+  if(!m){ if(!row.id || !HRM.d.hr_agents[row.id]) delete row.matricule_rh; return }
+  if(hrList("hr_agents").some(function(a){ return a.id!==row.id && String(a.matricule_rh).toUpperCase()===m })) throw new Error("Ce matricule est déjà utilisé par un autre dossier");
+  row.matricule_rh = m;
+}
 function hrOptsU(ent){ ent = ent || hrEnt(); return [["","— Aucune —"]].concat(hrTree(null,0,null,ent).map(function(n){ return [n.u.id, '  '.repeat(n.d)+n.u.nom] })) }
 function hrOptsP(ent, cur){
   ent = ent || hrEnt();
@@ -3371,13 +3377,14 @@ function hrAgentForm(a){
   var isNew = !a; a = a || {statut:"actif", nationalite:"Congolaise"};
   var acc = [["","— Aucun —"]].concat(allAgents().map(function(x){ return [x.c, x.n+" ("+x.c+")"] }));
   hrForm(isNew ? "Nouvel agent" : "Modifier le dossier", [
-    ["nom","Nom","text",null,1],["postnom","Postnom","text"],["prenom","Prénom","text"],["sexe","Sexe","select",[["","—"],["M","Masculin"],["F","Féminin"]],1],
+    ["matricule_rh","Matricule (laissez vide : automatique, ou code du compte lié)","text"],["nom","Nom","text",null,1],["postnom","Postnom","text"],["prenom","Prénom","text"],["sexe","Sexe","select",[["","—"],["M","Masculin"],["F","Féminin"]],1],
     ["date_naissance","Date de naissance","date"],["lieu_naissance","Lieu de naissance","text"],["etat_civil","État civil","select",[["","—"],["Célibataire","Célibataire"],["Marié(e)","Marié(e)"],["Divorcé(e)","Divorcé(e)"],["Veuf/Veuve","Veuf/Veuve"]]],["nationalite","Nationalité","text"],
     ["adresse","Adresse","text"],["telephone","Téléphone","tel"],["email","E-mail","email"],
     ["unite_id","Unité","select",hrOptsU()],["poste_id","Poste","select",hrOptsP(null, a.poste_id)]
   ].concat(isNew ? [["grade","Grade","text"],["echelon","Échelon","text"]] : []).concat([["date_embauche","Date d'embauche","date"],["code_app","Compte MESP Integra lié (le matricule de l'agent devient son code, ex. 10-056)","select",acc]]), a, async function(v){
     v.nom = UPN(v.nom); if(v.postnom) v.postnom = UPN(v.postnom);
     var row = Object.assign({}, a, hrClean(v)); if(isNew){ row.id = hrId(); row.created_by = AG.c; row.entite_id = hrEnt(); delete row.matricule_rh }
+    hrMatCheck(row, v.matricule_rh);
     hrCheckAffect(row); var x = await hrPut("hr_agents", row); HRM.sel = x.id; toast(isNew ? "Agent enregistré : "+x.matricule_rh : "Dossier mis à jour");
   });
 }
@@ -3518,11 +3525,12 @@ function hrStgForm(a){
   var isNew = !a; a = a || {statut:"actif", categorie:"stagiaire", nationalite:"Congolaise"};
   var enc = [["","— Aucun —"]].concat(hrList("hr_agents").filter(function(x){ return hrOn(x) && x.entite_id===hrEnt() }).sort(function(x,y){ return hrName(x).localeCompare(hrName(y),"fr") }).map(function(x){ return [x.id, hrName(x)+" ("+x.matricule_rh+")"] }));
   var acc = [["","— Aucun —"]].concat(allAgents().map(function(x){ return [x.c, x.n+" ("+x.c+")"] }));
-  hrForm(isNew ? "Nouveau stagiaire" : "Modifier le stagiaire", [["nom","Nom","text",null,1],["postnom","Postnom","text"],["prenom","Prénom","text"],["sexe","Sexe","select",[["","—"],["M","Masculin"],["F","Féminin"]],1],["date_naissance","Date de naissance","date"],["lieu_naissance","Lieu de naissance","text"],["telephone","Téléphone","tel"],["email","E-mail","email"],
+  hrForm(isNew ? "Nouveau stagiaire" : "Modifier le stagiaire", [["matricule_rh","Matricule (laissez vide : automatique ST-…)","text"],["nom","Nom","text",null,1],["postnom","Postnom","text"],["prenom","Prénom","text"],["sexe","Sexe","select",[["","—"],["M","Masculin"],["F","Féminin"]],1],["date_naissance","Date de naissance","date"],["lieu_naissance","Lieu de naissance","text"],["telephone","Téléphone","tel"],["email","E-mail","email"],
     ["ecole","École / université","text",null,1],["filiere","Filière / option","text"],["unite_id","Unité d'accueil","select",hrOptsU()],["encadreur_id","Encadreur","select",enc],["stage_debut","Début du stage","date",null,1],["stage_fin","Fin du stage","date",null,1],["code_app","Compte MESP Integra lié (facultatif)","select",acc]], a, async function(v){
     if(v.stage_fin < v.stage_debut) throw new Error("La fin du stage précède son début");
     v.nom = UPN(v.nom); if(v.postnom) v.postnom = UPN(v.postnom);
     var row = Object.assign({}, a, hrClean(v)); if(isNew){ row.id = hrId(); row.created_by = AG.c; row.entite_id = hrEnt(); row.categorie = "stagiaire"; row.statut = "actif"; delete row.matricule_rh }
+    hrMatCheck(row, v.matricule_rh);
     var x = await hrPut("hr_agents", row); HRM.sel = x.id; toast(isNew ? "Stagiaire enregistré : "+x.matricule_rh : "Dossier mis à jour");
   });
 }
