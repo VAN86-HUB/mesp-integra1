@@ -3368,7 +3368,7 @@ function hrOptsP(ent, cur){
 }
 function hrCheckAffect(row){
   if(!row.poste_id) return;
-  var p = HRM.d.hr_postes[row.poste_id]; if(!p) throw new Error("Poste introuvable");
+  var p = HRM.d.hr_postes[row.poste_id]; if(!p) throw new Error("Poste introuvable"); if(p.grade && !row.grade) row.grade = p.grade;
   if(!row.unite_id && p.unite_id) row.unite_id = p.unite_id;
   if(p.entite_id!==row.entite_id) throw new Error("Ce poste n'appartient pas à l'entité de l'agent");
   if(row.statut==="actif" || row.statut==="suspendu"){
@@ -3384,8 +3384,8 @@ function hrAgentForm(a){
     ["matricule_rh","Matricule (laissez vide : automatique, ou code du compte lié)","text"],["nom","Nom","text",null,1],["postnom","Postnom","text"],["prenom","Prénom","text"],["sexe","Sexe","select",[["","—"],["M","Masculin"],["F","Féminin"]],1],
     ["date_naissance","Date de naissance","date"],["lieu_naissance","Lieu de naissance","text"],["etat_civil","État civil","select",[["","—"],["Célibataire","Célibataire"],["Marié(e)","Marié(e)"],["Divorcé(e)","Divorcé(e)"],["Veuf/Veuve","Veuf/Veuve"]]],["nationalite","Nationalité","text"],
     ["adresse","Adresse","text"],["telephone","Téléphone","tel"],["email","E-mail","email"],
-    ["unite_id","Unité","select",hrOptsU()],["poste_id","Poste","select",hrOptsP(null, a.poste_id)]
-  ].concat(isNew ? [["grade","Grade","text"],["echelon","Échelon","text"]] : []).concat([["date_embauche","Date d'embauche","date"],["code_app","Compte MESP Integra lié (le matricule de l'agent devient son code, ex. 10-056)","select",acc]]), a, async function(v){
+    ["unite_id","Unité (facultatif : à l'affectation)","select",hrOptsU()],["poste_id","Poste (facultatif : à l'affectation)","select",hrOptsP(null, a.poste_id)]
+  ].concat(isNew ? [["grade","Grade (facultatif : repris du poste à l'affectation)","text"],["echelon","Échelon","text"]] : []).concat([["date_embauche","Date d'embauche","date"],["code_app","Compte MESP Integra lié (le matricule de l'agent devient son code, ex. 10-056)","select",acc]]), a, async function(v){
     v.nom = UPN(v.nom); if(v.postnom) v.postnom = UPN(v.postnom);
     var row = Object.assign({}, a, hrClean(v)); if(isNew){ row.id = hrId(); row.created_by = AG.c; row.entite_id = hrEnt(); delete row.matricule_rh }
     hrMatCheck(row, v.matricule_rh);
@@ -3394,7 +3394,7 @@ function hrAgentForm(a){
 }
 function hrAssignForm(id){
   var a = HRM.d.hr_agents[id];
-  hrForm("Affecter à un poste", [["unite_id","Unité","select",hrOptsU(a.entite_id)],["poste_id","Poste (places libres)","select",hrOptsP(a.entite_id, a.poste_id)]], a, async function(v){
+  hrForm("Affecter à un poste (le grade du poste est repris si l'agent n'en a pas)", [["unite_id","Unité","select",hrOptsU(a.entite_id)],["poste_id","Poste (places libres)","select",hrOptsP(a.entite_id, a.poste_id)]], a, async function(v){
     var row = Object.assign({}, a, hrClean(v)); hrCheckAffect(row); await hrPut("hr_agents", row); toast("Affectation enregistrée");
   });
 }
