@@ -348,6 +348,7 @@ input[type=password],input[type=date],input#lc{width:100%;font:inherit;font-size
 <div id="hr" class="hide"></div>
 <div id="fin" class="hide"></div>
 <div id="hub" class="hide" role="dialog" aria-label="Portails MESP"><div class="hubw">
+  <div style="text-align:right;margin-bottom:6px"><button type="button" id="hublo" class="hrb">⏻ Se déconnecter</button></div>
   <h1>MESP INTEGRA</h1>
   <p class="hsub">Plateforme numérique intégrée de gestion de la MESP</p>
   <div class="hg">
@@ -2809,7 +2810,7 @@ async function hashPw(pw, saltHex){
 }
 function saveSess(){ if(DEMO || OFFRES) return; try{ localStorage.setItem("mesp_sess", JSON.stringify({c:AG.c, t:Date.now()})) }catch(e){} }
 /* menu d'accueil : portails MESP (MESP Santé = l'application actuelle) */
-function hubShow(){ if(typeof hrClose==="function") hrClose(); if(typeof finClose==="function") finClose(); if(typeof hubFilter==="function") hubFilter(false); var h = $("hub"); if(h){ h.classList.remove("hide"); h.scrollTop = 0 } }
+function hubShow(){ if(!AG){ hubHide(); go("v0"); return } if(typeof hrClose==="function") hrClose(); if(typeof finClose==="function") finClose(); if(typeof hubFilter==="function") hubFilter(false); var h = $("hub"); if(h){ h.classList.remove("hide"); h.scrollTop = 0 } }
 function hubHide(){ var h = $("hub"); if(h) h.classList.add("hide"); window.scrollTo(0,0) }
 document.addEventListener("click", function(e){
   var b = e.target.closest && e.target.closest("[data-hub]"); if(b){ var k = b.dataset.hub;
@@ -3094,7 +3095,7 @@ function hrClose(){ if(typeof hrKClose==="function") hrKClose(); var el = $("hr"
 /* ---------- affichage ---------- */
 function hrRender(){
   var el = $("hr"); if(!el || el.classList.contains("hide")) return;
-  var h = '<div class="hrw"><div class="hrh"><h1>MESP-Ressources humaines</h1><div class="hrsm"><button class="hrb" data-hract="fs" title="Plein écran">⛶ Plein écran</button>'+(DEMO?'<select id="hras" title="Démonstration : voir comme"><option value="national"'+(HRM.as==="national"?' selected':'')+'>Voir comme : Siège national</option><option value="kinshasa"'+(HRM.as==="kinshasa"&&!HRM.me?' selected':'')+'>Voir comme : Kinshasa</option><option value="kasai-oriental"'+(HRM.as==="kasai-oriental"&&!HRM.me?' selected':'')+'>Voir comme : Kasaï-Oriental</option><option value="kinshasa#dag8"'+(HRM.me==="dag8"?' selected':'')+'>Voir comme : un agent (Kazadi, Kinshasa)</option><option value="kinshasa#dag9"'+(HRM.me==="dag9"?' selected':'')+'>Voir comme : un chef d\'unité (Ilunga, Kinshasa)</option></select>':'')+'<button class="hrb" data-hract="refresh">↻ Actualiser</button>'+(typeof PORTALS!=="undefined" && PORTALS.length>1 ? '<button class="hrb" data-hract="portals">☰ Portails</button>' : '')+'</div></div>';
+  var h = '<div class="hrw"><div class="hrh"><h1>MESP-Ressources humaines</h1><div class="hrsm"><button class="hrb" data-hract="fs" title="Plein écran">⛶ Plein écran</button>'+(DEMO?'<select id="hras" title="Démonstration : voir comme"><option value="national"'+(HRM.as==="national"?' selected':'')+'>Voir comme : Siège national</option><option value="kinshasa"'+(HRM.as==="kinshasa"&&!HRM.me?' selected':'')+'>Voir comme : Kinshasa</option><option value="kasai-oriental"'+(HRM.as==="kasai-oriental"&&!HRM.me?' selected':'')+'>Voir comme : Kasaï-Oriental</option><option value="kinshasa#dag8"'+(HRM.me==="dag8"?' selected':'')+'>Voir comme : un agent (Kazadi, Kinshasa)</option><option value="kinshasa#dag9"'+(HRM.me==="dag9"?' selected':'')+'>Voir comme : un chef d\'unité (Ilunga, Kinshasa)</option></select>':'')+'<button class="hrb" data-hract="refresh">↻ Actualiser</button>'+(typeof PORTALS!=="undefined" && PORTALS.length>1 ? '<button class="hrb" data-hract="portals">☰ Portails</button>' : '')+'<button class="hrb" data-hract="logout">⏻ Se déconnecter</button></div></div>';
   if(HRM.busy){ el.innerHTML = h+'<p class="hrmsg">Chargement…</p></div>'; return }
   if(HRM.err){ el.innerHTML = h+'<div class="card"><b style="color:var(--ko)">Impossible de charger les données RH</b><p class="sub" style="margin-top:8px">'+esc(HRM.err)+'</p><button class="hrb pri" data-hract="refresh">Réessayer</button></div></div>'; return }
   var lv = hrLvl();
@@ -3865,6 +3866,7 @@ async function hrCgDecide(id, ok){
       if(a==="cg-no"){ await hrCgDecide(id, false); return }
       if(a==="cg-cancel"){ if(confirm("Annuler ce congé ?")){ var cc = HRM.d.hr_conges[id]; await hrPut("hr_conges", Object.assign({}, cc, {statut:"annule"})); hrRender(); toast("Congé annulé") } return }
       if(a==="xlsx-cg"){ await exportXlsx("MESP_RH_conges", "Congés", ["Agent","Type","Du","Au","Jours","Statut","Motif"], hrList("hr_conges").map(function(c){ var g = HRM.d.hr_agents[c.agent_id]; return [g?hrName(g):c.agent_id, HR_CT[c.type], hrFD(c.date_debut), hrFD(c.date_fin), c.jours, HR_CS[c.statut], c.motif||""] })); return }
+      if(a==="logout"){ logout(); return }
       if(a==="portals"){ hrClose(); hubShow(); return }
       if(a==="refresh"){ HRM.loaded = false; HRM.jrLoaded = false; HRM.st = null; hrLoad(); return }
       if(a==="reset-f"){ setF({}); return }
@@ -4051,7 +4053,7 @@ function finReset(){ FIN.d = {}; FIN.demoD = null; FIN.loaded = false; FIN.nj = 
 /* ---------- affichage ---------- */
 function finRender(){
   var el = $("fin"); if(!el || el.classList.contains("hide")) return;
-  var h = '<div class="hrw"><div class="hrh"><h1>MESP FINANCE</h1><div class="hrsm"><button class="hrb" data-fact="fs" title="Plein écran">⛶ Plein écran</button>'+(DEMO?'<select id="finas" title="Démonstration : voir comme">'+Object.keys(FIN_DEMO_U).map(function(k){ return '<option value="'+k+'"'+(FIN.as===k?' selected':'')+'>Voir comme : '+esc(FIN_DEMO_U[k].nom)+'</option>' }).join("")+'</select>':'')+'<button class="hrb" data-fact="refresh">↻ Actualiser</button>'+(typeof PORTALS!=="undefined" && PORTALS.length>1 ? '<button class="hrb" data-fact="portals">☰ Portails</button>' : '')+'</div></div>';
+  var h = '<div class="hrw"><div class="hrh"><h1>MESP FINANCE</h1><div class="hrsm"><button class="hrb" data-fact="fs" title="Plein écran">⛶ Plein écran</button>'+(DEMO?'<select id="finas" title="Démonstration : voir comme">'+Object.keys(FIN_DEMO_U).map(function(k){ return '<option value="'+k+'"'+(FIN.as===k?' selected':'')+'>Voir comme : '+esc(FIN_DEMO_U[k].nom)+'</option>' }).join("")+'</select>':'')+'<button class="hrb" data-fact="refresh">↻ Actualiser</button>'+(typeof PORTALS!=="undefined" && PORTALS.length>1 ? '<button class="hrb" data-fact="portals">☰ Portails</button>' : '')+'<button class="hrb" data-fact="logout">⏻ Se déconnecter</button></div></div>';
   if(FIN.busy && !FIN.loaded){ el.innerHTML = h+'<div class="card"><p class="sub">Chargement…</p></div></div>'; return }
   if(FIN.err){ el.innerHTML = h+'<div class="card"><b style="color:var(--ko)">Impossible de charger les données Finance</b><p class="sub">'+esc(FIN.err)+'</p><p class="sub">Vérifiez que le script <b>fin_etape1.sql</b> a été exécuté dans Supabase (après les scripts RH).</p></div></div>'; return }
   var lv = finLvl();
@@ -4194,6 +4196,7 @@ var FIN_DH = ["Objet","Bénéficiaire","Entité","Montant","Devise","Statut","De
     if(!(b = t.closest("[data-fact]"))) return;
     var a = b.dataset.fact, id = b.dataset.id;
     try{
+      if(a==="logout"){ logout(); return }
       if(a==="portals"){ finClose(); hubShow(); return }
       if(a==="refresh"){ FIN.loaded = false; if(DEMO) FIN.demoD = FIN.demoD; finLoad(); return }
       if(a==="fs"){ var de = document.documentElement; try{ if(document.fullscreenElement) await document.exitFullscreen(); else await (de.requestFullscreen||de.webkitRequestFullscreen).call(de) }catch(x){ toast("Plein écran non disponible sur cet appareil") } return }
@@ -4249,7 +4252,9 @@ function hubFilter(wait){
   var adm = ptAdmin(), h = $("hub"); if(!h) return;
   var w = $("hubwait"); if(!w){ w = document.createElement("p"); w.id = "hubwait"; w.className = "hsub"; w.style.border = "0"; var s = h.querySelector(".hsub"); s.parentNode.insertBefore(w, s.nextSibling) }
   w.textContent = "Ouverture de votre espace…"; w.style.display = wait ? "" : "none";
-  h.querySelectorAll("[data-hub]").forEach(function(b){ var k = b.dataset.hub; b.style.display = wait ? "none" : ((adm || PORTALS.indexOf(k)>=0) ? "" : "none") });
+  var nb = 0; h.querySelectorAll("[data-hub]").forEach(function(b){ var k = b.dataset.hub, on = !wait && (adm || PORTALS.indexOf(k)>=0); b.style.display = on ? "" : "none"; if(on && k!=="central") nb++ });
+  if(!wait && !nb){ w.textContent = AG ? "Aucun portail disponible pour ce compte. Reconnectez-vous ou contactez l'administrateur." : "Session terminée. Reconnectez-vous pour continuer."; w.style.display = ""; var lb = $("hublo"); if(lb){ lb.textContent = AG ? "⏻ Se déconnecter" : "⏻ Se reconnecter" } }
+  else { var lb2 = $("hublo"); if(lb2) lb2.textContent = "⏻ Se déconnecter" }
 }
 function openPortal(k){
   PORTAL = k; hubHide(); if(k!=="rh") hrClose(); if(k!=="finance") finClose();
@@ -4279,6 +4284,12 @@ document.addEventListener("click", async function(e){
     if(DEMO){ PROWS[code] = row } else { var r = await SB.from("portails_acces").upsert(row).select(); if(r.error) throw new Error(/relation|does not exist|portails_acces/i.test(r.error.message||"") ? "Exécutez d'abord portails_acces.sql dans Supabase" : r.error.message); PROWS[code] = (r.data && r.data[0]) || row }
     toast("Portails enregistrés : "+list.map(function(k){ return PT_ALL.filter(function(x){ return x[0]===k })[0][1] }).join(", ")); renderAdmin();
   }catch(ex){ toast("Enregistrement impossible : "+(ex.message||ex)) }
+});
+
+document.addEventListener("click", function(e){
+  var b = e.target.closest && e.target.closest("#hublo"); if(!b) return;
+  if(!AG){ hubHide(); go("v0"); return }
+  logout();
 });
 
 function bootAuth(){ go("v0") }
@@ -4722,7 +4733,7 @@ function logout(force){
   finReset(); finClose(); hubHide(); PORTALS = []; PROW = null; PROWS = {}; HRM.loaded = false; HRM.d = {}; HRM.sel = null; HRM.jrLoaded = false; HRM.st = null; PORTAL = "";
   AG = null; ROLE = null; SCOPE = []; FOSA = null; CUR = null; VIEW = null; ME = {id:null,isOwner:false,canEdit:false}; LABEL = "la hiérarchie";
   $("who").classList.add("hide"); $("top").classList.remove("in"); $("tabs").classList.add("hide"); $("tabs").innerHTML = ""; $("spnav").classList.add("hide"); document.body.classList.remove("nat"); $("out").classList.add("hide");
-  $("q").value = ""; $("lc").value = ""; $("lp").value = ""; go("v0"); hubShow();
+  $("q").value = ""; $("lc").value = ""; $("lp").value = ""; go("v0"); hubHide();
 }
 function setTab(v, label){ var b = $("tabs").querySelector('[data-v="'+v+'"]'); if(b) b.textContent = label }
 function openView(v){
