@@ -1840,8 +1840,8 @@ function renderPrest(){
   var sum = function(a){ return a.reduce(function(s,p){return s+(+p.cout||0)},0) };
   el.innerHTML = '<div class="card"><div class="kpis"><div class="kpi"><b>'+fmt(sum(mine))+' $</b><span>Total '+esc(FOSA)+'</span></div><div class="kpi"><b>'+mine.length+'</b><span>prestation(s)</span></div></div>'
     + '<p class="sub" style="margin:10px 0 0">Total de vos FOSA : <b>'+fmt(sum(all))+' $</b> · '+all.length+' prestation(s)</p></div>'
-    + '<div class="card"><b>Prestations enregistrées</b><p class="sub" style="margin:4px 0 0">Touchez une ligne pour lire la fiche du malade.</p>' + (mine.length ? '' : '<p class="sub" style="margin:8px 0 0">Aucune prestation enregistrée.</p>')
-    + mine.map(function(p){ return '<div class="nrow" data-id="'+esc(p.id)+'"><div><b>'+esc(p.nom)+' '+esc(p.prenom)+'</b><small>'+esc(p.type)+' · '+esc(p.mat)+' · '+esc(fmtDT(p.at||0))+(canEdit(p)?' · épisode en cours':'')+'</small></div><b>'+fmt(+p.cout||0)+' $ ›</b></div>' }).join("") + '</div>';
+    + '<div class="card"><b>Prestations enregistrées</b><p class="sub" style="margin:4px 0 0">Touchez une ligne pour lire la fiche du malade.</p><p class="sub" style="margin:4px 0 0"><span style="display:inline-block;width:10px;height:10px;border-radius:3px;background:#16a34a;margin-right:6px"></span>En vert : prestations d\'aujourd\'hui</p>' + (mine.length ? '' : '<p class="sub" style="margin:8px 0 0">Aucune prestation enregistrée.</p>')
+    + mine.map(function(p){ var t0 = new Date(); t0.setHours(0,0,0,0); return '<div class="nrow'+((p.at||0)>=t0.getTime() ? ' today' : '')+'" data-id="'+esc(p.id)+'"><div><b>'+esc(p.nom)+' '+esc(p.prenom)+'</b><small>'+esc(p.type)+' · '+esc(p.mat)+' · '+esc(fmtDT(p.at||0))+(canEdit(p)?' · épisode en cours':'')+'</small></div><b>'+fmt(+p.cout||0)+' $ ›</b></div>' }).join("") + '</div>';
 }
 $("v7").addEventListener("click", function(e){ var row = e.target.closest(".nrow"); if(row && row.dataset.id){ try{ showFiche(row.dataset.id, null) }catch(err){ toast("Fiche illisible : "+err.message) } } });
 function patientRow(p){ var rows = (p.mat && DB.H.bio[p.mat]) || []; for(var j=0;j<rows.length;j++) if(rkey(p.mat,rows[j])===p.pk) return rows[j]; return null }
@@ -2670,8 +2670,8 @@ function gridHtml(g, title){
     return '<tr><td style="text-align:left;white-space:nowrap">'+b+'</td>'+c(x[0],i,"h0")+c(x[1],i,"h1")+c(x[2],i,"f0")+c(x[3],i,"f1")+c(x[0]+x[2],i,"t0")+c(x[1]+x[3],i,"t1")+c(x[0]+x[1]+x[2]+x[3],i,"t2") + '</tr>' }).join("");
   var u1 = T[0]+T[2], u2 = T[1]+T[3], H = T[0]+T[1], F = T[2]+T[3], A = H+F;
   return '<div class="tw twg"><table class="mini"><thead><tr><th rowspan="2">Tranche d\'âge</th><th colspan="2">Homme</th><th colspan="2">Femme</th><th colspan="2">Total 1</th><th>Total 2</th></tr><tr><th>Titulaire</th><th>PAC</th><th>Titulaire</th><th>PAC</th><th>Titulaire</th><th>PAC</th><th>Tit. + PAC</th></tr></thead><tbody>'+rows
-    + '<tr style="font-weight:800;border-top:2px solid var(--line)"><td style="text-align:left">Total 3</td>'+c(T[0],-1,"h0")+c(T[1],-1,"h1")+c(T[2],-1,"f0")+c(T[3],-1,"f1")+c(u1,-1,"t0")+c(u2,-1,"t1")+c(A,-1,"t2")+'</tr>'
-    + '<tr style="font-weight:800"><td style="text-align:left">Total 4</td>'+c(H,-1,"H").replace("<td ",'<td colspan="2" ')+c(F,-1,"F").replace("<td ",'<td colspan="2" ')+c(A,-1,"A").replace("<td ",'<td colspan="3" ')+'</tr></tbody></table></div>'
+    + '<tr style="font-weight:800;border-top:2px solid var(--line)"><td style="text-align:left">Total 3</td>'+c(T[0],-1,"h0")+c(T[1],-1,"h1")+c(T[2],-1,"f0")+c(T[3],-1,"f1")+c(u1,-1,"t0")+c(u2,-1,"t1")+'<td style="background:rgba(120,120,120,.16)"></td></tr>'
+    + '<tr style="font-weight:800"><td style="text-align:left">Total 4</td>'+c(H,-1,"H").replace("<td ",'<td colspan="2" ')+c(F,-1,"F").replace("<td ",'<td colspan="2" ')+'<td colspan="2" style="background:rgba(120,120,120,.16)"></td>'+c(A,-1,"A").replace("text-decoration:underline","text-decoration:none")+'</tr></tbody></table></div>'
     + '<p class="sub" style="margin:6px 0 0">Titulaire = rang 00 · PAC = personnes à charge (autres rangs). Total 3 = cumul par colonne · Total 4 = cumul Hommes | cumul Femmes | ensemble.'+(g.nsx?' Sexe non renseigné (non repris dans le tableau) : '+g.nsx+'.':'')+' Touchez un chiffre pour voir les patients.</p>'
     + '<div class="enc" style="margin-top:8px"><button class="back" data-gx="xlsx|'+g.id+'" style="padding:6px 12px">Exporter (Excel)</button> <button class="back" data-gx="pdf|'+g.id+'" style="padding:6px 12px">Exporter (PDF)</button></div>';
 }
@@ -2679,14 +2679,14 @@ function gridData(g){
   var T = gridTot(g), H = ["Tranche d'âge","Homme Titulaire","Homme PAC","Femme Titulaire","Femme PAC","Total 1 Titulaire","Total 1 PAC","Total 2 Tit.+PAC"], R = [];
   AGEN.forEach(function(b,i){ var x = g.b[i]; if(i===10 && !(x[0]+x[1]+x[2]+x[3])) return; R.push([b, x[0], x[1], x[2], x[3], x[0]+x[2], x[1]+x[3], x[0]+x[1]+x[2]+x[3]]) });
   var A = T[0]+T[1]+T[2]+T[3];
-  R.push(["Total 3", T[0], T[1], T[2], T[3], T[0]+T[2], T[1]+T[3], A]);
+  R.push(["Total 3", T[0], T[1], T[2], T[3], T[0]+T[2], T[1]+T[3], ""]);
   R.push(["Total 4 (Hommes | Femmes | Ensemble)", T[0]+T[1], "", T[2]+T[3], "", "", "", A]);
   return {h:H, r:R};
 }
 function gridLines(g){ var L = [], T = gridTot(g), A = T[0]+T[1]+T[2]+T[3];
   AGEN.forEach(function(b,i){ var x = g.b[i], n = x[0]+x[1]+x[2]+x[3]; if(!n) return;
     L.push({t:"   "+noacc(b)+" : H tit. "+x[0]+" / PAC "+x[1]+" - F tit. "+x[2]+" / PAC "+x[3]+" - Total 1 : tit. "+(x[0]+x[2])+" / PAC "+(x[1]+x[3])+" - Total 2 : "+n}) });
-  L.push({t:"   Total 3 : H tit. "+T[0]+" / PAC "+T[1]+" - F tit. "+T[2]+" / PAC "+T[3]+" - tit. "+(T[0]+T[2])+" / PAC "+(T[1]+T[3])+" - "+A, b:1});
+  L.push({t:"   Total 3 : H tit. "+T[0]+" / PAC "+T[1]+" - F tit. "+T[2]+" / PAC "+T[3]+" - tit. "+(T[0]+T[2])+" / PAC "+(T[1]+T[3]), b:1});
   L.push({t:"   Total 4 : Hommes "+(T[0]+T[1])+" - Femmes "+(T[2]+T[3])+" - Ensemble "+A, b:1});
   if(g.nsx) L.push({t:"   Sexe non renseigne (hors tableau) : "+g.nsx}); return L }
 /* --- liste des patients d'une case du tableau, puis traitement et impression de la fiche --- */
@@ -4291,6 +4291,39 @@ document.addEventListener("click", function(e){
   if(!AG){ hubHide(); go("v0"); return }
   logout();
 });
+/* ===== Mise à jour automatique : la nouvelle version s'applique seule, sans fermer ni rouvrir l'application ===== */
+var AU = {need:false, last:Date.now(), had:false, shown:false};
+function auSafe(){
+  if(DEMO) return false;
+  try{ if(AG && typeof obMine==="function" && obMine().length) return false }catch(e){}
+  var bad = false;
+  document.querySelectorAll('input:not([type=checkbox]):not([type=radio]):not([type=button]):not([type=submit]):not([type=file]):not([type=hidden]),textarea').forEach(function(i){ if(!bad && i.offsetParent!==null && !i.readOnly && String(i.value||"").trim()) bad = true });
+  if(bad) return false;
+  return document.hidden || (Date.now()-AU.last) > 15000;
+}
+function auReload(){
+  try{ var t = +sessionStorage.getItem("mesp_au")||0; if(Date.now()-t < 60000) return; sessionStorage.setItem("mesp_au", String(Date.now())) }catch(e){}
+  location.reload();
+}
+function auBanner(){
+  if(AU.shown) return; AU.shown = true;
+  var d = document.createElement("div"); d.id = "auban";
+  d.style.cssText = "position:fixed;left:12px;right:12px;bottom:14px;z-index:99999;background:#0f6b4f;color:#fff;border-radius:12px;padding:10px 14px;display:flex;gap:12px;align-items:center;justify-content:space-between;box-shadow:0 6px 24px rgba(0,0,0,.25);font-size:.92rem";
+  d.innerHTML = '<span>Nouvelle version disponible : mise à jour automatique dans un instant…</span><button type="button" id="aunow" style="background:#fff;color:#0f6b4f;border:0;border-radius:8px;padding:7px 12px;font-weight:700">Mettre à jour maintenant</button>';
+  document.body.appendChild(d);
+  d.querySelector("#aunow").addEventListener("click", function(){ try{ sessionStorage.removeItem("mesp_au") }catch(e){} auReload() });
+}
+function autoUpdateInit(reg){
+  if(!("serviceWorker" in navigator)) return;
+  AU.had = !!navigator.serviceWorker.controller;
+  ["keydown","pointerdown","touchstart","input"].forEach(function(ev){ document.addEventListener(ev, function(){ AU.last = Date.now() }, true) });
+  navigator.serviceWorker.addEventListener("controllerchange", function(){ if(AU.had){ AU.need = true; auBanner() } AU.had = true });
+  var chk = function(){ try{ reg.update().catch(function(){}) }catch(e){} };
+  setInterval(chk, 120000);
+  document.addEventListener("visibilitychange", function(){ if(!document.hidden) chk() });
+  window.addEventListener("online", chk);
+  setInterval(function(){ if(AU.need && auSafe()) auReload() }, 4000);
+}
 
 function bootAuth(){ go("v0") }
 function startSession(a){
@@ -7434,7 +7467,7 @@ function clearShared(){
     else if(s && age < 48*36e5 && !onl && await resumeOffline(s)){}
     else { if(ses && onl) await SB.auth.signOut(); go("v0"); if(!onl) offerResume() }
     document.addEventListener("visibilitychange", function(){ if(!document.hidden && AG) SBX.resync() });
-    if("serviceWorker" in navigator && /^https?:$/.test(location.protocol)){ try{ navigator.serviceWorker.register("sw.js").catch(function(){}) }catch(e){} }
+    if("serviceWorker" in navigator && /^https?:$/.test(location.protocol)){ try{ navigator.serviceWorker.register("sw.js").then(autoUpdateInit).catch(function(){}) }catch(e){} }
   }catch(err){ $("info").textContent = "Erreur : "+err.message; $("lmsg").textContent = "Erreur : "+err.message; try{ go("v0") }catch(e){} if(navigator.onLine===false || /réseau|bibliothèque/i.test(err.message)){ $("lmsg").textContent = "Hors connexion : le composant de connexion n'est pas encore enregistré sur cet appareil. Ouvrez l'application une fois avec le réseau, puis rouvrez-la."; } }
   finally{ $("demo").disabled = false }
 })();
