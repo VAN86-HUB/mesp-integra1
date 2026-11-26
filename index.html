@@ -199,7 +199,7 @@ input[type=password],input[type=date],input#lc{width:100%;font:inherit;font-size
 :root[data-theme="dark"] #hub .p1{background:#16324a;color:#8cc4f5}:root[data-theme="dark"] #hub .p2{background:#173a21;color:#8fd49a}:root[data-theme="dark"] #hub .p3{background:#2a2147;color:#bba6f0}:root[data-theme="dark"] #hub .p4{background:#42291a;color:#f0b886}
 @media (max-width:360px){#hub .hg{grid-template-columns:1fr}}
 .toast{z-index:10001}
-#hr,#fin{position:fixed;inset:0;z-index:9000;background:var(--bg);overflow:auto;-webkit-overflow-scrolling:touch}
+#hr,#fin,#central{position:fixed;inset:0;z-index:9000;background:var(--bg);overflow:auto;-webkit-overflow-scrolling:touch}
 .hrw{max-width:none;width:100%;margin:0;padding:12px clamp(14px,2.5vw,40px) 60px}
 .hrh{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:6px}
 .hrh h1{margin:0;font-size:1.35rem;color:#237a35}
@@ -238,7 +238,7 @@ input[type=password],input[type=date],input#lc{width:100%;font:inherit;font-size
 .hrmb .hrx{background:var(--bg);color:var(--text);border:1px solid var(--line)}
 .hrerr{color:var(--ko);font-size:.9rem;margin:8px 0 0}
 .hrmsg{padding:30px 10px;text-align:center;color:var(--muted)}
-@media print{#hr,#fin{position:static}}
+@media print{#hr,#fin,#central{position:static}}
 .hrkio{position:fixed;inset:0;z-index:9300;background:#0b2a17;color:#fff;display:flex;flex-direction:column;align-items:center;gap:14px;padding:18px 16px;overflow:auto}
 .hrkio .hrkh{width:100%;max-width:900px;display:flex;justify-content:space-between;align-items:center;gap:10px}
 .hrkio .hrkh small{display:block;opacity:.75;text-transform:capitalize}
@@ -258,7 +258,7 @@ input[type=password],input[type=date],input#lc{width:100%;font:inherit;font-size
 .hrkst{opacity:.7;margin-top:auto}
 .hrsm select{width:auto;font-size:.85rem;padding:7px 8px;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--text)}
 .hrmc textarea{resize:vertical}
-</style>
+.cen-b{display:inline-block;font-size:.74rem;font-weight:700;padding:2px 8px;border-radius:999px;margin:1px 3px 1px 0;background:var(--card);border:1px solid var(--line)}.cen-sante{color:#1565a8}.cen-rh{color:#237a35}.cen-finance{color:#5b3aa8}.cen-ad{color:#9a5b00;background:rgba(245,158,11,.14)}.cen-on{color:#237a35}.cen-off{color:var(--ko)}</style>
 <link rel="manifest" href="manifest.webmanifest"><link rel="icon" type="image/png" href="icon-192.png"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="theme-color" content="#0d6e5b">
 <script src="config.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
@@ -347,6 +347,7 @@ input[type=password],input[type=date],input#lc{width:100%;font:inherit;font-size
 </div></div>
 <div id="hr" class="hide"></div>
 <div id="fin" class="hide"></div>
+<div id="central" class="hide"></div>
 <div id="hub" class="hide" role="dialog" aria-label="Portails MESP"><div class="hubw">
   <div style="text-align:right;margin-bottom:6px"><button type="button" id="hublo" class="hrb">⏻ Se déconnecter</button></div>
   <h1>MESP INTEGRA</h1>
@@ -2810,11 +2811,11 @@ async function hashPw(pw, saltHex){
 }
 function saveSess(){ if(DEMO || OFFRES) return; try{ localStorage.setItem("mesp_sess", JSON.stringify({c:AG.c, t:Date.now()})) }catch(e){} }
 /* menu d'accueil : portails MESP (MESP Santé = l'application actuelle) */
-function hubShow(){ if(!AG){ hubHide(); go("v0"); return } if(typeof hrClose==="function") hrClose(); if(typeof finClose==="function") finClose(); if(typeof hubFilter==="function") hubFilter(false); var h = $("hub"); if(h){ h.classList.remove("hide"); h.scrollTop = 0 } }
+function hubShow(){ if(!AG){ hubHide(); go("v0"); return } if(typeof hrClose==="function") hrClose(); if(typeof finClose==="function") finClose(); if(typeof cenClose==="function") cenClose(); if(typeof hubFilter==="function") hubFilter(false); var h = $("hub"); if(h){ h.classList.remove("hide"); h.scrollTop = 0 } }
 function hubHide(){ var h = $("hub"); if(h) h.classList.add("hide"); window.scrollTo(0,0) }
 document.addEventListener("click", function(e){
   var b = e.target.closest && e.target.closest("[data-hub]"); if(b){ var k = b.dataset.hub;
-    if(k==="sante"||k==="rh"||k==="finance"){ if(ptAdmin() || PORTALS.indexOf(k)>=0) openPortal(k) }
+    if(k==="sante"||k==="rh"||k==="finance"){ if(ptAdmin() || PORTALS.indexOf(k)>=0) openPortal(k) } else if(k==="central"){ if(ptAdmin()) openPortal("central"); else toast("Réservé aux administrateurs") }
     else toast({rh:"MESP-Ressources humaines", finance:"MESP FINANCE", admin:"MESP ADMIN", central:"Administration centrale", ident:"MESP IDENTIFICATION", archiv:"MESP ARCHIVAGE"}[k]+" : bientôt disponible.");
     return }
   if(e.target.id==="hubbtn") hubShow();
@@ -4257,8 +4258,8 @@ function hubFilter(wait){
   else { var lb2 = $("hublo"); if(lb2) lb2.textContent = "⏻ Se déconnecter" }
 }
 function openPortal(k){
-  PORTAL = k; hubHide(); if(k!=="rh") hrClose(); if(k!=="finance") finClose();
-  if(k==="rh") hrOpen(); else if(k==="finance") finOpen();
+  PORTAL = k; hubHide(); if(k!=="rh") hrClose(); if(k!=="finance") finClose(); if(k!=="central") cenClose();
+  if(k==="rh") hrOpen(); else if(k==="finance") finOpen(); else if(k==="central") cenOpen();
 }
 async function portalEntry(){
   if(!AG) return;
@@ -4330,6 +4331,250 @@ var PRPER = "1", PRPL = [["1","Aujourd'hui"],["7","7 derniers jours (semaine)"],
 function prFrom(){ if(ROLE!=="delegue" || PRPER==="0") return 0; var d = new Date(); d.setHours(0,0,0,0); d.setDate(d.getDate()-(+PRPER-1)); return d.getTime() }
 function prPerHtml(){ if(ROLE!=="delegue") return ""; return '<div style="margin:8px 0 4px"><label class="lbl" for="prper">Période de lecture</label><select id="prper">'+PRPL.map(function(o){ return '<option value="'+o[0]+'"'+(PRPER===o[0]?' selected':'')+'>'+o[1]+'</option>' }).join("")+'</select></div>' }
 document.addEventListener("change", function(e){ if(e.target && e.target.id==="prper"){ PRPER = e.target.value; renderPrest() } });
+/* ===== Administration centrale : utilisateurs, droits d'accès, journal, supervision, paramètres ===== */
+var CEN = {tab:"users", busy:false, loaded:false, err:"", warn:{}, acc:{}, fin:{}, hra:{}, hra2:{}, hrl:{}, par:{}, tx:[], ex:[], jr:null, jrBusy:false, q:"", ty:"", js:"all", jq:"", sup:null};
+var CEN_TY = {national:"National", assistant:"Assistant provincial", delegue:"Délégué", medecin:"Médecin conseil", chef:"Chef de service", autre:"Autre (vérification)"};
+var CEN_PT = [["sante","Santé"],["rh","RH"],["finance","Finance"]];
+var CEN_HRN = {drh:"DRH", gestionnaire:"Gestionnaire RH", lecture:"Lecture seule"};
+var CEN_TABS = [["users","Utilisateurs"],["droits","Droits d'accès"],["journal","Journal des opérations"],["sup","Supervision"],["param","Paramètres"]];
+function cenOpen(){
+  var el = $("central"); if(!el) return; PORTAL = "central"; el.classList.remove("hide"); el.scrollTop = 0;
+  if(!CEN.loaded && !CEN.busy) cenLoad(); else cenRender();
+}
+function cenClose(){ var el = $("central"); if(el) el.classList.add("hide"); var m = $("hrm"); if(m) m.remove() }
+function cenReset(){ CEN.loaded = false; CEN.busy = false; CEN.acc = {}; CEN.fin = {}; CEN.hra = {}; CEN.hrl = {}; CEN.par = {}; CEN.tx = []; CEN.ex = []; CEN.jr = null; CEN.sup = null; CEN.tab = "users"; CEN.warn = {} }
+function cenMap(rows, k){ var o = {}; (rows||[]).forEach(function(x){ o[x[k]] = x }); return o }
+async function cenSel(name, t){
+  try{ var out = {}, from = 0, k = {portails_acces:"code", fin_acces:"code", hr_acces:"code", fin_param:"cle", fin_taux:"id", fin_exercices:"id"}[t];
+    for(;;){ var r = await SB.from(t).select("*").order(k).range(from, from+999); if(r.error) throw r.error; r.data.forEach(function(x){ out[x[k]] = x }); if(r.data.length<1000) break; from += 1000 }
+    return out;
+  }catch(e){ CEN.warn[name] = (e && e.message) || String(e); return {} }
+}
+async function cenLoad(){
+  CEN.busy = true; CEN.err = ""; CEN.warn = {}; cenRender();
+  try{
+    if(DEMO){ if(!FIN.demoD) FIN.demoD = finDemoSeed(); CEN.fin = FIN.demoD.fin_acces; CEN.par = FIN.demoD.fin_param; CEN.tx = Object.keys(FIN.demoD.fin_taux).map(function(k){ return FIN.demoD.fin_taux[k] }); CEN.ex = Object.keys(FIN.demoD.fin_exercices).map(function(k){ return FIN.demoD.fin_exercices[k] }); CEN.acc = PROWS; try{ CEN.hra = await hrFetch("hr_acces") }catch(e){ CEN.hra = {} } }
+    else {
+      var a = await Promise.all([cenSel("portails","portails_acces"), cenSel("finance","fin_acces"), cenSel("rh","hr_acces"), cenSel("param","fin_param"), cenSel("taux","fin_taux"), cenSel("exercices","fin_exercices")]);
+      CEN.acc = a[0]; PROWS = a[0]; CEN.fin = a[1]; CEN.hra = a[2]; CEN.par = a[3]; CEN.tx = Object.keys(a[4]).map(function(k){ return a[4][k] }); CEN.ex = Object.keys(a[5]).map(function(k){ return a[5][k] });
+      if(isSuper()){ try{ var r = await callAdmin({action:"list"}); LOGINS = r.logins || {}; LOGINS_T = Date.now() }catch(e){} }
+    }
+    CEN.loaded = true;
+  }catch(e){ CEN.err = (e && e.message) || String(e) }
+  CEN.busy = false; cenRender();
+}
+function cenRows(){ return allAgents().filter(function(a){ return a && a.c }).sort(function(x,y){ return String(x.n).localeCompare(String(y.n),"fr") }) }
+function cenPortalsOf(a){
+  var row = CEN.acc[a.c], L;
+  if(row && row.portails && row.portails.length) L = row.portails.slice(); else { L = ["sante"]; if(a.r==="national" && a.v==="National") L.push("rh") }
+  if(CEN.fin[a.c] && L.indexOf("finance")<0) L.push("finance");
+  if(CEN.hra[a.c] && L.indexOf("rh")<0) L.push("rh");
+  return L;
+}
+function cenChips(a){
+  var L = cenPortalsOf(a), row = CEN.acc[a.c], h = "";
+  if(isSuper() ? (a.c==="10-056") : false) h += '<span class="cen-b cen-ad">Super-admin</span>'; else if(row && row.admin) h += '<span class="cen-b cen-ad">Admin</span>';
+  CEN_PT.forEach(function(p){ if(L.indexOf(p[0])>=0){ var ex = ""; if(p[0]==="finance" && CEN.fin[a.c]) ex = " · "+(FIN_NIV[CEN.fin[a.c].niveau]||CEN.fin[a.c].niveau); if(p[0]==="rh" && CEN.hra[a.c]) ex = " · "+(CEN_HRN[CEN.hra[a.c].niveau]||CEN.hra[a.c].niveau); h += '<span class="cen-b cen-'+p[0]+'">'+p[1]+esc(ex)+'</span>' } });
+  return h;
+}
+function cenLast(a){ var t = LOGINS && LOGINS[a.c]; return t ? new Date(t).toLocaleDateString("fr-FR") : (LOGINS && Object.keys(LOGINS).length ? "jamais" : "—") }
+function cenTabs(){ return '<div class="hrt">'+CEN_TABS.map(function(t){ return '<button class="'+(CEN.tab===t[0]?'on':'')+'" data-cen="tab" data-id="'+t[0]+'">'+t[1]+'</button>' }).join("")+'</div>' }
+function cenRender(){
+  var el = $("central"); if(!el || el.classList.contains("hide")) return;
+  var h = '<div class="hrw"><div class="hrh"><h1>Administration centrale</h1><div class="hrsm"><button class="hrb" data-cen="fs">⛶ Plein écran</button><button class="hrb" data-cen="refresh">↻ Actualiser</button>'+'<button class="hrb" data-cen="portals">☰ Portails</button>'+'<button class="hrb" data-cen="logout">⏻ Se déconnecter</button></div></div>';
+  h += '<p class="sub">'+esc(AG ? AG.n : "")+' · administrateur</p>';
+  if(CEN.busy && !CEN.loaded){ el.innerHTML = h+'<p class="hrmsg">Chargement…</p></div>'; return }
+  if(CEN.err){ el.innerHTML = h+'<div class="card"><b style="color:var(--ko)">Chargement impossible</b><p class="sub">'+esc(CEN.err)+'</p></div></div>'; return }
+  var keep = el.scrollTop;
+  h += cenTabs();
+  var w = Object.keys(CEN.warn).filter(function(k){ return CEN.warn[k] });
+  if(w.length) h += '<p class="sub" style="color:var(--ko)">Données non lisibles avec votre compte : '+esc(w.join(", "))+'. Les droits correspondants ne s\'affichent pas.</p>';
+  h += CEN.tab==="users" ? cenUsers() : CEN.tab==="droits" ? cenDroits() : CEN.tab==="journal" ? cenJournal() : CEN.tab==="sup" ? cenSup() : cenParam();
+  el.innerHTML = h+'</div>'; el.scrollTop = keep;
+}
+function cenFilter(){
+  var q = CEN.q.toLowerCase();
+  return cenRows().filter(function(a){ return (!CEN.ty || a.r===CEN.ty) && (!q || (String(a.n)+" "+a.c+" "+(a.v||"")).toLowerCase().indexOf(q)>=0) });
+}
+function cenToolbar(){
+  return '<div class="card"><div class="hrf" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center"><button class="hrb pri" data-cen="new">+ Nouvel utilisateur</button><button class="hrb" data-cen="new-fin">+ Nouvel utilisateur Finance</button>'
+    + '<input id="cenq" placeholder="Rechercher (nom, code, province)" value="'+esc(CEN.q)+'" style="flex:1;min-width:160px"><select id="centy"><option value="">Tous les types</option>'+Object.keys(CEN_TY).map(function(k){ return '<option value="'+k+'"'+(CEN.ty===k?' selected':'')+'>'+CEN_TY[k]+'</option>' }).join("")+'</select></div></div>';
+}
+function cenUsers(){
+  var L = cenFilter(), h = cenToolbar();
+  h += '<div class="card"><h3>Utilisateurs ('+L.length+' sur '+cenRows().length+')</h3><div class="tw"><table><thead><tr><th>Nom</th><th>Code</th><th>Type</th><th>Zone</th><th>État</th><th>Dernière connexion</th><th>Portails et niveaux</th><th></th></tr></thead><tbody>'
+  + L.map(function(a){ return '<tr><td><b>'+esc(a.n)+'</b><small style="display:block">'+esc(a.f||"")+'</small></td><td>'+esc(a.c)+'</td><td>'+esc(CEN_TY[a.r]||a.r||"")+'</td><td>'+esc(a.v||"")+'</td><td>'+(a.active===false?'<span class="cen-b cen-off">Inactif</span>':'<span class="cen-b cen-on">Actif</span>')+'</td><td>'+esc(cenLast(a))+'</td><td>'+cenChips(a)+'</td>'
+    + '<td style="white-space:nowrap"><button class="hrb" data-cen="rights" data-id="'+esc(a.c)+'">Droits</button> <button class="hrb" data-cen="reset" data-id="'+esc(a.c)+'">Mot de passe</button> <button class="hrb'+(a.active===false?'':' dan')+'" data-cen="active" data-id="'+esc(a.c)+'">'+(a.active===false?'Activer':'Désactiver')+'</button></td></tr>' }).join("")
+  + '</tbody></table></div>'+(L.length?'':'<p class="hrmsg">Aucun utilisateur.</p>')+'</div>';
+  return h;
+}
+function cenDroits(){
+  var L = cenFilter();
+  var h = '<div class="card"><p class="sub" style="margin:0 0 8px">Une seule page pour décider qui entre où : portails, niveau Finance et niveau RH. Cochez les portails ouverts à la personne ; le portail Finance demande aussi un niveau (directeur financier, secrétaire exécutif, comptable, caissier ou lecture). Les droits de Santé restent déterminés par le type de compte.</p><div class="hrf" style="display:flex;gap:8px;flex-wrap:wrap"><input id="cenq" placeholder="Rechercher (nom, code, province)" value="'+esc(CEN.q)+'" style="flex:1;min-width:160px"><select id="centy"><option value="">Tous les types</option>'+Object.keys(CEN_TY).map(function(k){ return '<option value="'+k+'"'+(CEN.ty===k?' selected':'')+'>'+CEN_TY[k]+'</option>' }).join("")+'</select></div></div>';
+  h += '<div class="card"><div class="tw"><table><thead><tr><th>Utilisateur</th><th>Santé</th><th>RH</th><th>Niveau RH</th><th>Finance</th><th>Niveau Finance</th><th>Admin</th><th></th></tr></thead><tbody>'
+  + L.map(function(a){ var P = cenPortalsOf(a), row = CEN.acc[a.c], f = CEN.fin[a.c], r = CEN.hra[a.c], tick = function(k){ return P.indexOf(k)>=0 ? '<b style="color:var(--ok)">✓</b>' : '<span style="color:var(--muted)">—</span>' };
+    return '<tr><td><b>'+esc(a.n)+'</b><small style="display:block">'+esc(a.c)+' · '+esc(CEN_TY[a.r]||a.r||"")+'</small></td><td>'+tick("sante")+'</td><td>'+tick("rh")+'</td><td>'+(r?esc(CEN_HRN[r.niveau]||r.niveau):'—')+'</td><td>'+tick("finance")+'</td><td>'+(f?esc(FIN_NIV[f.niveau]||f.niveau):'—')+'</td><td>'+((row&&row.admin)||a.c==="10-056"?'<b style="color:var(--ok)">✓</b>':'—')+'</td><td><button class="hrb" data-cen="rights" data-id="'+esc(a.c)+'">Modifier</button></td></tr>' }).join("")
+  + '</tbody></table></div></div>';
+  return h;
+}
+/* ---- formulaires ---- */
+function cenFinOpts(){ return [["","— Aucun accès Finance —"]].concat(Object.keys(FIN_NIV).map(function(k){ return [k, FIN_NIV[k]] })) }
+function cenHrOpts(){ return [["","— Aucun accès RH —"]].concat(Object.keys(CEN_HRN).map(function(k){ return [k, CEN_HRN[k]] })) }
+async function cenSave(t, row, k){
+  if(DEMO){ if(t==="portails_acces") CEN.acc[row.code] = row; else if(t==="fin_acces"){ CEN.fin[row.code] = row; FIN.demoD.fin_acces[row.code] = row } else if(t==="hr_acces") CEN.hra[row.code] = row; return }
+  var r = await SB.from(t).upsert(row).select(); if(r.error) throw new Error(t+" : "+(r.error.message||"refusé"));
+  var x = (r.data && r.data[0]) || row; if(t==="portails_acces"){ CEN.acc[x.code] = x; PROWS[x.code] = x } else if(t==="fin_acces") CEN.fin[x.code] = x; else if(t==="hr_acces") CEN.hra[x.code] = x;
+}
+async function cenDel(t, code){
+  if(DEMO){ if(t==="fin_acces"){ delete CEN.fin[code]; delete FIN.demoD.fin_acces[code] } else if(t==="hr_acces") delete CEN.hra[code]; return }
+  var r = await SB.from(t).delete().eq("code", code); if(r.error) throw new Error(t+" : "+(r.error.message||"refusé"));
+  if(t==="fin_acces") delete CEN.fin[code]; else if(t==="hr_acces") delete CEN.hra[code];
+}
+async function cenApplyRights(code, nom, v){
+  var P = []; if(v.p_sante) P.push("sante"); if(v.p_rh || v.hrn) P.push("rh"); if(v.p_finance || v.finn) P.push("finance");
+  if(!P.length) throw new Error("Cochez au moins un portail");
+  var old = CEN.acc[code] || {};
+  await cenSave("portails_acces", {code:code, portails:P, admin: isSuper() ? !!v.admin : !!old.admin, updated_by:AG.c, updated_at:new Date().toISOString()});
+  if(v.finn){ await cenSave("fin_acces", {code:code, nom:nom, niveau:v.finn, entite_id:(CEN.fin[code] && CEN.fin[code].entite_id) || "national"}) } else if(CEN.fin[code]){ await cenDel("fin_acces", code) }
+  if(v.hrn){ await cenSave("hr_acces", {code:code, nom:nom, niveau:v.hrn, entite_id:(CEN.hra[code] && CEN.hra[code].entite_id) || "national"}) } else if(CEN.hra[code]){ await cenDel("hr_acces", code) }
+}
+function cenRightsForm(code){
+  var a = allAgents().filter(function(x){ return x.c===code })[0]; if(!a) return;
+  var P = cenPortalsOf(a), f = CEN.fin[code], r = CEN.hra[code], row = CEN.acc[code];
+  var F = [["p_sante","Portail MESP SANTÉ","check"],["p_rh","Portail MESP-Ressources humaines","check"],["hrn","Niveau RH","select",cenHrOpts()],["p_finance","Portail MESP FINANCE","check"],["finn","Niveau Finance","select",cenFinOpts()]];
+  if(isSuper()) F.push(["admin","Administrateur : accès à tous les portails","check"]);
+  hrForm("Droits d'accès — "+esc(a.n)+" ("+esc(code)+")", F, {p_sante:P.indexOf("sante")>=0, p_rh:P.indexOf("rh")>=0, hrn:r?r.niveau:"", p_finance:P.indexOf("finance")>=0, finn:f?f.niveau:"", admin:!!(row&&row.admin)}, async function(v){
+    if(code===AG.c && ((CEN.fin[code] && !v.finn) || (CEN.hra[code] && !v.hrn)) && !window.confirm("Vous retirez vos propres droits : vous ne pourrez plus les rétablir vous-même. Continuer ?")) return;
+    await cenApplyRights(code, a.n, v); toast("Droits enregistrés"); cenRender();
+  });
+  var fm = $("hrm"); if(fm){ var p = document.createElement("p"); p.className = "sub"; p.style.margin = "0 0 6px"; p.textContent = "Un niveau Finance ou RH ouvre automatiquement le portail correspondant."; fm.querySelector("h3").after(p) }
+}
+function cenNewForm(preset){
+  var fin = preset==="fin", T = fin ? [["autre","Autre — compte sans accès aux données de santé"]] : Object.keys(CEN_TY).map(function(k){ return [k, CEN_TY[k]] });
+  var P = []; try{ P = levels().filter(function(x){ return x!=="National" }) }catch(e){}
+  var F = [["name","Nom complet (nom et prénom)","text",null,1],["fonction","Fonction","text"],["ty","Type de compte","select",T]];
+  if(!fin) F.push(["city","Province (sauf national et « autre »)","select",[["","—"]].concat(P.map(function(p){ return [p,p] }))]);
+  F.push(["pw","Mot de passe (8 caractères minimum ; vide = généré)","text"]);
+  F.push(["p_sante","Portail MESP SANTÉ","check"]); F.push(["p_rh","Portail MESP-Ressources humaines","check"]); F.push(["hrn","Niveau RH","select",cenHrOpts()]); F.push(["p_finance","Portail MESP FINANCE","check"]); F.push(["finn","Niveau Finance","select",cenFinOpts()]);
+  hrForm(fin ? "Nouvel utilisateur Finance" : "Nouvel utilisateur", F, fin ? {p_sante:false, p_rh:false, p_finance:true, hrn:"", finn:"df"} : {p_sante:true, p_rh:false, p_finance:false, hrn:"", finn:""}, async function(v){
+    var ty = v.ty, nat = ty==="national" || ty==="autre", n = UPN(v.name);
+    if(n.length<5 || n.indexOf(" ")<0) throw new Error("Saisissez le nom complet (nom et prénom)");
+    if(v.pw && v.pw.length<8) throw new Error("Mot de passe : 8 caractères minimum (ou laissez vide)");
+    if(!nat && !v.city) throw new Error("Choisissez la province");
+    if(fin && !v.finn) throw new Error("Choisissez le niveau Finance");
+    var f = v.fonction || (ty==="autre" ? "Autre" : ty==="chef" ? "Chef de service" : ty==="medecin" ? "Médecin conseil" : ty==="delegue" ? "Délégué" : "Assistant");
+    var r, code;
+    if(DEMO){ code = "10-9"+String(Math.floor(Math.random()*90)+10); r = {code:code, password:v.pw||"demo-pass-123"}; DAG[code] = {c:code, n:n, f:f, l:"National", w:"National", v:nat ? (ty==="autre" ? "Autre" : "National") : v.city, r:ty, active:true} }
+    else {
+      r = await callAdmin({action:"create", role:(nat || ty==="medecin" || ty==="chef") ? ty : undefined, name:n, fonction:f, city:nat ? undefined : v.city, password:ty==="delegue" ? "" : v.pw}); code = r.code;
+      var cty = ty==="autre" ? "Autre" : (nat ? "National" : v.city); DAG[code] = {c:code, n:n, f:f, l:(nat ? cty : "Provincial"), w:cty, v:cty, r:ty, active:true};
+    }
+    var msg = "Compte créé : "+code;
+    try{ await cenApplyRights(code, n, v) }catch(ex){ msg += " — droits NON enregistrés ("+(ex.message||ex)+") : utilisez « Droits »" }
+    CEN.created = {code:code, nom:n, pw:r.password, msg:msg}; toast(msg); cenRender();
+    setTimeout(function(){ cenShowCreated() }, 50);
+  });
+}
+function cenShowCreated(){
+  var c = CEN.created; if(!c) return; CEN.created = null;
+  var m = document.createElement("div"); m.id = "hrm"; m.className = "hrmo";
+  m.innerHTML = '<form class="hrmc"><h3>Compte créé</h3><p><b>'+esc(c.nom)+'</b></p><p>Code de connexion : <b>'+esc(c.code)+'</b></p><p>Mot de passe : <b id="cen-pw">'+esc(c.pw||"(voir l\'écran précédent)")+'</b></p><p class="sub">Notez-le maintenant : il ne sera plus affiché. La personne pourra le changer avec le bouton « Mot de passe ».</p><p class="hrerr">'+(/NON/.test(c.msg)?esc(c.msg):'')+'</p><div class="hrmb"><button type="button" class="hrx" data-hrm="x">Fermer</button></div></form>';
+  document.body.appendChild(m); m.addEventListener("click", function(e){ if(e.target===m || (e.target.dataset && e.target.dataset.hrm==="x")) m.remove() });
+}
+async function cenPwd(code){
+  var a = allAgents().filter(function(x){ return x.c===code })[0]; if(!a) return;
+  if(!window.confirm("Réinitialiser le mot de passe de "+a.n+" ("+code+") ?")) return;
+  try{ var r = DEMO ? {password:"demo-nouveau-123"} : await callAdmin({action:"reset", code:code});
+    CEN.created = {code:code, nom:a.n, pw:r.password, msg:""}; cenShowCreated(); }catch(ex){ toast("Réinitialisation impossible : "+(ex.message||ex)) }
+}
+async function cenToggle(code){
+  var a = allAgents().filter(function(x){ return x.c===code })[0]; if(!a) return; var to = a.active===false;
+  if(!window.confirm((to ? "Réactiver" : "Désactiver")+" le compte de "+a.n+" ("+code+") ?")) return;
+  try{ if(!DEMO) await callAdmin({action:"setActive", code:code, active:to}); if(DAG[code]) DAG[code].active = to; toast(to ? "Compte réactivé" : "Compte désactivé"); cenRender() }catch(ex){ toast("Impossible : "+(ex.message||ex)) }
+}
+/* ---- journal des opérations ---- */
+async function cenLoadJ(){
+  if(CEN.jrBusy) return; CEN.jrBusy = true; var rows = [];
+  async function get(src, t, ord){ try{ var r = await SB.from(t).select(t==="audit_log" ? "id,at,actor,actor_role,actor_city,action,coll,doc_id,fosa,details" : "*").order("id",{ascending:false}).range(0,199); if(r.error) throw r.error; return r.data||[] }catch(e){ CEN.warn["journal "+src] = (e&&e.message)||String(e); return [] } }
+  var A = await get("Santé","audit_log"), H = await get("RH","hr_journal"), Fn = DEMO ? (FIN.nj||[]) : await get("Finance","fin_journal");
+  A.forEach(function(x){ rows.push({t:x.at, src:"Santé", who:x.actor, act:x.action, obj:[x.coll,x.doc_id].filter(Boolean).join(" "), det:cenDet(x.details)}) });
+  H.forEach(function(x){ rows.push({t:x.at, src:"RH", who:x.acteur, act:x.action, obj:[x.table_name,x.ligne_id].filter(Boolean).join(" "), det:cenDet(x.details)}) });
+  Fn.forEach(function(x){ rows.push({t:x.at, src:"Finance", who:x.acteur, act:x.action, obj:[x.table_name,x.ligne_id].filter(Boolean).join(" "), det:cenDet(x.details)}) });
+  rows.sort(function(a,b){ return String(typeof b.t==="number" ? new Date(b.t).toISOString() : b.t).localeCompare(String(typeof a.t==="number" ? new Date(a.t).toISOString() : a.t)) });
+  CEN.jr = rows; CEN.jrBusy = false; if(CEN.tab==="journal") cenRender();
+}
+function cenDet(d){ if(d==null) return ""; var s = typeof d==="string" ? d : JSON.stringify(d); return s.length>140 ? s.slice(0,140)+"…" : s }
+function cenFT(t){ if(t==null) return "—"; var d = new Date(t); return isNaN(d) ? String(t) : d.toLocaleDateString("fr-FR")+" "+d.toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"}) }
+function cenJournal(){
+  if(CEN.jr==null){ cenLoadJ(); return '<div class="card"><p class="hrmsg">Chargement des journaux…</p></div>' }
+  var q = CEN.jq.toLowerCase(), L = CEN.jr.filter(function(x){ return (CEN.js==="all" || x.src===CEN.js) && (!q || (x.who+" "+x.act+" "+x.obj+" "+x.det).toLowerCase().indexOf(q)>=0) });
+  return '<div class="card"><p class="sub" style="margin:0 0 8px">Les 200 dernières opérations de chaque portail, du plus récent au plus ancien.</p><div class="hrf" style="display:flex;gap:8px;flex-wrap:wrap"><select id="cenjs">'+[["all","Tous les portails"],["Santé","Santé"],["RH","RH"],["Finance","Finance"]].map(function(o){ return '<option value="'+o[0]+'"'+(CEN.js===o[0]?' selected':'')+'>'+o[1]+'</option>' }).join("")+'</select><input id="cenjq" placeholder="Rechercher (personne, action, objet)" value="'+esc(CEN.jq)+'" style="flex:1;min-width:160px"><button class="hrb" data-cen="jx">Excel</button></div></div>'
+    + '<div class="card"><h3>'+L.length+' opération(s)</h3><div class="tw"><table><thead><tr><th>Date</th><th>Portail</th><th>Acteur</th><th>Action</th><th>Objet</th><th>Détail</th></tr></thead><tbody>'
+    + L.slice(0,300).map(function(x){ return '<tr><td style="white-space:nowrap">'+esc(cenFT(x.t))+'</td><td>'+esc(x.src)+'</td><td>'+esc(x.who||"—")+'</td><td>'+esc(x.act||"")+'</td><td>'+esc(x.obj)+'</td><td><small>'+esc(x.det)+'</small></td></tr>' }).join("")+'</tbody></table></div>'+(L.length?'':'<p class="hrmsg">Aucune opération.</p>')+(L.length>300?'<p class="sub">300 premières lignes affichées : affinez la recherche.</p>':'')+'</div>';
+}
+/* ---- supervision ---- */
+async function cenLoadSup(){
+  if(CEN.supBusy) return; CEN.supBusy = true; var S = {};
+  try{ if(!HRM.loaded && !HRM.busy) await hrLoad() }catch(e){}
+  try{ if(!FIN.loaded && !FIN.busy) await finLoad() }catch(e){}
+  CEN.sup = S; CEN.supBusy = false; if(CEN.tab==="sup") cenRender();
+}
+function cenK(v, l, bad){ return '<div class="kpi"><b'+(bad?' style="color:var(--ko)"':'')+'>'+v+'</b><span>'+l+'</span></div>' }
+function cenSup(){
+  if(CEN.sup==null){ cenLoadSup(); return '<div class="card"><p class="hrmsg">Chargement de la supervision…</p></div>' }
+  var all = cenRows(), act = all.filter(function(a){ return a.active!==false }), now = Date.now(), on = Object.keys(PRES||{}).filter(function(k){ var p = PRES[k]; return p && p.online && now-(p.last||0) < PRES_TTL }).length;
+  var jam = LOGINS && Object.keys(LOGINS).length ? all.filter(function(a){ return !LOGINS[a.c] }).length : null;
+  var h = '<div class="card"><h3>Comptes</h3><div class="kpis">'+cenK(all.length,"comptes")+cenK(act.length,"actifs")+cenK(all.length-act.length,"inactifs", all.length-act.length>0)+cenK(on,"en ligne maintenant")+(jam==null?'':cenK(jam,"jamais connectés", jam>0))+'</div></div>';
+  var sa = 0, st = 0, tf = 0, nf = 0; try{ var t0 = new Date(); t0.setHours(0,0,0,0); Object.keys(PREST||{}).forEach(function(k){ sa++; if((PREST[k].at||0)>=t0.getTime()) st++ }); tf = Object.keys(TRF||{}).length; nf = Object.keys(DFOSA||{}).length }catch(e){}
+  h += '<div class="card"><h3>MESP SANTÉ</h3><div class="kpis">'+cenK(fmt(sa),"prestations (chargées)")+cenK(fmt(st),"prestations aujourd\'hui")+cenK(fmt(tf),"transferts")+cenK(fmt(nf),"FOSA")+'</div></div>';
+  if(HRM.loaded){
+    var ag = hrList("hr_agents"), on2 = ag.filter(hrOn), cg = hrList("hr_conges").filter(function(c){ return c.statut==="demande" || c.statut==="valide_chef" }).length, inc = on2.filter(hrIncomplete).length, sp = on2.filter(function(a){ return !a.poste_id }).length;
+    h += '<div class="card"><h3>MESP-Ressources humaines</h3><div class="kpis">'+cenK(fmt(on2.length),"agents en service")+cenK(sp,"sans poste", sp>0)+cenK(inc,"dossiers incomplets", inc>0)+cenK(hrList("hr_mutations").filter(function(m){ return m.statut==="proposee" }).length,"mutations en attente")+cenK(hrList("hr_actes").filter(function(x){ return x.statut==="en_attente" }).length,"actes à valider")+cenK(cg,"congés à traiter")+'</div></div>';
+  } else h += '<div class="card"><h3>MESP-Ressources humaines</h3><p class="sub">Indisponible'+(HRM.err?' : '+esc(HRM.err):'')+'.</p></div>';
+  if(FIN.loaded){
+    var dp = finList("fin_depenses"), c = function(s){ return dp.filter(function(x){ return x.statut===s }).length };
+    h += '<div class="card"><h3>MESP FINANCE</h3><div class="kpis">'+cenK(c("demande"),"attendent le directeur financier", c("demande")>0)+cenK(c("valide_df"),"attendent le secrétaire exécutif", c("valide_df")>0)+cenK(c("approuve"),"approuvées à payer")+cenK(c("paye"),"payées")+cenK(finList("fin_caisses").length,"caisses")+'</div></div>';
+  } else h += '<div class="card"><h3>MESP FINANCE</h3><p class="sub">Indisponible'+(FIN.err?' : '+esc(FIN.err):'')+'.</p></div>';
+  return h;
+}
+/* ---- paramètres ---- */
+function cenParam(){
+  var seuil = CEN.par.seuil_se_usd, tx = CEN.tx.slice().sort(function(a,b){ return String(b.jour).localeCompare(String(a.jour)) })[0], ex = CEN.ex.filter(function(e){ return !e.cloture }).sort(function(a,b){ return String(b.debut).localeCompare(String(a.debut)) })[0];
+  var adm = Object.keys(CEN.acc).filter(function(k){ return CEN.acc[k].admin });
+  var h = '<div class="card"><h3>Finance</h3><div class="grid2" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px">'
+    + '<div><small>Seuil de validation du secrétaire exécutif</small><div><b>'+(seuil ? fmt(+seuil.valeur)+' USD' : '0 USD (il valide toujours)')+'</b></div><button class="hrb" data-cen="seuil" style="margin-top:6px">Modifier</button></div>'
+    + '<div><small>Dernier taux de change</small><div><b>'+(tx ? '1 USD = '+fmt(+tx.usd_cdf)+' CDF' : 'Aucun taux saisi')+'</b></div><small>'+(tx ? 'au '+esc(hrFD(tx.jour)) : 'à saisir dans MESP FINANCE')+'</small></div>'
+    + '<div><small>Exercice en cours</small><div><b>'+(ex ? esc(ex.libelle) : 'Aucun exercice ouvert')+'</b></div>'+(ex ? '<small>du '+esc(hrFD(ex.debut))+' au '+esc(hrFD(ex.fin))+'</small>' : '')+'</div></div></div>';
+  h += '<div class="card"><h3>Administrateurs</h3><p class="sub" style="margin:0 0 6px">Ils voient tous les portails. Le super-administrateur peut en nommer d\'autres dans « Droits d\'accès ».</p>'
+    + '<div>'+['10-056'].concat(adm.filter(function(k){ return k!=="10-056" })).map(function(k){ var a = allAgents().filter(function(x){ return x.c===k })[0]; return '<span class="cen-b cen-ad" style="margin:2px">'+esc(a ? a.n : k)+' ('+esc(k)+')</span>' }).join("")+'</div></div>';
+  h += '<div class="card"><h3>Portails</h3><div class="tw"><table><thead><tr><th>Portail</th><th>État</th><th>Comptes autorisés</th></tr></thead><tbody>'
+    + [["sante","MESP SANTÉ","Disponible"],["rh","MESP-Ressources humaines","Disponible"],["finance","MESP FINANCE","Disponible"],["ident","MESP IDENTIFICATION","Bientôt"],["admin","MESP ADMIN","Bientôt"],["archiv","MESP ARCHIVAGE","Bientôt"]].map(function(p){ var n = cenRows().filter(function(a){ return cenPortalsOf(a).indexOf(p[0])>=0 }).length; return '<tr><td>'+p[1]+'</td><td>'+p[2]+'</td><td>'+(p[2]==="Bientôt"?'—':n)+'</td></tr>' }).join("")+'</tbody></table></div></div>';
+  h += '<div class="card"><h3>Application</h3><p class="sub" style="margin:0">Version installée : <b id="cenver">…</b></p></div>';
+  setTimeout(function(){ try{ caches.keys().then(function(ks){ var k = ks.filter(function(x){ return /^mesp-v/.test(x) })[0], e = $("cenver"); if(e) e.textContent = k ? k.replace("mesp-","") : "non disponible" }) }catch(e){ var e2 = $("cenver"); if(e2) e2.textContent = "non disponible" } }, 0);
+  return h;
+}
+function cenSeuilForm(){
+  var cur = CEN.par.seuil_se_usd; hrForm("Seuil de validation du secrétaire exécutif (USD)", [["v","Montant en USD (0 = le secrétaire exécutif valide toujours)","number",null,1]], {v: cur ? +cur.valeur : 0}, async function(v){
+    var row = {cle:"seuil_se_usd", valeur:v.v, note:(cur && cur.note) || "0 = le secrétaire exécutif valide toujours"};
+    if(DEMO){ CEN.par.seuil_se_usd = row; FIN.demoD.fin_param.seuil_se_usd = row } else { var r = await SB.from("fin_param").upsert(row).select(); if(r.error) throw new Error(r.error.message || "Refusé : seuls le directeur financier et le secrétaire exécutif modifient ce paramètre"); CEN.par.seuil_se_usd = (r.data && r.data[0]) || row; if(FIN.d.fin_param) FIN.d.fin_param.seuil_se_usd = CEN.par.seuil_se_usd }
+    toast("Seuil enregistré"); cenRender();
+  });
+}
+/* ---- événements ---- */
+document.addEventListener("click", async function(e){
+  var b = e.target.closest && e.target.closest("[data-cen]"); if(!b || !$("central") || $("central").classList.contains("hide")) return;
+  var a = b.dataset.cen, id = b.dataset.id;
+  if(a==="tab"){ CEN.tab = id; cenRender(); return }
+  if(a==="refresh"){ CEN.loaded = false; CEN.jr = null; CEN.sup = null; HRM.loaded = false; FIN.loaded = false; cenLoad(); return }
+  if(a==="portals"){ cenClose(); hubShow(); return }
+  if(a==="logout"){ logout(); return }
+  if(a==="fs"){ try{ if(document.fullscreenElement) document.exitFullscreen(); else document.documentElement.requestFullscreen() }catch(x){} return }
+  if(a==="new") return cenNewForm(); if(a==="new-fin") return cenNewForm("fin");
+  if(a==="rights") return cenRightsForm(id); if(a==="reset") return cenPwd(id); if(a==="active") return cenToggle(id); if(a==="seuil") return cenSeuilForm();
+  if(a==="jx"){ var L = (CEN.jr||[]).filter(function(x){ return (CEN.js==="all" || x.src===CEN.js) }); await exportXlsx("MESP_journal_operations","Journal",["Date","Portail","Acteur","Action","Objet","Détail"], L.map(function(x){ return [cenFT(x.t), x.src, x.who||"", x.act||"", x.obj, x.det] })); return }
+});
+document.addEventListener("input", function(e){ var t = e.target; if(t.id==="cenq"){ CEN.q = t.value; var p = t.selectionStart; cenRender(); var n = $("cenq"); if(n){ n.focus(); try{ n.setSelectionRange(p,p) }catch(x){} } } else if(t.id==="cenjq"){ CEN.jq = t.value; var p2 = t.selectionStart; cenRender(); var n2 = $("cenjq"); if(n2){ n2.focus(); try{ n2.setSelectionRange(p2,p2) }catch(x){} } } });
+document.addEventListener("change", function(e){ var t = e.target; if(t.id==="centy"){ CEN.ty = t.value; cenRender() } else if(t.id==="cenjs"){ CEN.js = t.value; cenRender() } });
 
 function bootAuth(){ go("v0") }
 function startSession(a){
@@ -4769,7 +5014,7 @@ function logout(force){
   presOff(); offClearUser(); OFFK = null; OFFRES = false;
   try{ localStorage.removeItem("mesp_sess") }catch(e){}
   try{ SB.auth.signOut() }catch(e){} clearShared();
-  finReset(); finClose(); hubHide(); PORTALS = []; PROW = null; PROWS = {}; HRM.loaded = false; HRM.d = {}; HRM.sel = null; HRM.jrLoaded = false; HRM.st = null; PORTAL = "";
+  finReset(); finClose(); cenReset(); cenClose(); hubHide(); PORTALS = []; PROW = null; PROWS = {}; HRM.loaded = false; HRM.d = {}; HRM.sel = null; HRM.jrLoaded = false; HRM.st = null; PORTAL = "";
   AG = null; ROLE = null; SCOPE = []; FOSA = null; CUR = null; VIEW = null; ME = {id:null,isOwner:false,canEdit:false}; LABEL = "la hiérarchie";
   $("who").classList.add("hide"); $("top").classList.remove("in"); $("tabs").classList.add("hide"); $("tabs").innerHTML = ""; $("spnav").classList.add("hide"); document.body.classList.remove("nat"); $("out").classList.add("hide");
   $("q").value = ""; $("lc").value = ""; $("lp").value = ""; go("v0"); hubHide();
