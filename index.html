@@ -3368,7 +3368,7 @@ function hrOptsP(ent, cur){
 }
 function hrCheckAffect(row){
   if(!row.poste_id) return;
-  var p = HRM.d.hr_postes[row.poste_id]; if(!p) throw new Error("Poste introuvable"); if(p.grade && !row.grade) row.grade = p.grade;
+  var p = HRM.d.hr_postes[row.poste_id]; if(!p) throw new Error("Poste introuvable"); if(p.grade && !row.grade && !HRM.d.hr_agents[row.id]) row.grade = p.grade;
   if(!row.unite_id && p.unite_id) row.unite_id = p.unite_id;
   if(p.entite_id!==row.entite_id) throw new Error("Ce poste n'appartient pas à l'entité de l'agent");
   if(row.statut==="actif" || row.statut==="suspendu"){
@@ -3394,7 +3394,7 @@ function hrAgentForm(a){
 }
 function hrAssignForm(id){
   var a = HRM.d.hr_agents[id];
-  hrForm("Affecter à un poste (le grade du poste est repris si l'agent n'en a pas)", [["unite_id","Unité","select",hrOptsU(a.entite_id)],["poste_id","Poste (places libres)","select",hrOptsP(a.entite_id, a.poste_id)]], a, async function(v){
+  hrForm("Affecter à un poste", [["unite_id","Unité","select",hrOptsU(a.entite_id)],["poste_id","Poste (places libres)","select",hrOptsP(a.entite_id, a.poste_id)]], a, async function(v){
     var row = Object.assign({}, a, hrClean(v)); hrCheckAffect(row); await hrPut("hr_agents", row); toast("Affectation enregistrée");
   });
 }
