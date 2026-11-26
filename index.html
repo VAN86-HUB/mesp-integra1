@@ -4449,15 +4449,28 @@ function cenRightsForm(code){
   });
   var fm = $("hrm"); if(fm){ var p = document.createElement("p"); p.className = "sub"; p.style.margin = "0 0 6px"; p.textContent = "Un niveau Finance ou RH ouvre automatiquement le portail correspondant."; fm.querySelector("h3").after(p) }
 }
-function cenNewForm(preset){
+async function cenRhList(){
+  try{
+    if(DEMO) return Object.keys((HRM.d && HRM.d.hr_agents) || {}).map(function(k){ return HRM.d.hr_agents[k] }).filter(function(a){ return !a.code_app && (a.statut==="actif"||a.statut==="suspendu") });
+    var r = await SB.from("hr_agents").select("id,nom,postnom,prenom,matricule_rh,code_app,statut").is("code_app", null).in("statut",["actif","suspendu"]).order("nom").range(0,999);
+    return r.error ? [] : r.data;
+  }catch(e){ return [] }
+}
+var CEN_RHM = /^[0-9]{2}-[0-9]{3}$/;
+async function cenNewForm(preset){
+  var RH = await cenRhList(), RHM = {};
+  var rhOpts = [["","— Aucun : code généré automatiquement —"]].concat(RH.map(function(a){ RHM[a.id] = a; return [a.id, [a.nom,a.postnom,a.prenom].filter(Boolean).join(" ")+" — "+a.matricule_rh] }));
   var fin = preset==="fin", T = fin ? [["autre","Autre — compte sans accès aux données de santé"]] : Object.keys(CEN_TY).map(function(k){ return [k, CEN_TY[k]] });
   var P = []; try{ P = levels().filter(function(x){ return x!=="National" }) }catch(e){}
-  var F = [["name","Nom complet (nom et prénom)","text",null,1],["fonction","Fonction","text"],["ty","Type de compte","select",T]];
+  var F = [["rhid","Agent RH : son matricule RH devient son code de connexion","select",rhOpts],["name","Nom complet (nom et prénom ; repris du dossier RH si choisi)","text"],["fonction","Fonction","text"],["ty","Type de compte","select",T]];
   if(!fin) F.push(["city","Province (sauf national et « autre »)","select",[["","—"]].concat(P.map(function(p){ return [p,p] }))]);
   F.push(["pw","Mot de passe (8 caractères minimum ; vide = généré)","text"]);
   F.push(["p_sante","Portail MESP SANTÉ","check"]); F.push(["p_rh","Portail MESP-Ressources humaines","check"]); F.push(["hrn","Niveau RH","select",cenHrOpts()]); F.push(["p_finance","Portail MESP FINANCE","check"]); F.push(["finn","Niveau Finance","select",cenFinOpts()]);
   hrForm(fin ? "Nouvel utilisateur Finance" : "Nouvel utilisateur", F, fin ? {p_sante:false, p_rh:false, p_finance:true, hrn:"", finn:"df"} : {p_sante:true, p_rh:false, p_finance:false, hrn:"", finn:""}, async function(v){
-    var ty = v.ty, nat = ty==="national" || ty==="autre", n = UPN(v.name);
+    var ty = v.ty, nat = ty==="national" || ty==="autre", rha = v.rhid ? RHM[v.rhid] : null;
+    if(rha && !v.name) v.name = [rha.nom,rha.postnom,rha.prenom].filter(Boolean).join(" ");
+    var n = UPN(v.name);
+    if(rha && !CEN_RHM.test(String(rha.matricule_rh)) && !window.confirm("Le matricule RH « "+rha.matricule_rh+" » n'est pas au format 10-123 accepté par le système de connexion : le compte gardera un code généré. Continuer ?")) return;
     if(n.length<5 || n.indexOf(" ")<0) throw new Error("Saisissez le nom complet (nom et prénom)");
     if(v.pw && v.pw.length<8) throw new Error("Mot de passe : 8 caractères minimum (ou laissez vide)");
     if(!nat && !v.city) throw new Error("Choisissez la province");
@@ -4469,16 +4482,28 @@ function cenNewForm(preset){
       r = await callAdmin({action:"create", role:(nat || ty==="medecin" || ty==="chef") ? ty : undefined, name:n, fonction:f, city:nat ? undefined : v.city, password:ty==="delegue" ? "" : v.pw}); code = r.code;
       var cty = ty==="autre" ? "Autre" : (nat ? "National" : v.city); DAG[code] = {c:code, n:n, f:f, l:(nat ? cty : "Provincial"), w:cty, v:cty, r:ty, active:true};
     }
-    var msg = "Compte créé : "+code;
+    var msg = "Compte créé : "+code, mnote = "";
+    if(rha){
+      var mat = String(rha.matricule_rh);
+      if(CEN_RHM.test(mat) && mat!==code){
+        try{
+          if(!DEMO){ if(!isSuper()) throw new Error("réservé au super-administrateur"); await callAdmin({action:"recode", code:code, newCode:mat}) }
+          else { DAG[mat] = DAG[code]; DAG[mat].c = mat; delete DAG[code] }
+          delete CEN.acc[code]; code = mat;
+        }catch(ex){ mnote = " — code RH non appliqué ("+(ex.message||ex)+"), code généré conservé" }
+      }else if(!CEN_RHM.test(mat)) mnote = " — matricule RH hors format 10-123, code généré conservé";
+      try{ if(!DEMO){ var u = await SB.from("hr_agents").update({code_app:code}).eq("id",rha.id); if(u.error) throw u.error } else if(HRM.d.hr_agents[rha.id]) HRM.d.hr_agents[rha.id].code_app = code }catch(ex){ mnote += " — lien avec le dossier RH non enregistré" }
+      msg = "Compte créé : "+code+mnote;
+    }
     try{ await cenApplyRights(code, n, v) }catch(ex){ msg += " — droits NON enregistrés ("+(ex.message||ex)+") : utilisez « Droits »" }
-    CEN.created = {code:code, nom:n, pw:r.password, msg:msg}; toast(msg); cenRender();
+    CEN.created = {code:code, nom:n, pw:r.password, msg:msg, rh:!!rha && !mnote}; toast(msg); cenRender();
     setTimeout(function(){ cenShowCreated() }, 50);
   });
 }
 function cenShowCreated(){
   var c = CEN.created; if(!c) return; CEN.created = null;
   var m = document.createElement("div"); m.id = "hrm"; m.className = "hrmo";
-  m.innerHTML = '<form class="hrmc"><h3>Compte créé</h3><p><b>'+esc(c.nom)+'</b></p><p>Code de connexion : <b>'+esc(c.code)+'</b></p><p>Mot de passe : <b id="cen-pw">'+esc(c.pw||"(voir l\'écran précédent)")+'</b></p><p class="sub">Notez-le maintenant : il ne sera plus affiché. La personne pourra le changer avec le bouton « Mot de passe ».</p><p class="hrerr">'+(/NON/.test(c.msg)?esc(c.msg):'')+'</p><div class="hrmb"><button type="button" class="hrx" data-hrm="x">Fermer</button></div></form>';
+  m.innerHTML = '<form class="hrmc"><h3>Compte créé</h3><p><b>'+esc(c.nom)+'</b></p><p>Code de connexion'+(c.rh?' (matricule RH)':'')+' : <b>'+esc(c.code)+'</b></p><p>Mot de passe : <b id="cen-pw">'+esc(c.pw||"(voir l\'écran précédent)")+'</b></p><p class="sub">Notez-le maintenant : il ne sera plus affiché. La personne pourra le changer avec le bouton « Mot de passe ».</p><p class="hrerr">'+(/NON/.test(c.msg)?esc(c.msg):'')+'</p><div class="hrmb"><button type="button" class="hrx" data-hrm="x">Fermer</button></div></form>';
   document.body.appendChild(m); m.addEventListener("click", function(e){ if(e.target===m || (e.target.dataset && e.target.dataset.hrm==="x")) m.remove() });
 }
 async function cenPwd(code){
