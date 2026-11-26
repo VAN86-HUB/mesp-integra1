@@ -1836,11 +1836,11 @@ async function savePrestation(i){
 function renderPrest(){
   var el = $("v7");
   if(!FOSA){ el.innerHTML = '<div class="card"><p class="sub" style="margin:0">Choisissez d\'abord la FOSA sur la page d\'accueil.</p></div>'; return }
-  var all = allP().filter(function(p){return inScopeF(p.fosa)}).sort(function(a,b){return (b.at||0)-(a.at||0)}), mine = all.filter(function(p){return p.fosa===FOSA});
+  var t0p = prFrom(), all = allP().filter(function(p){return inScopeF(p.fosa) && (p.at||0)>=t0p}).sort(function(a,b){return (b.at||0)-(a.at||0)}), mine = all.filter(function(p){return p.fosa===FOSA});
   var sum = function(a){ return a.reduce(function(s,p){return s+(+p.cout||0)},0) };
   el.innerHTML = '<div class="card"><div class="kpis"><div class="kpi"><b>'+fmt(sum(mine))+' $</b><span>Total '+esc(FOSA)+'</span></div><div class="kpi"><b>'+mine.length+'</b><span>prestation(s)</span></div></div>'
     + '<p class="sub" style="margin:10px 0 0">Total de vos FOSA : <b>'+fmt(sum(all))+' $</b> · '+all.length+' prestation(s)</p></div>'
-    + '<div class="card"><b>Prestations enregistrées</b><p class="sub" style="margin:4px 0 0">Touchez une ligne pour lire la fiche du malade.</p><p class="sub" style="margin:4px 0 0"><span style="display:inline-block;width:10px;height:10px;border-radius:3px;background:#16a34a;margin-right:6px"></span>En vert : prestations d\'aujourd\'hui</p>' + (mine.length ? '' : '<p class="sub" style="margin:8px 0 0">Aucune prestation enregistrée.</p>')
+    + '<div class="card"><b>Prestations enregistrées</b>'+prPerHtml()+'<p class="sub" style="margin:4px 0 0">Touchez une ligne pour lire la fiche du malade.</p><p class="sub" style="margin:4px 0 0"><span style="display:inline-block;width:10px;height:10px;border-radius:3px;background:#16a34a;margin-right:6px"></span>En vert : prestations d\'aujourd\'hui</p>' + (mine.length ? '' : '<p class="sub" style="margin:8px 0 0">Aucune prestation enregistrée'+(ROLE==="delegue" && PRPER!=="0" ? ' sur cette période' : '')+'.</p>')
     + mine.map(function(p){ var t0 = new Date(); t0.setHours(0,0,0,0); return '<div class="nrow'+((p.at||0)>=t0.getTime() ? ' today' : '')+'" data-id="'+esc(p.id)+'"><div><b>'+esc(p.nom)+' '+esc(p.prenom)+'</b><small>'+esc(p.type)+' · '+esc(p.mat)+' · '+esc(fmtDT(p.at||0))+(canEdit(p)?' · épisode en cours':'')+'</small></div><b>'+fmt(+p.cout||0)+' $ ›</b></div>' }).join("") + '</div>';
 }
 $("v7").addEventListener("click", function(e){ var row = e.target.closest(".nrow"); if(row && row.dataset.id){ try{ showFiche(row.dataset.id, null) }catch(err){ toast("Fiche illisible : "+err.message) } } });
@@ -4324,6 +4324,12 @@ function autoUpdateInit(reg){
   window.addEventListener("online", chk);
   setInterval(function(){ if(AU.need && auSafe()) auReload() }, 4000);
 }
+
+/* ===== Prestations du délégué : période de lecture (par défaut aujourd'hui) ===== */
+var PRPER = "1", PRPL = [["1","Aujourd'hui"],["7","7 derniers jours (semaine)"],["30","30 derniers jours"],["0","Toutes les prestations"]];
+function prFrom(){ if(ROLE!=="delegue" || PRPER==="0") return 0; var d = new Date(); d.setHours(0,0,0,0); d.setDate(d.getDate()-(+PRPER-1)); return d.getTime() }
+function prPerHtml(){ if(ROLE!=="delegue") return ""; return '<div style="margin:8px 0 4px"><label class="lbl" for="prper">Période de lecture</label><select id="prper">'+PRPL.map(function(o){ return '<option value="'+o[0]+'"'+(PRPER===o[0]?' selected':'')+'>'+o[1]+'</option>' }).join("")+'</select></div>' }
+document.addEventListener("change", function(e){ if(e.target && e.target.id==="prper"){ PRPER = e.target.value; renderPrest() } });
 
 function bootAuth(){ go("v0") }
 function startSession(a){
